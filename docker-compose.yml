@@ -1,0 +1,35 @@
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: amstar_postgres
+    environment:
+      POSTGRES_DB: amstar_DB
+      POSTGRES_USER: amstar_user
+      POSTGRES_PASSWORD: amstar_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amstar_user -d amstar_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: amstar_backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/amstar_db
+      SPRING_DATASOURCE_USERNAME: amstar_user
+      SPRING_DATASOURCE_PASSWORD: amstar_password
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
