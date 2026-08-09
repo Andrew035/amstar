@@ -37,7 +37,9 @@ export const RepairQueue: React.FC = () => {
                             <th>Priority Rank</th>
                             <th>Score</th>
                             <th>Customer</th>
-                            <th>Vehicle</th>
+                            <th>Vehicle Image</th>
+                            <th>License Plate</th>
+                            <th>Vehicle Specs</th>
                             <th>Service Required</th>
                             <th>Severity (1-5)</th>
                             <th>Entry Date</th>
@@ -51,7 +53,26 @@ export const RepairQueue: React.FC = () => {
                                 <td><strong>#{index + 1}</strong></td>
                                 <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
                                 <td>{item.customerName}</td>
-                                <td>{item.vehicleDetails}</td>
+                                <td>
+                                    {item.carImageUrl ? (
+                                        <img
+                                            src={item.carImageUrl}
+                                            alt={`${item.make} ${item.model}`}
+                                            style={{ width: '120px', borderRadius: '6px', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <span style={{ color: '#999' }}>No Image</span>
+                                    )}
+                                </td>
+                                <td>
+                                    {item.licensPlate ? (
+                                        <div style={{ padding: '4px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: '#eee' }}>
+                                            <strong>{item.licensPlate}</strong><br />
+                                            <small style={{ fontSize: '10px' }}>{item.state}</small>
+                                        </div>
+                                    ) : 'N/A'}
+                                </td>
+                                <td>{item.year} {item.make} {item.model}</td>
                                 <td>{item.serviceType}</td>
                                 <td>
                                     <span style={{

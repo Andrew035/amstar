@@ -13,7 +13,6 @@ public class VehicleRepair {
     private Long id;
 
     private String customerName;
-    private String vehicleDetails; // e.g., "2018 Ford F-150"
     private String serviceType; // e.g., "Full Transmission Rebuild"
 
     private int severity; // Scale 1 (Low) to 5 (Critical/Hard Rebuild)
@@ -21,22 +20,17 @@ public class VehicleRepair {
     private LocalDate expectedCompletionDate;
     private String status; // PENDING, IN_PROGRESS, COMPLETED
 
+    private String licensePlate;
+    private String state;
+    private String make;
+    private String model;
+    private Integer year;
+    private String carImageUrl;
+
     @Transient
     private double priorityScore;
 
     public VehicleRepair() {
-    }
-
-    public VehicleRepair(Long id, String customerName, String vehicleDetails, String serviceType, int severity,
-            LocalDate entryDate, LocalDate expectedCompletionDate, String status) {
-        this.id = id;
-        this.customerName = customerName;
-        this.vehicleDetails = vehicleDetails;
-        this.serviceType = serviceType;
-        this.severity = severity;
-        this.entryDate = entryDate;
-        this.expectedCompletionDate = expectedCompletionDate;
-        this.status = status;
     }
 
     // Getters and Setters
@@ -54,14 +48,6 @@ public class VehicleRepair {
 
     public void setCustomerName(String customerName) {
         this.customerName = customerName;
-    }
-
-    public String getVehicleDetails() {
-        return vehicleDetails;
-    }
-
-    public void setVehicleDetails(String vehicleDetails) {
-        this.vehicleDetails = vehicleDetails;
     }
 
     public String getServiceType() {
@@ -102,6 +88,54 @@ public class VehicleRepair {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getLicensePlate() {
+        return licensePlate;
+    }
+
+    public void setLicensePlate(String licensePlate) {
+        this.licensePlate = licensePlate;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getMake() {
+        return make;
+    }
+
+    public void setMake(String make) {
+        this.make = make;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
+    public String getCarImageUrl() {
+        return carImageUrl;
+    }
+
+    public void setCarImageUrl(String carImageUrl) {
+        this.carImageUrl = carImageUrl;
     }
 
     public double getPriorityScore() {

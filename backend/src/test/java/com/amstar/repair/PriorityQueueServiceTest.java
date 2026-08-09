@@ -3,6 +3,7 @@ package com.amstar.repair;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
 import com.amstar.repair.service.PriorityQueueService;
+import com.amstar.repair.service.VehicleLookupService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -15,14 +16,29 @@ public class PriorityQueueServiceTest {
     @Test
     public void testHigherSeverityYieldsHigherScore() {
         VehicleRepairRepository repository = Mockito.mock(VehicleRepairRepository.class);
-        PriorityQueueService service = new PriorityQueueService(repository);
+        VehicleLookupService lookupService = Mockito.mock(VehicleLookupService.class);
+        PriorityQueueService service = new PriorityQueueService(repository, lookupService);
 
         LocalDate today = LocalDate.now();
         LocalDate dueDate = today.plusDays(3);
 
-        VehicleRepair lowSeverity = new VehicleRepair(1L, "John", "Civic", "Oil Change", 1, today, dueDate, "PENDING");
-        VehicleRepair highSeverity = new VehicleRepair(2L, "Jane", "F-150", "Transmission Rebuild", 5, today, dueDate,
-                "PENDING");
+        VehicleRepair lowSeverity = new VehicleRepair();
+        lowSeverity.setId(1L);
+        lowSeverity.setCustomerName("John");
+        lowSeverity.setServiceType("Oil Change");
+        lowSeverity.setSeverity(1);
+        lowSeverity.setEntryDate(today);
+        lowSeverity.setExpectedCompletionDate(dueDate);
+        lowSeverity.setStatus("PENDING");
+
+        VehicleRepair highSeverity = new VehicleRepair();
+        highSeverity.setId(2L);
+        highSeverity.setCustomerName("Jane");
+        highSeverity.setServiceType("Transmission Rebuild");
+        highSeverity.setSeverity(5);
+        highSeverity.setEntryDate(today);
+        highSeverity.setExpectedCompletionDate(dueDate);
+        highSeverity.setStatus("PENDING");
 
         double lowScore = service.calculatePriorityScore(lowSeverity);
         double highScore = service.calculatePriorityScore(highSeverity);

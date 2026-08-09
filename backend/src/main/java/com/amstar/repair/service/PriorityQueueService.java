@@ -12,9 +12,11 @@ import java.util.List;
 @Service
 public class PriorityQueueService {
     private final VehicleRepairRepository repository;
+    private final VehicleLookupService lookupService;
 
-    public PriorityQueueService(VehicleRepairRepository repository) {
+    public PriorityQueueService(VehicleRepairRepository repository, VehicleLookupService lookupService) {
         this.repository = repository;
+        this.lookupService = lookupService;
     }
 
     public double calculatePriorityScore(VehicleRepair repair) {
@@ -51,6 +53,10 @@ public class PriorityQueueService {
         if (repair.getStatus() == null) {
             repair.setStatus("PENDING");
         }
+
+        // Intercept the repair to fetch the car image and details before saving
+        lookupService.enrichVehicleData(repair);
+
         return repository.save(repair);
     }
 }
