@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { VehicleRepair } from '../types/repair';
+import type { VehicleRepair } from '../types/repair';
 
 export const RepairQueue: React.FC = () => {
     const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
