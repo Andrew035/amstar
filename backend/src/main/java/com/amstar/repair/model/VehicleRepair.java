@@ -5,27 +5,23 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "vehicle_repairs")
+@Table(name = "service_tickets")
 public class VehicleRepair {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "vehicle_id", referencedColumnName = "id")
+    private Vehicle vehicle;
+
     private String customerName;
     private String serviceType; // e.g., "Full Transmission Rebuild"
-
     private int severity; // Scale 1 (Low) to 5 (Critical/Hard Rebuild)
     private LocalDate entryDate;
     private LocalDate expectedCompletionDate;
     private String status; // PENDING, IN_PROGRESS, COMPLETED
-
-    private String licensePlate;
-    private String state;
-    private String make;
-    private String model;
-    private Integer year;
-    private String carImageUrl;
 
     @Transient
     private double priorityScore;
@@ -40,6 +36,14 @@ public class VehicleRepair {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Vehicle getVehicle() {
+        return vehicle;
+    }
+
+    public void setVehicle(Vehicle vehicle) {
+        this.vehicle = vehicle;
     }
 
     public String getCustomerName() {
@@ -88,54 +92,6 @@ public class VehicleRepair {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getLicensePlate() {
-        return licensePlate;
-    }
-
-    public void setLicensePlate(String licensePlate) {
-        this.licensePlate = licensePlate;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getMake() {
-        return make;
-    }
-
-    public void setMake(String make) {
-        this.make = make;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public void setModel(String model) {
-        this.model = model;
-    }
-
-    public Integer getYear() {
-        return year;
-    }
-
-    public void setYear(Integer year) {
-        this.year = year;
-    }
-
-    public String getCarImageUrl() {
-        return carImageUrl;
-    }
-
-    public void setCarImageUrl(String carImageUrl) {
-        this.carImageUrl = carImageUrl;
     }
 
     public double getPriorityScore() {

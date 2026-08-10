@@ -1,5 +1,6 @@
 package com.amstar.repair;
 
+import com.amstar.repair.model.Vehicle;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
 import com.amstar.repair.service.PriorityQueueService;
@@ -23,6 +24,7 @@ public class PriorityQueueServiceTest {
         LocalDate dueDate = today.plusDays(3);
 
         VehicleRepair lowSeverity = new VehicleRepair();
+        lowSeverity.setVehicle(new Vehicle());
         lowSeverity.setId(1L);
         lowSeverity.setCustomerName("John");
         lowSeverity.setServiceType("Oil Change");
@@ -32,6 +34,7 @@ public class PriorityQueueServiceTest {
         lowSeverity.setStatus("PENDING");
 
         VehicleRepair highSeverity = new VehicleRepair();
+        highSeverity.setVehicle(new Vehicle());
         highSeverity.setId(2L);
         highSeverity.setCustomerName("Jane");
         highSeverity.setServiceType("Transmission Rebuild");

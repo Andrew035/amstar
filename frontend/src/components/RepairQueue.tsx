@@ -40,6 +40,7 @@ export const RepairQueue: React.FC = () => {
                             <th>Vehicle Image</th>
                             <th>License Plate</th>
                             <th>Vehicle Specs</th>
+                            <th>VIN</th>
                             <th>Service Required</th>
                             <th>Severity (1-5)</th>
                             <th>Entry Date</th>
@@ -54,10 +55,10 @@ export const RepairQueue: React.FC = () => {
                                 <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
                                 <td>{item.customerName}</td>
                                 <td>
-                                    {item.carImageUrl ? (
+                                    {item.vehicle?.carImageUrl ? (
                                         <img
-                                            src={item.carImageUrl}
-                                            alt={`${item.make} ${item.model}`}
+                                            src={item.vehicle.carImageUrl}
+                                            alt={`${item.vehicle.make} ${item.vehicle.model}`}
                                             style={{ width: '120px', borderRadius: '6px', objectFit: 'cover' }}
                                         />
                                     ) : (
@@ -65,14 +66,15 @@ export const RepairQueue: React.FC = () => {
                                     )}
                                 </td>
                                 <td>
-                                    {item.licensPlate ? (
+                                    {item.vehicle?.licensePlate ? (
                                         <div style={{ padding: '4px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: '#eee' }}>
-                                            <strong>{item.licensPlate}</strong><br />
-                                            <small style={{ fontSize: '10px' }}>{item.state}</small>
+                                            <strong>{item.vehicle.licensePlate}</strong><br />
+                                            <small style={{ fontSize: '10px' }}>{item.vehicle.state}</small>
                                         </div>
                                     ) : 'N/A'}
                                 </td>
-                                <td>{item.year} {item.make} {item.model}</td>
+                                <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
+                                <td><small style={{ fontFamily: 'monospace' }}>{item.vehicle?.vin || 'Unknown'}</small></td>
                                 <td>{item.serviceType}</td>
                                 <td>
                                     <span style={{
