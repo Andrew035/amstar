@@ -8,97 +8,97 @@ import java.time.LocalDate;
 @Table(name = "service_tickets")
 public class VehicleRepair {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "vehicle_id", referencedColumnName = "id")
-    private Vehicle vehicle;
+  @ManyToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "vehicle_id", referencedColumnName = "id")
+  private Vehicle vehicle;
 
-    private String customerName;
-    private String serviceType; // e.g., "Full Transmission Rebuild"
-    private int severity; // Scale 1 (Low) to 5 (Critical/Hard Rebuild)
-    private LocalDate entryDate;
-    private LocalDate expectedCompletionDate;
-    private String status; // PENDING, IN_PROGRESS, COMPLETED
+  private String customerName;
+  private String serviceType; // e.g., "Full Transmission Rebuild"
+  private int severity; // Scale 1 (Low) to 5 (Critical/Hard Rebuild)
+  private LocalDate entryDate;
+  private LocalDate expectedCompletionDate;
+  private String status; // PENDING, IN_PROGRESS, COMPLETED
 
-    @Transient
-    private double priorityScore;
+  @Transient
+  private double priorityScore;
 
-    public VehicleRepair() {
-    }
+  public VehicleRepair() {
+  }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+  // Getters and Setters
+  public Long getId() {
+    return id;
+  }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  public void setId(Long id) {
+    this.id = id;
+  }
 
-    public Vehicle getVehicle() {
-        return vehicle;
-    }
+  public Vehicle getVehicle() {
+    return vehicle;
+  }
 
-    public void setVehicle(Vehicle vehicle) {
-        this.vehicle = vehicle;
-    }
+  public void setVehicle(Vehicle vehicle) {
+    this.vehicle = vehicle;
+  }
 
-    public String getCustomerName() {
-        return customerName;
-    }
+  public String getCustomerName() {
+    return customerName;
+  }
 
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
-    }
+  public void setCustomerName(String customerName) {
+    this.customerName = customerName;
+  }
 
-    public String getServiceType() {
-        return serviceType;
-    }
+  public String getServiceType() {
+    return serviceType;
+  }
 
-    public void setServiceType(String serviceType) {
-        this.serviceType = serviceType;
-    }
+  public void setServiceType(String serviceType) {
+    this.serviceType = serviceType;
+  }
 
-    public int getSeverity() {
-        return severity;
-    }
+  public int getSeverity() {
+    return severity;
+  }
 
-    public void setSeverity(int severity) {
-        this.severity = severity;
-    }
+  public void setSeverity(int severity) {
+    this.severity = severity;
+  }
 
-    public LocalDate getEntryDate() {
-        return entryDate;
-    }
+  public LocalDate getEntryDate() {
+    return entryDate;
+  }
 
-    public void setEntryDate(LocalDate entryDate) {
-        this.entryDate = entryDate;
-    }
+  public void setEntryDate(LocalDate entryDate) {
+    this.entryDate = entryDate;
+  }
 
-    public LocalDate getExpectedCompletionDate() {
-        return expectedCompletionDate;
-    }
+  public LocalDate getExpectedCompletionDate() {
+    return expectedCompletionDate;
+  }
 
-    public void setExpectedCompletionDate(LocalDate expectedCompletionDate) {
-        this.expectedCompletionDate = expectedCompletionDate;
-    }
+  public void setExpectedCompletionDate(LocalDate expectedCompletionDate) {
+    this.expectedCompletionDate = expectedCompletionDate;
+  }
 
-    public String getStatus() {
-        return status;
-    }
+  public String getStatus() {
+    return status;
+  }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+  public void setStatus(String status) {
+    this.status = status;
+  }
 
-    public double getPriorityScore() {
-        return priorityScore;
-    }
+  public double getPriorityScore() {
+    return priorityScore;
+  }
 
-    public void setPriorityScore(double priorityScore) {
-        this.priorityScore = priorityScore;
-    }
+  public void setPriorityScore(double priorityScore) {
+    this.priorityScore = priorityScore;
+  }
 }

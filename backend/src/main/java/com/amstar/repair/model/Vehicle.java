@@ -6,75 +6,75 @@ import jakarta.persistence.*;
 @Table(name = "vehicles")
 public class Vehicle {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    private String licensePlate;
-    private String state;
-    private String vin;
-    private String make;
-    private String model;
-    private Integer year;
-    private String carImageUrl;
+  private String licensePlate;
+  private String state;
+  private String vin;
+  private String make;
+  private String model;
+  private Integer year;
+  private String carImageUrl;
 
-    public Vehicle() {
-    }
+  public Vehicle() {
+  }
 
-    // Getters and Setters
-    public String getLicensePlate() {
-        return licensePlate;
-    }
+  // Getters and Setters
+  public String getLicensePlate() {
+    return licensePlate;
+  }
 
-    public void setLicensePlate(String licensePlate) {
-        this.licensePlate = licensePlate;
-    }
+  public void setLicensePlate(String licensePlate) {
+    this.licensePlate = licensePlate;
+  }
 
-    public String getState() {
-        return state;
-    }
+  public String getState() {
+    return state;
+  }
 
-    public void setState(String state) {
-        this.state = state;
-    }
+  public void setState(String state) {
+    this.state = state;
+  }
 
-    public String getVin() {
-        return vin;
-    }
+  public String getVin() {
+    return vin;
+  }
 
-    public void setVin(String vin) {
-        this.vin = vin;
-    }
+  public void setVin(String vin) {
+    this.vin = vin;
+  }
 
-    public String getMake() {
-        return make;
-    }
+  public String getMake() {
+    return make;
+  }
 
-    public void setMake(String make) {
-        this.make = make;
-    }
+  public void setMake(String make) {
+    this.make = make;
+  }
 
-    public String getModel() {
-        return model;
-    }
+  public String getModel() {
+    return model;
+  }
 
-    public void setModel(String model) {
-        this.model = model;
-    }
+  public void setModel(String model) {
+    this.model = model;
+  }
 
-    public Integer getYear() {
-        return year;
-    }
+  public Integer getYear() {
+    return year;
+  }
 
-    public void setYear(Integer year) {
-        this.year = year;
-    }
+  public void setYear(Integer year) {
+    this.year = year;
+  }
 
-    public String getCarImageUrl() {
-        return carImageUrl;
-    }
+  public String getCarImageUrl() {
+    return carImageUrl;
+  }
 
-    public void setCarImageUrl(String carImageUrl) {
-        this.carImageUrl = carImageUrl;
-    }
+  public void setCarImageUrl(String carImageUrl) {
+    this.carImageUrl = carImageUrl;
+  }
 }

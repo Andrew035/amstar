@@ -14,38 +14,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PriorityQueueServiceTest {
 
-    @Test
-    public void testHigherSeverityYieldsHigherScore() {
-        VehicleRepairRepository repository = Mockito.mock(VehicleRepairRepository.class);
-        VehicleLookupService lookupService = Mockito.mock(VehicleLookupService.class);
-        PriorityQueueService service = new PriorityQueueService(repository, lookupService);
+  @Test
+  public void testHigherSeverityYieldsHigherScore() {
+    VehicleRepairRepository repository = Mockito.mock(VehicleRepairRepository.class);
+    VehicleLookupService lookupService = Mockito.mock(VehicleLookupService.class);
+    PriorityQueueService service = new PriorityQueueService(repository, lookupService);
 
-        LocalDate today = LocalDate.now();
-        LocalDate dueDate = today.plusDays(3);
+    LocalDate today = LocalDate.now();
+    LocalDate dueDate = today.plusDays(3);
 
-        VehicleRepair lowSeverity = new VehicleRepair();
-        lowSeverity.setVehicle(new Vehicle());
-        lowSeverity.setId(1L);
-        lowSeverity.setCustomerName("John");
-        lowSeverity.setServiceType("Oil Change");
-        lowSeverity.setSeverity(1);
-        lowSeverity.setEntryDate(today);
-        lowSeverity.setExpectedCompletionDate(dueDate);
-        lowSeverity.setStatus("PENDING");
+    VehicleRepair lowSeverity = new VehicleRepair();
+    lowSeverity.setVehicle(new Vehicle());
+    lowSeverity.setId(1L);
+    lowSeverity.setCustomerName("John");
+    lowSeverity.setServiceType("Oil Change");
+    lowSeverity.setSeverity(1);
+    lowSeverity.setEntryDate(today);
+    lowSeverity.setExpectedCompletionDate(dueDate);
+    lowSeverity.setStatus("PENDING");
 
-        VehicleRepair highSeverity = new VehicleRepair();
-        highSeverity.setVehicle(new Vehicle());
-        highSeverity.setId(2L);
-        highSeverity.setCustomerName("Jane");
-        highSeverity.setServiceType("Transmission Rebuild");
-        highSeverity.setSeverity(5);
-        highSeverity.setEntryDate(today);
-        highSeverity.setExpectedCompletionDate(dueDate);
-        highSeverity.setStatus("PENDING");
+    VehicleRepair highSeverity = new VehicleRepair();
+    highSeverity.setVehicle(new Vehicle());
+    highSeverity.setId(2L);
+    highSeverity.setCustomerName("Jane");
+    highSeverity.setServiceType("Transmission Rebuild");
+    highSeverity.setSeverity(5);
+    highSeverity.setEntryDate(today);
+    highSeverity.setExpectedCompletionDate(dueDate);
+    highSeverity.setStatus("PENDING");
 
-        double lowScore = service.calculatePriorityScore(lowSeverity);
-        double highScore = service.calculatePriorityScore(highSeverity);
+    double lowScore = service.calculatePriorityScore(lowSeverity);
+    double highScore = service.calculatePriorityScore(highSeverity);
 
-        assertTrue(highScore > lowScore, "High severity repair must have a high priority score.");
-    }
+    assertTrue(highScore > lowScore, "High severity repair must have a high priority score.");
+  }
 }

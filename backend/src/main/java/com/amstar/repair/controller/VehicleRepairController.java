@@ -10,19 +10,19 @@ import java.util.List;
 @RequestMapping("/api/repairs")
 @CrossOrigin(origins = "*")
 public class VehicleRepairController {
-    private final PriorityQueueService priorityQueueService;
+  private final PriorityQueueService priorityQueueService;
 
-    public VehicleRepairController(PriorityQueueService priorityQueueService) {
-        this.priorityQueueService = priorityQueueService;
-    }
+  public VehicleRepairController(PriorityQueueService priorityQueueService) {
+    this.priorityQueueService = priorityQueueService;
+  }
 
-    @GetMapping("/queue")
-    public List<VehicleRepair> getPriorityQueue() {
-        return priorityQueueService.getPrioritizedQueue();
-    }
+  @GetMapping("/queue")
+  public List<VehicleRepair> getPriorityQueue() {
+    return priorityQueueService.getPrioritizedQueue();
+  }
 
-    @PostMapping
-    public VehicleRepair addRepair(@RequestBody VehicleRepair repair) {
-        return priorityQueueService.createRepair(repair);
-    }
+  @PostMapping
+  public VehicleRepair addRepair(@RequestBody VehicleRepair repair) {
+    return priorityQueueService.createRepair(repair);
+  }
 }
