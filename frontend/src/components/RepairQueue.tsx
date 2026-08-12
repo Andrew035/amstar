@@ -7,7 +7,20 @@ export const RepairQueue: React.FC = () => {
 
   const fetchQueue = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/repairs/queue');
+      const token = localStorage.getItem('amstar_token');
+      const response = await fetch('http://localhost:8080/api/repairs/queue', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        // If the token is expired or invalid, log the user out
+        localStorage.removeItem('amstar_token');
+        window.location.reload();
+        return;
+      }
+
       const data = await response.json();
       setRepairs(data);
     } catch (error) {
