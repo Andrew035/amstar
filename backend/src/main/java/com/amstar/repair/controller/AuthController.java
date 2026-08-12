@@ -2,8 +2,8 @@ package com.amstar.repair.controller;
 
 import com.amstar.repair.model.User;
 import com.amstar.repair.repository.UserRepository;
+import com.amstar.repair.security.JwtAuthenticationFilter;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +21,7 @@ public class AuthController {
   private final PasswordEncoder passwordEncoder;
 
   // In production, store this securely in an environment variable!
-  private final Key jwtSecretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+  private final Key jwtSecretKey = Keys.hmacShaKeyFor(JwtAuthenticationFilter.SECRET.getBytes());
 
   public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
