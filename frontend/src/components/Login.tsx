@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 
 interface LoginProps {
   onLoginSuccess: (token: string) => void;
+  onSwitchToRegister: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -61,6 +62,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           Sign In
         </button>
       </form>
+
+      <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
+        Don't have an account?{' '}
+        <span
+          onClick={onSwitchToRegister}
+          style={{ color: '#3498db', cursor: 'pointer', textDecoration: 'underline' }}
+        >
+          Sign Up
+        </span>
+      </div>
     </div>
   );
 };

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { RepairQueue } from './components/RepairQueue'
 import { Login } from './components/Login';
+import { Register } from './components/Register';
 
 const App: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
+  const [showRegister, setShowRegister] = useState<boolean>(false);
 
   // Check if we already have a token when the app loads
   useEffect(() => {
@@ -42,7 +44,16 @@ const App: React.FC = () => {
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
         {/* If we have a token, show the queue. Otherwise, show the login screen. */}
-        {token ? <RepairQueue /> : <Login onLoginSuccess={setToken} />}
+        {token ? (
+          <RepairQueue />
+        ) : showRegister ? (
+          <Register onSwitchToLogin={() => setShowRegister(false)} />
+        ) : (
+          <Login
+            onLoginSuccess={setToken}
+            onSwitchToRegister={() => setShowRegister(true)}
+          />
+        )}
       </main>
     </div>
   );
