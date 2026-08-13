@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -40,7 +41,13 @@ public class SecurityConfig {
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless REST APIs
         .authorizeHttpRequests(auth -> auth
+            // Explicitly allow browser preflight requests
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            // Allow open access to auth endpoints
             .requestMatchers("/api/auth/**").permitAll() // Open login/register
+            // Unmask backend errors (prevents 500 error from turning into 403s)
+            .requestMatchers("/error").permitAll()
+            // Secure the repairs endpoints (both exact match and sub-paths)
             .requestMatchers("/api/repairs/**").authenticated() // Temporarily open while testing
             .anyRequest().authenticated())
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
