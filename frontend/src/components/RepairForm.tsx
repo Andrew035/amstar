@@ -1,5 +1,23 @@
 import React, { useState } from 'react';
 
+const SERVICE_SEVERITY_MAP: Record<string, number> = {
+  'Oil changes': 1,
+  'Auto fluids and filters maintenance': 1,
+  'Routine automotive maintenance': 1,
+
+  'Auto light repair': 2,
+  'Transmission leak inspection': 2,
+
+  'Auto battery or electrical system repair': 3,
+  'Auto brake repair': 3,
+  'Auto HVAC repair': 3,
+
+  'Auto steering and suspension repair': 4,
+
+  'Auto engine repair': 5,
+  'Auto transmission repair': 5
+};
+
 interface RepairFormProps {
   onSuccess: () => void;
 }
@@ -93,17 +111,32 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
 
         <div>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Service Type</label>
-          <input type="text" value={serviceType} onChange={e => setServiceType(e.target.value)} required style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }} />
-        </div>
+          <select
+            value={serviceType}
+            onChange={(e) => {
+              const selectedService = e.target.value;
+              setServiceType(selectedService);
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Severity (1-5)</label>
-          <select value={severity} onChange={e => setSeverity(Number(e.target.value))} style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }}>
-            <option value={1}>1 - Routine Maintenance</option>
-            <option value={2}>2 - Minor Repair</option>
-            <option value={3}>3 - Standard Repair</option>
-            <option value={4}>4 - Major Repair</option>
-            <option value={5}>5 - Critical / Vehicle Disabled</option>
+              // Automatically update the severity based on the map!
+              if (SERVICE_SEVERITY_MAP[selectedService]) {
+                setSeverity(SERVICE_SEVERITY_MAP[selectedService]);
+              }
+            }}
+            required
+            style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }}
+          >
+            <option value="" disabled>Select a service...</option>
+            <option value="Auto battery or electrical system repair">Auto battery or electrical system repair</option>
+            <option value="Auto brake repair">Auto brake repair</option>
+            <option value="Auto engine repair">Auto engine repair</option>
+            <option value="Auto fluids and filters maintenance">Auto fluids and filters maintenance</option>
+            <option value="Auto HVAC repair">Auto HVAC repair</option>
+            <option value="Auto light repair">Auto light repair</option>
+            <option value="Auto steering and suspension repair">Auto steering and suspension repair</option>
+            <option value="Auto transmission repair">Auto transmission repair</option>
+            <option value="Oil changes">Oil changes</option>
+            <option value="Routine automotive maintenance">Routine automotive maintenance</option>
+            <option value="Transmission leak inspection">Transmission leak inspection</option>
           </select>
         </div>
 
@@ -113,7 +146,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
         </div>
 
         <div style={{ gridColumn: '1 / -1', textAlign: 'right', marginTop: '0.5rem' }}>
-          <button type="submit" disabled={isSubmitting} style={{ padding: '0.75rem 1.5rem', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button type="submit" disabled={isSubmitting} style={{ padding: '0.75rem 1.5rem', background: '#d62027', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
             {isSubmitting ? 'Submitting...' : 'Add to Queue'}
           </button>
         </div>

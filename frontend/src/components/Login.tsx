@@ -58,7 +58,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
             required
           />
         </div>
-        <button type="submit" style={{ padding: '0.75', background: '#2c3e50', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <button type="submit" style={{ padding: '0.75', background: '#0b3068', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           Sign In
         </button>
       </form>
@@ -67,7 +67,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
         Don't have an account?{' '}
         <span
           onClick={onSwitchToRegister}
-          style={{ color: '#3498db', cursor: 'pointer', textDecoration: 'underline' }}
+          style={{ color: '#d62027', cursor: 'pointer', textDecoration: 'underline' }}
         >
           Sign Up
         </span>

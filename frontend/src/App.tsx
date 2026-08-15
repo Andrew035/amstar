@@ -23,19 +23,20 @@ const App: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9f9f9', margin: 0, padding: 0 }}>
       <header style={{
-        backgroundColor: '#2c3e50',
+        backgroundColor: '#0b3068',
         color: '#ffffff',
         padding: '1.5rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        borderBottom: '4px solid #d62027',
       }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>AM Star Transmissions Dashboard</h1>
         {token && (
           <button
             onClick={handleLogout}
-            style={{ background: '#e74c3c', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ background: '#d62027', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}
           >
             Logout
           </button>

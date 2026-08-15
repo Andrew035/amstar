@@ -102,7 +102,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
         <button
           type="submit"
           disabled={isSubmitting}
-          style={{ padding: '0.75rem', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '0.5rem', fontWeight: 'bold' }}
+          style={{ padding: '0.75rem', background: '#0b3068', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '0.5rem', fontWeight: 'bold' }}
         >
           {isSubmitting ? 'Registering...' : 'Sign Up'}
         </button>
@@ -112,7 +112,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
         Already have an account?{' '}
         <span
           onClick={onSwitchToLogin}
-          style={{ color: '#3498db', cursor: 'pointer', textDecoration: 'underline' }}
+          style={{ color: '#d62027', cursor: 'pointer', textDecoration: 'underline' }}
         >
           Sign in here
         </span>
