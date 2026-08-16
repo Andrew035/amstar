@@ -34,7 +34,7 @@ public class PriorityQueueService {
   }
 
   public List<VehicleRepair> getPrioritizedQueue() {
-    List<VehicleRepair> activeRepairs = repository.findByStatusNot("COMPLETED");
+    List<VehicleRepair> activeRepairs = repository.findAll();
 
     for (VehicleRepair repair : activeRepairs) {
       repair.setPriorityScore(calculatePriorityScore(repair));
@@ -58,5 +58,13 @@ public class PriorityQueueService {
     lookupService.enrichVehicleData(repair);
 
     return repository.save(repair);
+  }
+
+  public boolean updateRepairStatus(Long id, String newStatus) {
+    return repository.findById(id).map(repair -> {
+      repair.setStatus(newStatus);
+      repository.save(repair);
+      return true;
+    }).orElse(false);
   }
 }
