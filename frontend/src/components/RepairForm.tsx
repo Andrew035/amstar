@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const SERVICE_SEVERITY_MAP: Record<string, number> = {
   'Oil changes': 1,
@@ -20,15 +20,25 @@ const SERVICE_SEVERITY_MAP: Record<string, number> = {
 
 interface RepairFormProps {
   onSuccess: () => void;
+  currentUser: string;
+  isAdmin: boolean;
 }
 
-export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
+export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, isAdmin }) => {
   const [customerName, setCustomerName] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
   const [vehicleState, setVehicleState] = useState('MD');
   const [serviceType, setServiceType] = useState('');
   const [severity, setSeverity] = useState<number>(3);
   const [expectedCompletionDate, setExpectedCompletionDate] = useState('');
+
+  const [assignedWorker, setAssignedWorker] = useState<string>('');
+
+  useEffect(() => {
+    if (!isAdmin && currentUser) {
+      setAssignedWorker(currentUser);
+    }
+  }, [currentUser, isAdmin]);
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,10 +60,14 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
       severity,
       entryDate,
       expectedCompletionDate,
+      assignedWorker: isAdmin ? assignedWorker : currentUser, // Admin choice OR Worker default
       status: 'PENDING',
       vehicle: {
         licensePlate,
-        state: vehicleState
+        state: vehicleState,
+        make: "Unknown",
+        model: "Vehicle",
+        year: 2020
       }
     };
 
@@ -77,6 +91,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
       setServiceType('');
       setSeverity(3);
       setExpectedCompletionDate('');
+      if (isAdmin) setAssignedWorker('');
 
       // Trigger the queue to refresh
       onSuccess();
@@ -87,6 +102,17 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
     }
   };
 
+  const sharedInputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.6rem',
+    boxSizing: 'border-box',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    backgroundColor: '#fff',
+    outline: 'none',
+    fontSize: '0.95rem'
+  }
+
   return (
     <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginBottom: '2rem' }}>
       <h3 style={{ marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>New Vehicle Intake</h3>
@@ -96,17 +122,17 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
 
         <div>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Customer Name</label>
-          <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} required style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }} />
+          <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} required style={sharedInputStyle} />
         </div>
 
         <div>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>License Plate</label>
-          <input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} required style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }} />
+          <input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} required style={sharedInputStyle} />
         </div>
 
         <div>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Vehicle State</label>
-          <input type="text" value={vehicleState} onChange={e => setVehicleState(e.target.value.toUpperCase())} maxLength={2} required style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }} />
+          <input type="text" value={vehicleState} onChange={e => setVehicleState(e.target.value.toUpperCase())} maxLength={2} required style={sharedInputStyle} />
         </div>
 
         <div>
@@ -123,7 +149,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
               }
             }}
             required
-            style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }}
+            style={sharedInputStyle}
           >
             <option value="" disabled>Select a service...</option>
             <option value="Auto battery or electrical system repair">Auto battery or electrical system repair</option>
@@ -142,8 +168,25 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess }) => {
 
         <div>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Target Completion</label>
-          <input type="date" value={expectedCompletionDate} onChange={e => setExpectedCompletionDate(e.target.value)} required style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }} />
+          <input type="date" value={expectedCompletionDate} onChange={e => setExpectedCompletionDate(e.target.value)} required style={sharedInputStyle} />
         </div>
+
+        {isAdmin && (
+          <div>
+            <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Assign To Worker (Optional)</label>
+            <select
+              value={assignedWorker}
+              onChange={e => setAssignedWorker(e.target.value)}
+              required
+              style={sharedInputStyle}
+            >
+              <option value="">Unassigned</option>
+              <option value="worker1">worker1</option>
+              <option value="worker2">worker2</option>
+              <option value="worker3">worker3</option>
+            </select>
+          </div>
+        )}
 
         <div style={{ gridColumn: '1 / -1', textAlign: 'right', marginTop: '0.5rem' }}>
           <button type="submit" disabled={isSubmitting} style={{ padding: '0.75rem 1.5rem', background: '#d62027', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>

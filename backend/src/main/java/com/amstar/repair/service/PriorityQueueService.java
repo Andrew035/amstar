@@ -63,6 +63,23 @@ public class PriorityQueueService {
   public boolean updateRepairStatus(Long id, String newStatus) {
     return repository.findById(id).map(repair -> {
       repair.setStatus(newStatus);
+
+      // Automatically stamp the date when completed
+      if ("COMPLETED".equals(newStatus)) {
+        repair.setActualCompletionDate(LocalDate.now());
+      } else {
+        // Remove the date if accidently marked complete and reverted
+        repair.setActualCompletionDate(null);
+      }
+
+      repository.save(repair);
+      return true;
+    }).orElse(false);
+  }
+
+  public boolean assignWorker(Long id, String workerUsername) {
+    return repository.findById(id).map(repair -> {
+      repair.setAssignedWorker(workerUsername);
       repository.save(repair);
       return true;
     }).orElse(false);

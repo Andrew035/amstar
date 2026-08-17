@@ -5,10 +5,30 @@ import { RepairForm } from './RepairForm';
 export const RepairQueue: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [currentUser, setCurrentUser] = useState<string>('');
+
+  const isAdmin = currentUser === 'admin1' || currentUser === 'admin2';
+
+  useEffect(() => {
+    const token = localStorage.getItem('amstar_token');
+    if (token) {
+      try {
+        // Decode the JWT to find out who is logged in
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUser(payload.sub); // 'sub' is the standard JWT subject (username)
+
+      } catch (error) {
+        console.error("Invalid token format");
+      }
+    }
+    fetchQueue();
+  }, [])
 
   const fetchQueue = async () => {
     try {
       const token = localStorage.getItem('amstar_token');
+      if (!token) return;
+
       const response = await fetch('http://localhost:8080/api/repairs/queue', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -52,40 +72,67 @@ export const RepairQueue: React.FC = () => {
     }
   }
 
-  useEffect(() => {
-    fetchQueue();
-  }, []);
+  const handleAssignWorker = async (id: number, workerUsername: string) => {
+    const token = localStorage.getItem("amstar_token");
+    try {
+      const response = await fetch(`http://localhost:8080/api/repairs/${id}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ worker: workerUsername })
+      });
 
-  // Filter and sort the data into two separate arrays
-  const activeRepairs = repairs.filter(r => r.status !== 'COMPLETED');
+      if (response.ok) {
+        fetchQueue();
+      }
+    } catch (error) {
+      console.error("Failed to update status:", error)
+    }
+  }
+
+  // Filters: Admins see everything. Workers only see their assigned tickets.
+  const activeRepairs = repairs
+    .filter(r => r.status !== 'COMPLETED' && (isAdmin || r.assignedWorker === currentUser))
+    .sort((a, b) => new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() - new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime());
 
   const completedRepairs = repairs
     .filter(r => r.status === 'COMPLETED')
     // Sort descending by completion date (newest first)
-    .sort((a, b) => new Date(b.expectedCompletionDate).getTime() - new Date(a.expectedCompletionDate).getTime());
+    .sort((a, b) => new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() - new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime());
+
+  // Shared UI Style for Table Dropdowns
+  const tableDropdownStyle: React.CSSProperties = {
+    padding: '0.4rem',
+    borderRadius: '4px',
+    border: '1px solid #ccc',
+    fontWeight: 'bold',
+    outline: 'none',
+    cursor: 'pointer',
+    backgroundColor: '#fff'
+  }
+
+  // Wait until we know who the user is before rendering the UI
+  if (!currentUser) return <div style={{ padding: '2rem' }}>Loading user data...</div>
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h2>Am Star Transmissions - Service Priority Queue</h2>
-      <p style={{ color: '#666' }}>
-        Priority calculation is driven by repair severity, entry timestamp, and targeted completion deadlines.
-      </p>
 
-      <RepairForm onSuccess={fetchQueue} />
+      <RepairForm onSuccess={fetchQueue} currentUser={currentUser} isAdmin={isAdmin} />
+      <h2 style={{ color: '#0b3068', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem' }}>
+        {isAdmin ? 'Shop Active Queue (Admin View)' : `My Assigned Tasks (${currentUser})`}
+      </h2>
 
       {loading ? (
         <p>Loading active repairs...</p>
       ) : activeRepairs.length === 0 ? (
         <div style={{ padding: '2rem', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px dashed #ccc' }}>
-          No repairs in the queue. Submit a new intake above!
+          No active repairs assigned at this time.
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-
-          <table border={1} cellPadding={10} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div style={{ overflowX: 'auto', marginBottom: '3rem' }}>
+          <table border={1} cellPadding={6} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ background: '#f4f4f4' }}>
-                <th>Priority Rank</th>
+                <th>Rank</th>
                 <th>Score</th>
                 <th>Customer</th>
                 <th>Vehicle Image</th>
@@ -96,6 +143,7 @@ export const RepairQueue: React.FC = () => {
                 <th>Severity (1-5)</th>
                 <th>Entry Date</th>
                 <th>Due Date</th>
+                <th>Assigned Worker</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -110,7 +158,7 @@ export const RepairQueue: React.FC = () => {
                       <img
                         src={item.vehicle.carImageUrl}
                         alt={`${item.vehicle.make} ${item.vehicle.model}`}
-                        style={{ width: '120px', borderRadius: '6px', objectFit: 'cover' }}
+                        style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
                       />
                     ) : (
                       <span style={{ color: '#999' }}>No Image</span>
@@ -129,6 +177,8 @@ export const RepairQueue: React.FC = () => {
                   <td>{item.serviceType}</td>
                   <td>
                     <span style={{
+                      display: 'inline-block',
+                      whiteSpace: 'nowrap',
                       padding: '4px 8px',
                       borderRadius: '4px',
                       color: '#fff',
@@ -139,11 +189,28 @@ export const RepairQueue: React.FC = () => {
                   </td>
                   <td>{item.entryDate}</td>
                   <td>{item.expectedCompletionDate}</td>
+                  {/* Assignment Dropdown */}
+                  <td>
+                    {isAdmin ? (
+                      <select
+                        value={item.assignedWorker || ''}
+                        onChange={(e) => handleAssignWorker(item.id!, e.target.value)}
+                        style={tableDropdownStyle}
+                      >
+                        <option value="">Unassigned</option>
+                        <option value="worker1">worker1</option>
+                        <option value="worker2">worker2</option>
+                        <option value="worker3">worker3</option>
+                      </select>
+                    ) : (
+                      <strong>{item.assignedWorker || 'Unassigned'}</strong>
+                    )}
+                  </td>
                   <td>
                     <select
                       value={item.status || 'PENDING'}
                       onChange={(e) => handleStatusChange(item.id!, e.target.value)}
-                      style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc', fontWeight: 'bold' }}
+                      style={tableDropdownStyle}
                     >
                       <option value="PENDING">PENDING</option>
                       <option value="IN_PROGRESS">IN PROGRESS</option>
@@ -162,33 +229,45 @@ export const RepairQueue: React.FC = () => {
             Completed Services History
           </h2>
           <div style={{ overflowX: 'auto', opacity: 0.8 }}>
-            <table border={1} cellPadding={10} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fafafa' }}>
+            <table border={1} cellPadding={6} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ background: '#eee' }}>
+                  <th>Entry Date</th>
                   <th>Completion Date</th>
                   <th>Customer</th>
+                  <th>Vehicle Image</th>
+                  <th>License Plate</th>
                   <th>Vehicle Specs</th>
                   <th>Service Performed</th>
+                  <th>Assigned Worker</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {completedRepairs.map((item) => (
                   <tr key={item.id}>
-                    <td><strong>{item.expectedCompletionDate}</strong></td>
+                    <td>{item.entryDate}</td>
+                    <td><strong>{item.actualCompletionDate}</strong></td>
                     <td>{item.customerName}</td>
+                    <td>{item.vehicle?.carImageUrl}</td>
+                    <td>{item.vehicle?.licensePlate}</td>
                     <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
                     <td>{item.serviceType}</td>
+                    <td>{item.assignedWorker || 'Unknown'}</td>
                     <td>
-                      <select
-                        value={item.status}
-                        onChange={(e) => handleStatusChange(item.id!, e.target.value)}
-                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#e2f0e6', color: '#27ae60', fontWeight: 'bold' }}
-                      >
-                        <option value="PENDING">PENDING</option>
-                        <option value="IN_PROGRESS">IN PROGRESS</option>
-                        <option value="COMPLETED">COMPLETED</option>
-                      </select>
+                      {isAdmin ? (
+                        <select
+                          value={item.status}
+                          onChange={(e) => handleStatusChange(item.id!, e.target.value)}
+                          style={tableDropdownStyle}
+                        >
+                          <option value="PENDING">PENDING</option>
+                          <option value="IN_PROGRESS">IN PROGRESS</option>
+                          <option value="COMPLETED">COMPLETED</option>
+                        </select>
+                      ) : (
+                        <span style={tableDropdownStyle}>COMPLETED</span>
+                      )}
                     </td>
                   </tr>
                 ))}

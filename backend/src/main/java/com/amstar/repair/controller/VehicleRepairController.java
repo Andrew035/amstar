@@ -39,4 +39,14 @@ public class VehicleRepairController {
       return ResponseEntity.notFound().build();
     }
   };
+
+  @PatchMapping("/{id}/assign")
+  public ResponseEntity<?> assignWorker(@PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
+    boolean isAssigned = priorityQueueService.assignWorker(id, request.get("worker"));
+
+    if (isAssigned) {
+      return ResponseEntity.ok().build();
+    }
+    return ResponseEntity.notFound().build();
+  }
 }

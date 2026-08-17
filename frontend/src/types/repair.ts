@@ -18,5 +18,7 @@ export interface VehicleRepair {
   entryDate: string;
   expectedCompletionDate: string;
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+  assignedWorker: string;
+  actualCompletionDate: string;
   priorityScore?: number;
 }

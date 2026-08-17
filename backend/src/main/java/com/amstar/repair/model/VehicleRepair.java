@@ -23,6 +23,9 @@ public class VehicleRepair {
   private LocalDate expectedCompletionDate;
   private String status; // PENDING, IN_PROGRESS, COMPLETED
 
+  private String assignedWorker;
+  private LocalDate actualCompletionDate;
+
   @Transient
   private double priorityScore;
 
@@ -100,5 +103,21 @@ public class VehicleRepair {
 
   public void setPriorityScore(double priorityScore) {
     this.priorityScore = priorityScore;
+  }
+
+  public String getAssignedWorker() {
+    return assignedWorker;
+  }
+
+  public void setAssignedWorker(String assignedWorker) {
+    this.assignedWorker = assignedWorker;
+  }
+
+  public LocalDate getActualCompletionDate() {
+    return actualCompletionDate;
+  }
+
+  public void setActualCompletionDate(LocalDate actualCompletionDate) {
+    this.actualCompletionDate = actualCompletionDate;
   }
 }
