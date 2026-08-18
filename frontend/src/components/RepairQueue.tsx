@@ -16,7 +16,6 @@ export const RepairQueue: React.FC = () => {
         // Decode the JWT to find out who is logged in
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUser(payload.sub); // 'sub' is the standard JWT subject (username)
-
       } catch (error) {
         console.error("Invalid token format");
       }
@@ -92,7 +91,8 @@ export const RepairQueue: React.FC = () => {
   // Filters: Admins see everything. Workers only see their assigned tickets.
   const activeRepairs = repairs
     .filter(r => r.status !== 'COMPLETED' && (isAdmin || r.assignedWorker === currentUser))
-    .sort((a, b) => new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() - new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime());
+    // Sort descending by priorityScore (highest score goes to the top!)
+    .sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
   const completedRepairs = repairs
     .filter(r => r.status === 'COMPLETED')
@@ -101,13 +101,15 @@ export const RepairQueue: React.FC = () => {
 
   // Shared UI Style for Table Dropdowns
   const tableDropdownStyle: React.CSSProperties = {
-    padding: '0.4rem',
+    padding: '0.2rem 0.4rem',
+    fontSize: '0.8rem',
     borderRadius: '4px',
     border: '1px solid #ccc',
     fontWeight: 'bold',
     outline: 'none',
     cursor: 'pointer',
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
+    width: 'auto'
   }
 
   // Wait until we know who the user is before rendering the UI
@@ -149,7 +151,7 @@ export const RepairQueue: React.FC = () => {
             </thead>
             <tbody>
               {activeRepairs.map((item, index) => (
-                <tr key={item.id} style={{ backgroundColor: index === 0 ? '#fff3cd' : 'tranparent' }}>
+                <tr key={item.id} style={{ backgroundColor: index === 0 ? '#fff3cd' : 'transparent' }}>
                   <td><strong>#{index + 1}</strong></td>
                   <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
                   <td>{item.customerName}</td>
@@ -249,8 +251,25 @@ export const RepairQueue: React.FC = () => {
                     <td>{item.entryDate}</td>
                     <td><strong>{item.actualCompletionDate}</strong></td>
                     <td>{item.customerName}</td>
-                    <td>{item.vehicle?.carImageUrl}</td>
-                    <td>{item.vehicle?.licensePlate}</td>
+                    <td>
+                      {item.vehicle?.carImageUrl ? (
+                        <img
+                          src={item.vehicle.carImageUrl}
+                          alt={`${item.vehicle.make} ${item.vehicle.model}`}
+                          style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ color: '#999' }}>No Image</span>
+                      )}
+                    </td>
+                    <td>
+                      {item.vehicle?.licensePlate ? (
+                        <div style={{ padding: '4px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: 'eee' }}>
+                          <strong>{item.vehicle.licensePlate}</strong><br />
+                          <small style={{ fontSize: '10px' }}>{item.vehicle.state}</small>
+                        </div>
+                      ) : 'N/A'}
+                    </td>
                     <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
                     <td>{item.serviceType}</td>
                     <td>{item.assignedWorker || 'Unknown'}</td>

@@ -50,77 +50,52 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // NHTSA VIN DECODER api 1
-  const handleDecodeVin = async () => {
-    if (!vin || vin.length !== 17) {
-      setError("Please enter a valid 17-character VIN.");
-      return;
-    }
-
-    setIsDecoding(true);
-    setError('');
-
-    try {
-      // Fetch specs from the US Department of Transportation
-      const nhtsaResponse = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
-      const nhtsaData = await nhtsaResponse.json();
-      const vehicleInfo = nhtsaData.Results[0];
-
-      if (vehicleInfo.Make && vehicleInfo.Model) {
-        setVehicleMake(vehicleInfo.Make);
-        setVehicleModel(vehicleInfo.Model);
-        setVehicleYear(Number(vehicleInfo.ModelYear) || new Date().getFullYear());
-
-        // Pass the decoded info to our Image Search API
-        fetchVehicleImage(vehicleInfo.Make, vehicleInfo.Model);
-      } else {
-        setError("VIN decoded, but Make/Model were not found.");
-      }
-    } catch (error) {
-      setError("Failed to decode VIN. The NHTSA service might be down.");
-    } finally {
-      setIsDecoding(false);
-    }
-  }
-
-  // WIKIMEDIA ARTICLE MAIN IMAGE SEARCH api 2
-  const fetchVehicleImage = async (make: string, model: string) => {
-    try {
-      // OpenSearch to find the exact official Wikipedia article title      
-      const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(make + ' ' + model)}&limit=1&format=json&origin=*`;
-      const searchResponse = await fetch(searchUrl);
-      const searchData = await searchResponse.json();
-
-      // Ensure the search actually found a matching article
-      if (searchData[1] && searchData[1].length > 0) {
-        const exactTitle = searchData[1][0]; // e.g., "Ford F-150" resolves to "Ford F-Series"
-
-        // Modern REST API to fetch the page summary and images
-        const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(exactTitle)}`;
-        const summaryResponse = await fetch(summaryUrl);
-        const summaryData = await summaryResponse.json();
-
-        // Prefer the high-resolution original image, fallback to the standard thumbnail
-        if (summaryData.originalimage && summaryData.originalimage.source) {
-          setCarImageUrl(summaryData.originalimage.source);
-        } else if (summaryData.thumbnail && summaryData.thumbnail.source) {
-          setCarImageUrl(summaryData.thumbnail.source);
-        } else {
-          console.log("Article found, but no main image was attached.");
-        }
-      } else {
-        console.log("No exact Wikipedia match found.");
-      }
-    } catch (error) {
-      console.error("Failed to fetch image from Wikipedia REST API.", error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
 
+    // Establish fallback variables in case the API fails or no VIN is provided
+    let finalMake = "Unknown";
+    let finalModel = "Vehicle";
+    let finalYear = new Date().getFullYear();
+    let finalImageUrl = "";
+
+    // Decoding: Wait for the APIs to fetch the data BEFORE building the payload
+    if (vin && vin.length === 17) {
+      try {
+        // Fetch specs from the US Department of Transportation
+        const nhtsaResponse = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
+        const nhtsaData = await nhtsaResponse.json();
+        const vehicleInfo = nhtsaData.Results[0];
+
+        if (vehicleInfo.Make && vehicleInfo.Model) {
+          finalMake = vehicleInfo.Make;
+          finalModel = vehicleInfo.Model;
+          finalYear = Number(vehicleInfo.ModelYear) || finalYear;
+
+          // Fetch Image from Wikipedia REST API using the freshly decoded Make & Model
+          const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(finalMake + ' ' + finalModel)}&limit=1&format=json&origin=*`;
+          const searchResponse = await fetch(searchUrl);
+          const searchData = await searchResponse.json();
+
+          if (searchData[1] && searchData[1].length > 0) {
+            const exactTitle = searchData[1][0];
+            const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(exactTitle)}`;
+            const summaryResponse = await fetch(summaryUrl);
+            const summaryData = await summaryResponse.json();
+
+            if (summaryData.originalimage && summaryData.originalimage.source) {
+              finalImageUrl = summaryData.originalimage.source;
+            } else if (summaryData.thumbnail && summaryData.thumbnail.source) {
+              finalImageUrl = summaryData.thumbnail.source;
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Background decoding failed, proceeding with default empty vehicle specs.", error);
+      }
+    }
     const token = localStorage.getItem('amstar_token');
 
     // Automatically set the entry date to today
@@ -139,10 +114,10 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
         vin: vin || "Unknown",
         licensePlate,
         state: vehicleState,
-        make: vehicleMake,
-        model: vehicleModel,
-        year: vehicleYear,
-        carImageUrl: carImageUrl
+        make: finalMake,
+        model: finalModel,
+        year: finalYear,
+        carImageUrl: finalImageUrl
       }
     };
 
@@ -162,15 +137,11 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
 
       // Restet the form on success
       setCustomerName('');
+      setVin('');
       setLicensePlate('');
       setServiceType('');
       setSeverity(3);
       setExpectedCompletionDate('');
-      setVin('');
-      setVehicleMake('Unknown');
-      setVehicleModel('Vehicle');
-      setVehicleYear(new Date().getFullYear());
-      setCarImageUrl('');
       if (isAdmin) setAssignedWorker('');
 
       // Trigger the queue to refresh
@@ -209,24 +180,16 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>VIN (Optional)</label>
+          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>VIN (17-Digits)</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
               type="text"
               value={vin}
               onChange={e => setVin(e.target.value.toUpperCase())}
               maxLength={17}
-              placeholder='17-Digit VIN'
-              style={{ ...sharedInputStyle, flex: 1 }}
+              placeholder='e.g. 1G1RC6E45BU...'
+              style={sharedInputStyle}
             />
-            <button
-              type="button"
-              onClick={handleDecodeVin}
-              disabled={isDecoding || vin.length !== 17}
-              style={{ padding: '0 1rem', background: '#0b3068', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-            >
-              {isDecoding ? '...' : 'Decode'}
-            </button>
           </div>
         </div>
 
@@ -240,15 +203,6 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
           <input type="text" value={vehicleState} onChange={e => setVehicleState(e.target.value.toUpperCase())} maxLength={2} required style={sharedInputStyle} />
         </div>
 
-        {vehicleMake !== "Unknown" && (
-          <div style={{ gridColumn: '1 / -1', background: '#f8f9fa', padding: '1rem', borderRadius: '4px', border: '1px solid #e9ecef', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            {carImageUrl && <img src={carImageUrl} alt="Vehicle" style={{ width: '100px', borderRadius: '4px', objectFit: 'cover' }} />}
-            <div>
-              <strong>Decoded Vehicle:</strong>
-              <p style={{ margin: 0 }}>{vehicleYear} {vehicleMake} {vehicleModel}</p>
-            </div>
-          </div>
-        )}
         <div>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Service Type</label>
           <select
