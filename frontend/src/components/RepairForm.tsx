@@ -35,11 +35,6 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
 
   // Vehicle Specification States
   const [vin, setVin] = useState('');
-  const [vehicleMake, setVehicleMake] = useState('Unknown');
-  const [vehicleModel, setVehicleModel] = useState('Vehicle');
-  const [vehicleYear, setVehicleYear] = useState<number>(new Date().getFullYear());
-  const [carImageUrl, setCarImageUrl] = useState('');
-  const [isDecoding, setIsDecoding] = useState(false);
 
   useEffect(() => {
     if (!isAdmin && currentUser) {
