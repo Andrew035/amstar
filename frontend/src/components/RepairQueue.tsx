@@ -7,6 +7,9 @@ export const RepairQueue: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<string>('');
 
+  // State to hold our search query
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
   const isAdmin = currentUser === 'admin1' || currentUser === 'admin2';
 
   useEffect(() => {
@@ -88,14 +91,33 @@ export const RepairQueue: React.FC = () => {
     }
   }
 
+  // Helper funtion to check if an item matches our search term
+  const matchesSearch = (item: VehicleRepair) => {
+    if (!searchTerm) return true; // If search is empty, show everything!
+    const lowerSearch = searchTerm.toLowerCase();
+
+    return (
+      item.customerName?.toLowerCase().includes(lowerSearch) ||
+      item.vehicle?.licensePlate?.toLowerCase().includes(lowerSearch) ||
+      item.vehicle?.vin?.toLowerCase().includes(lowerSearch) ||
+      item.vehicle?.make?.toLowerCase().includes(lowerSearch) ||
+      item.vehicle?.model?.toLowerCase().includes(lowerSearch) ||
+      item.assignedWorker?.toLowerCase().includes(lowerSearch) ||
+      item.serviceType?.toLowerCase().includes(lowerSearch)
+    );
+  }
+
+
   // Filters: Admins see everything. Workers only see their assigned tickets.
   const activeRepairs = repairs
     .filter(r => r.status !== 'COMPLETED' && (isAdmin || r.assignedWorker === currentUser))
+    .filter(matchesSearch)
     // Sort descending by priorityScore (highest score goes to the top!)
     .sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
   const completedRepairs = repairs
     .filter(r => r.status === 'COMPLETED')
+    .filter(matchesSearch)
     // Sort descending by completion date (newest first)
     .sort((a, b) => new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() - new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime());
 
@@ -119,15 +141,34 @@ export const RepairQueue: React.FC = () => {
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
 
       <RepairForm onSuccess={fetchQueue} currentUser={currentUser} isAdmin={isAdmin} />
-      <h2 style={{ color: '#0b3068', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem' }}>
-        {isAdmin ? 'Shop Active Queue (Admin View)' : `My Assigned Tasks (${currentUser})`}
-      </h2>
+
+      {/* Search Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+        <h2 style={{ color: '#0b3068', margin: 0 }}>
+          {isAdmin ? 'Shop Active Queue (Admin View)' : `My Assigned Tasks (${currentUser})`}
+        </h2>
+
+        <input
+          type="text"
+          placeholder='Search by name, VIN, plate, or vehilce...'
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: '0.6rem 1rem',
+            borderRadius: '20px',
+            border: '1px solid #ccc',
+            width: '300px',
+            outline: 'none',
+            fontSize: '0.9rem'
+          }}
+        />
+      </div>
 
       {loading ? (
         <p>Loading active repairs...</p>
       ) : activeRepairs.length === 0 ? (
         <div style={{ padding: '2rem', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px dashed #ccc' }}>
-          No active repairs assigned at this time.
+          {searchTerm ? 'No repairs match your search.' : 'No active repairs assigned at this time.'}
         </div>
       ) : (
         <div style={{ overflowX: 'auto', marginBottom: '3rem' }}>
@@ -151,7 +192,7 @@ export const RepairQueue: React.FC = () => {
             </thead>
             <tbody>
               {activeRepairs.map((item, index) => (
-                <tr key={item.id} style={{ backgroundColor: index === 0 ? '#fff3cd' : 'transparent' }}>
+                <tr key={item.id} style={{ backgroundColor: index === 0 && !searchTerm ? '#fff3cd' : 'transparent' }}>
                   <td><strong>#{index + 1}</strong></td>
                   <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
                   <td>{item.customerName}</td>
