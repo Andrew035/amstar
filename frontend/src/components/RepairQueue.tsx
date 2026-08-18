@@ -10,6 +10,9 @@ export const RepairQueue: React.FC = () => {
   // State to hold our search query
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Tab Navigation State ('ACTIVE' or 'HISTORY')
+  const [currentTab, setCurrentTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
+
   const isAdmin = currentUser === 'admin1' || currentUser === 'admin2';
 
   useEffect(() => {
@@ -134,18 +137,60 @@ export const RepairQueue: React.FC = () => {
     width: 'auto'
   }
 
+  const activeTabStyle: React.CSSProperties = {
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#0b3068',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    fontSize: '1rem'
+  };
+
+  const inactiveTabStyle: React.CSSProperties = {
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#e9ecef',
+    color: '#495057',
+    border: 'none',
+    borderRadius: '4px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    fontSize: '1rem'
+  }
+
   // Wait until we know who the user is before rendering the UI
   if (!currentUser) return <div style={{ padding: '2rem' }}>Loading user data...</div>
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
 
-      <RepairForm onSuccess={fetchQueue} currentUser={currentUser} isAdmin={isAdmin} />
+      {/* Tab Navigation Menu */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <button
+          onClick={() => setCurrentTab('ACTIVE')}
+          style={currentTab === 'ACTIVE' ? activeTabStyle : inactiveTabStyle}
+        >
+          Active Shop Queue
+        </button>
+        <button
+          onClick={() => setCurrentTab('HISTORY')}
+          style={currentTab === 'HISTORY' ? activeTabStyle : inactiveTabStyle}
+        >
+          Completed Services History
+        </button>
+      </div>
+
+      {currentTab === 'ACTIVE' && (
+        <RepairForm onSuccess={fetchQueue} currentUser={currentUser} isAdmin={isAdmin} />
+      )}
 
       {/* Search Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
         <h2 style={{ color: '#0b3068', margin: 0 }}>
-          {isAdmin ? 'Shop Active Queue (Admin View)' : `My Assigned Tasks (${currentUser})`}
+          {currentTab === 'ACTIVE'
+            ? (isAdmin ? 'Shop Active Queue (Admin View)' : `My Assigned Tasks (${currentUser})`)
+            : 'Completed Services Ledger'}
         </h2>
 
         <input
@@ -163,161 +208,98 @@ export const RepairQueue: React.FC = () => {
           }}
         />
       </div>
-
-      {loading ? (
-        <p>Loading active repairs...</p>
-      ) : activeRepairs.length === 0 ? (
-        <div style={{ padding: '2rem', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px dashed #ccc' }}>
-          {searchTerm ? 'No repairs match your search.' : 'No active repairs assigned at this time.'}
-        </div>
-      ) : (
-        <div style={{ overflowX: 'auto', marginBottom: '3rem' }}>
-          <table border={1} cellPadding={6} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', fontSize: '0.85rem' }}>
-            <thead>
-              <tr style={{ background: '#f4f4f4' }}>
-                <th>Rank</th>
-                <th>Score</th>
-                <th>Customer</th>
-                <th>Vehicle Image</th>
-                <th>License Plate</th>
-                <th>Vehicle Specs</th>
-                <th>VIN</th>
-                <th>Service Required</th>
-                <th>Severity (1-5)</th>
-                <th>Entry Date</th>
-                <th>Due Date</th>
-                <th>Assigned Worker</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeRepairs.map((item, index) => (
-                <tr key={item.id} style={{ backgroundColor: index === 0 && !searchTerm ? '#fff3cd' : 'transparent' }}>
-                  <td><strong>#{index + 1}</strong></td>
-                  <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
-                  <td>{item.customerName}</td>
-                  <td>
-                    {item.vehicle?.carImageUrl ? (
-                      <img
-                        src={item.vehicle.carImageUrl}
-                        alt={`${item.vehicle.make} ${item.vehicle.model}`}
-                        style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <span style={{ color: '#999' }}>No Image</span>
-                    )}
-                  </td>
-                  <td>
-                    {item.vehicle?.licensePlate ? (
-                      <div style={{ padding: '4px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: '#eee' }}>
-                        <strong>{item.vehicle.licensePlate}</strong><br />
-                        <small style={{ fontSize: '10px' }}>{item.vehicle.state}</small>
-                      </div>
-                    ) : 'N/A'}
-                  </td>
-                  <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
-                  <td><small style={{ fontFamily: 'monospace' }}>{item.vehicle?.vin || 'Unknown'}</small></td>
-                  <td>{item.serviceType}</td>
-                  <td>
-                    <span style={{
-                      display: 'inline-block',
-                      whiteSpace: 'nowrap',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      color: '#fff',
-                      backgroundColor: item.severity >= 4 ? '#d9534f' : item.severity >= 3 ? '#f0ad4e' : '#5cb85c'
-                    }}>
-                      Level {item.severity}
-                    </span>
-                  </td>
-                  <td>{item.entryDate}</td>
-                  <td>{item.expectedCompletionDate}</td>
-                  {/* Assignment Dropdown */}
-                  <td>
-                    {isAdmin ? (
-                      <select
-                        value={item.assignedWorker || ''}
-                        onChange={(e) => handleAssignWorker(item.id!, e.target.value)}
-                        style={tableDropdownStyle}
-                      >
-                        <option value="">Unassigned</option>
-                        <option value="worker1">worker1</option>
-                        <option value="worker2">worker2</option>
-                        <option value="worker3">worker3</option>
-                      </select>
-                    ) : (
-                      <strong>{item.assignedWorker || 'Unassigned'}</strong>
-                    )}
-                  </td>
-                  <td>
-                    <select
-                      value={item.status || 'PENDING'}
-                      onChange={(e) => handleStatusChange(item.id!, e.target.value)}
-                      style={tableDropdownStyle}
-                    >
-                      <option value="PENDING">PENDING</option>
-                      <option value="IN_PROGRESS">IN PROGRESS</option>
-                      <option value="COMPLETED">COMPLETED</option>
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {completedRepairs.length > 0 && (
+      {/* Active Tab View */}
+      {currentTab === 'ACTIVE' && (
         <>
-          <h2 style={{ color: '#555', borderBottom: '3px solid #ccc', paddingBottom: '0.5rem', marginTop: '2rem' }}>
-            Completed Services History
-          </h2>
-          <div style={{ overflowX: 'auto', opacity: 0.8 }}>
-            <table border={1} cellPadding={6} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ background: '#eee' }}>
-                  <th>Entry Date</th>
-                  <th>Completion Date</th>
-                  <th>Customer</th>
-                  <th>Vehicle Image</th>
-                  <th>License Plate</th>
-                  <th>Vehicle Specs</th>
-                  <th>Service Performed</th>
-                  <th>Assigned Worker</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {completedRepairs.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.entryDate}</td>
-                    <td><strong>{item.actualCompletionDate}</strong></td>
-                    <td>{item.customerName}</td>
-                    <td>
-                      {item.vehicle?.carImageUrl ? (
-                        <img
-                          src={item.vehicle.carImageUrl}
-                          alt={`${item.vehicle.make} ${item.vehicle.model}`}
-                          style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <span style={{ color: '#999' }}>No Image</span>
-                      )}
-                    </td>
-                    <td>
-                      {item.vehicle?.licensePlate ? (
-                        <div style={{ padding: '4px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: 'eee' }}>
-                          <strong>{item.vehicle.licensePlate}</strong><br />
-                          <small style={{ fontSize: '10px' }}>{item.vehicle.state}</small>
-                        </div>
-                      ) : 'N/A'}
-                    </td>
-                    <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
-                    <td>{item.serviceType}</td>
-                    <td>{item.assignedWorker || 'Unknown'}</td>
-                    <td>
-                      {isAdmin ? (
+
+          {loading ? (
+            <p>Loading active repairs...</p>
+          ) : activeRepairs.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px dashed #ccc' }}>
+              {searchTerm ? 'No repairs match your search.' : 'No active repairs assigned at this time.'}
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto', marginBottom: '3rem' }}>
+              <table border={1} cellPadding={6} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ background: '#f4f4f4' }}>
+                    <th>Rank</th>
+                    <th>Score</th>
+                    <th>Customer</th>
+                    <th>Vehicle Image</th>
+                    <th>License Plate</th>
+                    <th>Vehicle Specs</th>
+                    <th>VIN</th>
+                    <th>Service Required</th>
+                    <th>Severity (1-5)</th>
+                    <th>Entry Date</th>
+                    <th>Due Date</th>
+                    <th>Assigned Worker</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeRepairs.map((item, index) => (
+                    <tr key={item.id} style={{ backgroundColor: index === 0 && !searchTerm ? '#fff3cd' : 'transparent' }}>
+                      <td><strong>#{index + 1}</strong></td>
+                      <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
+                      <td>{item.customerName}</td>
+                      <td>
+                        {item.vehicle?.carImageUrl ? (
+                          <img
+                            src={item.vehicle.carImageUrl}
+                            alt={`${item.vehicle.make} ${item.vehicle.model}`}
+                            style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <span style={{ color: '#999' }}>No Image</span>
+                        )}
+                      </td>
+                      <td>
+                        {item.vehicle?.licensePlate ? (
+                          <div style={{ padding: '4px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: '#eee' }}>
+                            <strong>{item.vehicle.licensePlate}</strong><br />
+                            <small style={{ fontSize: '10px' }}>{item.vehicle.state}</small>
+                          </div>
+                        ) : 'N/A'}
+                      </td>
+                      <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
+                      <td><small style={{ fontFamily: 'monospace' }}>{item.vehicle?.vin || 'Unknown'}</small></td>
+                      <td>{item.serviceType}</td>
+                      <td>
+                        <span style={{
+                          display: 'inline-block',
+                          whiteSpace: 'nowrap',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          backgroundColor: item.severity >= 4 ? '#d9534f' : item.severity >= 3 ? '#f0ad4e' : '#5cb85c'
+                        }}>
+                          Level {item.severity}
+                        </span>
+                      </td>
+                      <td>{item.entryDate}</td>
+                      <td>{item.expectedCompletionDate}</td>
+                      {/* Assignment Dropdown */}
+                      <td>
+                        {isAdmin ? (
+                          <select
+                            value={item.assignedWorker || ''}
+                            onChange={(e) => handleAssignWorker(item.id!, e.target.value)}
+                            style={tableDropdownStyle}
+                          >
+                            <option value="">Unassigned</option>
+                            <option value="worker1">worker1</option>
+                            <option value="worker2">worker2</option>
+                            <option value="worker3">worker3</option>
+                          </select>
+                        ) : (
+                          <strong>{item.assignedWorker || 'Unassigned'}</strong>
+                        )}
+                      </td>
+                      <td>
                         <select
-                          value={item.status}
+                          value={item.status || 'PENDING'}
                           onChange={(e) => handleStatusChange(item.id!, e.target.value)}
                           style={tableDropdownStyle}
                         >
@@ -325,15 +307,89 @@ export const RepairQueue: React.FC = () => {
                           <option value="IN_PROGRESS">IN PROGRESS</option>
                           <option value="COMPLETED">COMPLETED</option>
                         </select>
-                      ) : (
-                        <span style={tableDropdownStyle}>COMPLETED</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+      {/* History Tab View */}
+      {currentTab === 'HISTORY' && (
+        <>
+
+          {completedRepairs.length > 0 && (
+            <>
+              <h2 style={{ color: '#555', borderBottom: '3px solid #ccc', paddingBottom: '0.5rem', marginTop: '2rem' }}>
+                Completed Services History
+              </h2>
+              <div style={{ overflowX: 'auto', opacity: 0.8 }}>
+                <table border={1} cellPadding={6} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ background: '#eee' }}>
+                      <th>Entry Date</th>
+                      <th>Completion Date</th>
+                      <th>Customer</th>
+                      <th>Vehicle Image</th>
+                      <th>License Plate</th>
+                      <th>Vehicle Specs</th>
+                      <th>Service Performed</th>
+                      <th>Assigned Worker</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {completedRepairs.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.entryDate}</td>
+                        <td><strong>{item.actualCompletionDate}</strong></td>
+                        <td>{item.customerName}</td>
+                        <td>
+                          {item.vehicle?.carImageUrl ? (
+                            <img
+                              src={item.vehicle.carImageUrl}
+                              alt={`${item.vehicle.make} ${item.vehicle.model}`}
+                              style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <span style={{ color: '#999' }}>No Image</span>
+                          )}
+                        </td>
+                        <td>
+                          {item.vehicle?.licensePlate ? (
+                            <div style={{ padding: '4px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: 'eee' }}>
+                              <strong>{item.vehicle.licensePlate}</strong><br />
+                              <small style={{ fontSize: '10px' }}>{item.vehicle.state}</small>
+                            </div>
+                          ) : 'N/A'}
+                        </td>
+                        <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
+                        <td>{item.serviceType}</td>
+                        <td>{item.assignedWorker || 'Unknown'}</td>
+                        <td>
+                          {isAdmin ? (
+                            <select
+                              value={item.status}
+                              onChange={(e) => handleStatusChange(item.id!, e.target.value)}
+                              style={tableDropdownStyle}
+                            >
+                              <option value="PENDING">PENDING</option>
+                              <option value="IN_PROGRESS">IN PROGRESS</option>
+                              <option value="COMPLETED">COMPLETED</option>
+                            </select>
+                          ) : (
+                            <span style={tableDropdownStyle}>COMPLETED</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
