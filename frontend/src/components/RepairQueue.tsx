@@ -2,6 +2,39 @@ import React, { useEffect, useState } from 'react';
 import type { VehicleRepair } from '../types/repair';
 import { RepairForm } from './RepairForm';
 
+// Custom UI: Circular Progress Ring
+const CircularProgress = ({ percent, color, label, count }: { percent: number, color: string, label: string, count: number }) => {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #eee', flex: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+      <svg width="100" height="100">
+        {/* Background Ring */}
+        <circle stroke="#e9ecef" fill="transparent" strokeWidth="8" r={radius} cx="50" cy="50" />
+        {/* Colored Progress Ring */}
+        <circle
+          stroke={color}
+          fill="transparent"
+          strokeWidth="8"
+          r={radius}
+          cx="50"
+          cy="50"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap='round'
+          style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
+          transform="rotate(-90 50 50)"
+        />
+        {/* Center Text */}
+        <text x="50" y="50" fill="#333" fontSize="1.5rem" fontWeight="bold" textAnchor='middle' dy='.3em'>{count}</text>
+      </svg>
+      <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#555', marginTop: '1rem', textAlign: 'center' }}>{label}</div>
+    </div>
+  );
+};
+
 export const RepairQueue: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -10,8 +43,8 @@ export const RepairQueue: React.FC = () => {
   // State to hold our search query
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Tab Navigation State ('ACTIVE' or 'HISTORY')
-  const [currentTab, setCurrentTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
+  // Tab Navigation State   
+  const [currentTab, setCurrentTab] = useState<'DASHBOARD' | 'ACTIVE' | 'HISTORY'>('DASHBOARD');
 
   const isAdmin = currentUser === 'admin1' || currentUser === 'admin2';
 
@@ -124,6 +157,22 @@ export const RepairQueue: React.FC = () => {
     // Sort descending by completion date (newest first)
     .sort((a, b) => new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() - new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime());
 
+  // Dashboard Calculations
+  const totalRepairs = repairs.length;
+  const pendingCount = repairs.filter(r => r.status === 'PENDING').length;
+  const inProgressCount = repairs.filter(r => r.status === 'IN_PROGRESS').length;
+  const completedCount = completedRepairs.length;
+
+  const pendingPercent = totalRepairs === 0 ? 0 : (pendingCount / totalRepairs) * 100;
+  const inProgressPercent = totalRepairs === 0 ? 0 : (inProgressCount / totalRepairs) * 100;
+  const completedPercent = totalRepairs === 0 ? 0 : (completedCount / totalRepairs) * 100;
+
+  // Find workers who have tickets IN_PROGRESS
+  const activeWorkers = repairs.filter(r => r.status === 'IN_PROGRESS' && r.assignedWorker);
+
+  // Find critical vehicles sitting in PENDING
+  const criticalPending = repairs.filter(r => r.status === 'PENDING' && r.severity >= 4).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
+
   // Shared UI Style for Table Dropdowns
   const tableDropdownStyle: React.CSSProperties = {
     padding: '0.2rem 0.4rem',
@@ -167,6 +216,9 @@ export const RepairQueue: React.FC = () => {
 
       {/* Tab Navigation Menu */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <button onClick={() => setCurrentTab('DASHBOARD')} style={currentTab === 'DASHBOARD' ? activeTabStyle : inactiveTabStyle}>
+          Shop Overview
+        </button>
         <button
           onClick={() => setCurrentTab('ACTIVE')}
           style={currentTab === 'ACTIVE' ? activeTabStyle : inactiveTabStyle}
@@ -185,29 +237,92 @@ export const RepairQueue: React.FC = () => {
         <RepairForm onSuccess={fetchQueue} currentUser={currentUser} isAdmin={isAdmin} />
       )}
 
-      {/* Search Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-        <h2 style={{ color: '#0b3068', margin: 0 }}>
-          {currentTab === 'ACTIVE'
-            ? (isAdmin ? 'Shop Active Queue (Admin View)' : `My Assigned Tasks (${currentUser})`)
-            : 'Completed Services Ledger'}
-        </h2>
+      {/* Dashboard Tab View */}
+      {currentTab === 'DASHBOARD' && (
+        <div>
+          <h2 style={{ color: '#0b3068', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem', marginBottom: '1.5rem', marginTop: 0 }}>
+            AM Star Transmissions | Real-Time Shop Metrics
+          </h2>
 
-        <input
-          type="text"
-          placeholder='Search by name, VIN, plate, or vehilce...'
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            padding: '0.6rem 1rem',
-            borderRadius: '20px',
-            border: '1px solid #ccc',
-            width: '300px',
-            outline: 'none',
-            fontSize: '0.9rem'
-          }}
-        />
-      </div>
+          {/* Circular Progress Row */}
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+            <CircularProgress percent={pendingPercent} color="#f0ad4e" label="Vehicles Pending" count={pendingCount} />
+            <CircularProgress percent={inProgressPercent} color="#3498db" label="Vehicles In Progress" count={inProgressCount} />
+            <CircularProgress percent={completedPercent} color="#27ae60" label="Vehicles Completed" count={completedCount} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '1.5rem' }}>
+            {/* Left Column: Active Technicians */}
+            <div style={{ flex: 1, background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #eee' }}>
+              <h3 style={{ color: '#555', marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>Active Bays (In Progress)</h3>
+              {activeWorkers.length === 0 ? (
+                <p style={{ color: '#999', fontSize: '0.9rem' }}>No technicians are currently marked in progress.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {activeWorkers.map(item => (
+                    <li key={item.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid #f8f9fa', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#3498db' }}></div>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem' }}>{item.assignedWorker}</strong> is working on <br />
+                        <span style={{ color: '#666', fontSize: '0.9rem' }}>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model} - {item.serviceType}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Right Column: Critical Pending Queue */}
+            <div style={{ flex: 1, background: '#fff', padding: '1.5rem', borderRadius: '8px', border: '1px solid #eee' }}>
+              <h3 style={{ color: '#d9534f', marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>Critical Pending Approvals</h3>
+              {criticalPending.length === 0 ? (
+                <p style={{ color: '#999', fontSize: '0.9rem' }}>No critical level vehicles are pending. Excellent work.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {criticalPending.map(item => (
+                    <li key={item.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid #f8f9fa', display: 'flex', justifyContent: 'space-between' }}>
+                      <div>
+                        <strong>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</strong><br />
+                        <span style={{ color: '#666', fontSize: '0.9rem' }}>{item.serviceType}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ padding: '2px 6px', background: '#d9534f', color: '#fff', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Level {item.severity}</span>
+                        <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '4px' }}>Score: {item.priorityScore?.toFixed(1)}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Bar */}
+      {currentTab !== 'DASHBOARD' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+          <h2 style={{ color: '#0b3068', margin: 0 }}>
+            {currentTab === 'ACTIVE'
+              ? (isAdmin ? 'Shop Active Queue (Admin View)' : `My Assigned Tasks (${currentUser})`)
+              : 'Completed Services Ledger'}
+          </h2>
+
+          <input
+            type="text"
+            placeholder='Search by name, VIN, plate, or vehilce...'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: '0.6rem 1rem',
+              borderRadius: '20px',
+              border: '1px solid #ccc',
+              width: '300px',
+              outline: 'none',
+              fontSize: '0.9rem'
+            }}
+          />
+        </div>
+      )}
       {/* Active Tab View */}
       {currentTab === 'ACTIVE' && (
         <>
