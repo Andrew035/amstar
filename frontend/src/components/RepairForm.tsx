@@ -1,30 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-const SERVICE_SEVERITY_MAP: Record<string, number> = {
-  'Oil changes': 1,
-  'Auto fluids and filters maintenance': 1,
-  'Routine automotive maintenance': 1,
-
-  'Auto light repair': 2,
-  'Transmission leak inspection': 2,
-
-  'Auto battery or electrical system repair': 3,
-  'Auto brake repair': 3,
-  'Auto HVAC repair': 3,
-
-  'Auto steering and suspension repair': 4,
-
-  'Auto engine repair': 5,
-  'Auto transmission repair': 5
-};
-
 interface RepairFormProps {
   onSuccess: () => void;
   currentUser: string;
   isAdmin: boolean;
+  historicalServiceMap: Record<string, number>
 }
 
-export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, isAdmin }) => {
+export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, isAdmin, historicalServiceMap }) => {
   const [customerName, setCustomerName] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
   const [vehicleState, setVehicleState] = useState('MD');
@@ -200,32 +183,43 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
 
         <div>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Service Type</label>
-          <select
+
+          <input
+            type="text"
+            list="historical-services"
             value={serviceType}
             onChange={(e) => {
-              const selectedService = e.target.value;
-              setServiceType(selectedService);
-
-              // Automatically update the severity based on the map!
-              if (SERVICE_SEVERITY_MAP[selectedService]) {
-                setSeverity(SERVICE_SEVERITY_MAP[selectedService]);
+              const val = e.target.value.toUpperCase();
+              setServiceType(val);
+              // Auto-fill severity if the service matches our historical memory!
+              if (historicalServiceMap[val]) {
+                setSeverity(historicalServiceMap[val]);
               }
             }}
+            placeholder='Search or type a new service...'
+            required
+            style={sharedInputStyle}
+          />
+          <datalist id="historical-services">
+            {Object.keys(historicalServiceMap).sort().map((service, idx) => (
+              <option key={idx} value={service} />
+            ))}
+          </datalist>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Severity Level</label>
+          <select
+            value={severity}
+            onChange={(e) => setSeverity(Number(e.target.value))}
             required
             style={sharedInputStyle}
           >
-            <option value="" disabled>Select a service...</option>
-            <option value="Auto battery or electrical system repair">Auto battery or electrical system repair</option>
-            <option value="Auto brake repair">Auto brake repair</option>
-            <option value="Auto engine repair">Auto engine repair</option>
-            <option value="Auto fluids and filters maintenance">Auto fluids and filters maintenance</option>
-            <option value="Auto HVAC repair">Auto HVAC repair</option>
-            <option value="Auto light repair">Auto light repair</option>
-            <option value="Auto steering and suspension repair">Auto steering and suspension repair</option>
-            <option value="Auto transmission repair">Auto transmission repair</option>
-            <option value="Oil changes">Oil changes</option>
-            <option value="Routine automotive maintenance">Routine automotive maintenance</option>
-            <option value="Transmission leak inspection">Transmission leak inspection</option>
+            <option value={1}>Level 1 - Routine / Low</option>
+            <option value={2}>Level 2 - Minor Repair</option>
+            <option value={3}>Level 3 - Standard Repair</option>
+            <option value={4}>Level 4 - Major / Urgent</option>
+            <option value={5}>Level 5 - Critical / Safety</option>
           </select>
         </div>
 
@@ -244,9 +238,9 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
               style={sharedInputStyle}
             >
               <option value="">Unassigned</option>
-              <option value="worker1">worker1</option>
-              <option value="worker2">worker2</option>
-              <option value="worker3">worker3</option>
+              <option value="worker1">Technician 1</option>
+              <option value="worker2">Technician 2</option>
+              <option value="worker3">Technician 3</option>
             </select>
           </div>
         )}

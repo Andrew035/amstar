@@ -214,6 +214,20 @@ export const RepairQueue: React.FC = () => {
   // Find critical vehicles sitting in PENDING
   const criticalPending = repairs.filter(r => r.status === 'PENDING' && r.severity >= 4).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
+  // Smart self-learning severity map
+  // Sorts repairs newest-to-oldest, so if a service severity was updated recently, it remembers the newest score.
+  const historicalServiceMap: Record<string, number> = {};
+  const sortedRepairs = [...repairs].sort((a, b) => (b.id || 0) - (a.id || 0));
+
+  sortedRepairs.forEach(r => {
+    if (r.serviceType && r.severity) {
+      const s = r.serviceType.toUpperCase().trim();
+      if (s && !historicalServiceMap[s]) {
+        historicalServiceMap[s] = r.severity;
+      }
+    }
+  })
+
   // Helper function to grab the right color based on status
   const getStatusColor = (status: string | undefined) => {
     switch (status) {
@@ -334,7 +348,12 @@ export const RepairQueue: React.FC = () => {
       </div>
 
       {currentTab === 'ACTIVE' && isAdmin && (
-        <RepairForm onSuccess={fetchQueue} currentUser={currentUser} isAdmin={isAdmin} />
+        <RepairForm
+          onSuccess={fetchQueue}
+          currentUser={currentUser}
+          isAdmin={isAdmin}
+          historicalServiceMap={historicalServiceMap}
+        />
       )}
 
       {/* Dashboard Tab View */}
@@ -511,9 +530,9 @@ export const RepairQueue: React.FC = () => {
                             style={tableDropdownStyle}
                           >
                             <option value="">Unassigned</option>
-                            <option value="worker1">worker1</option>
-                            <option value="worker2">worker2</option>
-                            <option value="worker3">worker3</option>
+                            <option value="worker1">Technician 1</option>
+                            <option value="worker2">Technician 2</option>
+                            <option value="worker3">Technician 3</option>
                           </select>
                         ) : (
                           <strong>{item.assignedWorker || 'Unassigned'}</strong>
