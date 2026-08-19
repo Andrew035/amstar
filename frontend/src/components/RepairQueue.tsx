@@ -46,7 +46,11 @@ export const RepairQueue: React.FC = () => {
   // Tab Navigation State   
   const [currentTab, setCurrentTab] = useState<'DASHBOARD' | 'ACTIVE' | 'HISTORY'>('DASHBOARD');
 
-  const isAdmin = currentUser === 'admin1' || currentUser === 'admin2';
+  // Custom Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [repairToDelete, setRepairToDelete] = useState<number | null>(null);
+
+  const isAdmin = ['admin1', 'admin2', 'admin3'].includes(currentUser);
 
   useEffect(() => {
     const token = localStorage.getItem('amstar_token');
@@ -127,6 +131,43 @@ export const RepairQueue: React.FC = () => {
     }
   }
 
+  // Delete logic
+  // Triggered when the row is clicked
+  const handleDeleteClick = (id: number) => {
+    if (!isAdmin) return;
+    setRepairToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (repairToDelete === null) return;
+
+    const token = localStorage.getItem("amstar_token");
+    try {
+      const response = await fetch(`http://localhost:8080/api/repairs/${repairToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        fetchQueue();
+      } else {
+        alert("Failed to delete the ticket. Make sure the backend supports this.")
+      }
+    } catch (error) {
+      console.error("Failed to delete ticket:", error);
+    } finally {
+      // Close modal and reset state whether it succeeded or failed
+      setIsDeleteModalOpen(false);
+      setRepairToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setRepairToDelete(null);
+  };
+
   // Helper funtion to check if an item matches our search term
   const matchesSearch = (item: VehicleRepair) => {
     if (!searchTerm) return true; // If search is empty, show everything!
@@ -146,7 +187,7 @@ export const RepairQueue: React.FC = () => {
 
   // Filters: Admins see everything. Workers only see their assigned tickets.
   const activeRepairs = repairs
-    .filter(r => r.status !== 'COMPLETED' && (isAdmin || r.assignedWorker === currentUser))
+    .filter(r => r.status !== 'COMPLETED')
     .filter(matchesSearch)
     // Sort descending by priorityScore (highest score goes to the top!)
     .sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
@@ -173,6 +214,16 @@ export const RepairQueue: React.FC = () => {
   // Find critical vehicles sitting in PENDING
   const criticalPending = repairs.filter(r => r.status === 'PENDING' && r.severity >= 4).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
+  // Helper function to grab the right color based on status
+  const getStatusColor = (status: string | undefined) => {
+    switch (status) {
+      case 'PENDING': return '#f0ad4e';
+      case 'IN_PROGRESS': return '#3498db';
+      case 'COMPLETED': return '#27ae60';
+      default: return '#ccc';
+    }
+  }
+
   // Shared UI Style for Table Dropdowns
   const tableDropdownStyle: React.CSSProperties = {
     padding: '0.2rem 0.4rem',
@@ -185,6 +236,7 @@ export const RepairQueue: React.FC = () => {
     backgroundColor: '#fff',
     width: 'auto'
   }
+
 
   const activeTabStyle: React.CSSProperties = {
     padding: '0.75rem 1.5rem',
@@ -214,6 +266,52 @@ export const RepairQueue: React.FC = () => {
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
 
+      {/* Custom Delete confirmation modal */}
+      {isDeleteModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+
+          <div style={{ background: '#fff', padding: '2rem', borderRadius: '8px', width: '400px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ marginTop: 0, color: '#d9534f', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              Confirm Deletion
+            </h3>
+            <p style={{ color: '#444', lineHeight: '1.5', fontSize: '1rem' }}>
+              Are you sure you want to permanently delete this repair ticket? <strong style={{ color: '#d9534f' }}>This action cannot be undone.</strong>
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+              <button onClick={cancelDelete} style={{ padding: '0.6rem 1.2rem', border: '1px solid #ccc', background: '#f8f9fa', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#333' }}>
+                Cancel
+              </button>
+              <button onClick={confirmDelete} style={{ padding: '0.6rem 1.2rem', border: 'none', background: '#d9534f', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#fff' }}>
+                Delete Repair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Inline CSS for Admin Hover Delete Effect */}
+      <style>{`
+        .admin-row {
+          transition: background-color 0.15s ease-in-out;
+        }
+        .admin-row:hover {
+          background-color: #fee2e2 !important;
+          cursor: pointer;
+        }
+      `}</style>
+
       {/* Tab Navigation Menu */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
         <button onClick={() => setCurrentTab('DASHBOARD')} style={currentTab === 'DASHBOARD' ? activeTabStyle : inactiveTabStyle}>
@@ -225,15 +323,17 @@ export const RepairQueue: React.FC = () => {
         >
           Active Shop Queue
         </button>
-        <button
-          onClick={() => setCurrentTab('HISTORY')}
-          style={currentTab === 'HISTORY' ? activeTabStyle : inactiveTabStyle}
-        >
-          Completed Services History
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setCurrentTab('HISTORY')}
+            style={currentTab === 'HISTORY' ? activeTabStyle : inactiveTabStyle}
+          >
+            Completed Services History
+          </button>
+        )}
       </div>
 
-      {currentTab === 'ACTIVE' && (
+      {currentTab === 'ACTIVE' && isAdmin && (
         <RepairForm onSuccess={fetchQueue} currentUser={currentUser} isAdmin={isAdmin} />
       )}
 
@@ -355,7 +455,13 @@ export const RepairQueue: React.FC = () => {
                 </thead>
                 <tbody>
                   {activeRepairs.map((item, index) => (
-                    <tr key={item.id} style={{ backgroundColor: index === 0 && !searchTerm ? '#fff3cd' : 'transparent' }}>
+                    <tr
+                      key={item.id}
+                      className={isAdmin ? 'admin-row' : ''}
+                      title={isAdmin ? "Click to delete this repair" : ""}
+                      onClick={() => isAdmin && handleDeleteClick(item.id!)}
+                      style={{ backgroundColor: index === 0 && !searchTerm ? '#fff3cd' : 'transparent' }}
+                    >
                       <td><strong>#{index + 1}</strong></td>
                       <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
                       <td>{item.customerName}</td>
@@ -401,6 +507,7 @@ export const RepairQueue: React.FC = () => {
                           <select
                             value={item.assignedWorker || ''}
                             onChange={(e) => handleAssignWorker(item.id!, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
                             style={tableDropdownStyle}
                           >
                             <option value="">Unassigned</option>
@@ -413,15 +520,35 @@ export const RepairQueue: React.FC = () => {
                         )}
                       </td>
                       <td>
-                        <select
-                          value={item.status || 'PENDING'}
-                          onChange={(e) => handleStatusChange(item.id!, e.target.value)}
-                          style={tableDropdownStyle}
-                        >
-                          <option value="PENDING">PENDING</option>
-                          <option value="IN_PROGRESS">IN PROGRESS</option>
-                          <option value="COMPLETED">COMPLETED</option>
-                        </select>
+                        {isAdmin ? (
+                          <select
+                            value={item.status || 'PENDING'}
+                            onChange={(e) => handleStatusChange(item.id!, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              ...tableDropdownStyle,
+                              backgroundColor: getStatusColor(item.status),
+                              color: '#fff',
+                              border: 'none'
+                            }}
+                          >
+                            <option value="PENDING">PENDING</option>
+                            <option value="IN_PROGRESS">IN PROGRESS</option>
+                            <option value="COMPLETED">COMPLETED</option>
+                          </select>
+                        ) : (
+                          <span
+                            style={{
+                              ...tableDropdownStyle,
+                              display: 'inline-block',
+                              backgroundColor: getStatusColor(item.status),
+                              color: '#fff',
+                              border: 'none'
+                            }}
+                          >
+                            {item.status?.replace('_', ' ')}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -432,14 +559,11 @@ export const RepairQueue: React.FC = () => {
         </>
       )}
       {/* History Tab View */}
-      {currentTab === 'HISTORY' && (
+      {isAdmin && currentTab === 'HISTORY' && (
         <>
 
           {completedRepairs.length > 0 && (
             <>
-              <h2 style={{ color: '#555', borderBottom: '3px solid #ccc', paddingBottom: '0.5rem', marginTop: '2rem' }}>
-                Completed Services History
-              </h2>
               <div style={{ overflowX: 'auto', opacity: 0.8 }}>
                 <table border={1} cellPadding={6} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', fontSize: '0.85rem' }}>
                   <thead>
@@ -457,7 +581,12 @@ export const RepairQueue: React.FC = () => {
                   </thead>
                   <tbody>
                     {completedRepairs.map((item) => (
-                      <tr key={item.id}>
+                      <tr
+                        key={item.id}
+                        className='admin-row'
+                        title="Click to delete this ticket"
+                        onClick={() => handleDeleteClick(item.id!)}
+                      >
                         <td>{item.entryDate}</td>
                         <td><strong>{item.actualCompletionDate}</strong></td>
                         <td>{item.customerName}</td>
@@ -482,13 +611,32 @@ export const RepairQueue: React.FC = () => {
                         </td>
                         <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
                         <td>{item.serviceType}</td>
-                        <td>{item.assignedWorker || 'Unknown'}</td>
+                        <td>
+                          <select
+                            value={item.assignedWorker || ''}
+                            onChange={(e) => handleAssignWorker(item.id!, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            style={tableDropdownStyle}
+                          >
+                            <option value="">Unassigned</option>
+                            <option value="worker1">worker1</option>
+                            <option value="worker2">worker2</option>
+                            <option value="worker3">worker3</option>
+                          </select>
+                        </td>
                         <td>
                           {isAdmin ? (
                             <select
                               value={item.status}
                               onChange={(e) => handleStatusChange(item.id!, e.target.value)}
-                              style={tableDropdownStyle}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                ...tableDropdownStyle,
+                                display: 'inline-block',
+                                backgroundColor: getStatusColor(item.status),
+                                color: '#fff',
+                                border: 'none'
+                              }}
                             >
                               <option value="PENDING">PENDING</option>
                               <option value="IN_PROGRESS">IN PROGRESS</option>

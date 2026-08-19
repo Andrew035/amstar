@@ -1,6 +1,7 @@
 package com.amstar.repair.controller;
 
 import com.amstar.repair.model.VehicleRepair;
+import com.amstar.repair.repository.VehicleRepairRepository;
 import com.amstar.repair.service.PriorityQueueService;
 
 import org.springframework.http.ResponseEntity;
@@ -13,9 +14,11 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class VehicleRepairController {
   private final PriorityQueueService priorityQueueService;
+  private final VehicleRepairRepository repairRepository;
 
-  public VehicleRepairController(PriorityQueueService priorityQueueService) {
+  public VehicleRepairController(PriorityQueueService priorityQueueService, VehicleRepairRepository repairRepository) {
     this.priorityQueueService = priorityQueueService;
+    this.repairRepository = repairRepository;
   }
 
   @GetMapping("/queue")
@@ -48,5 +51,18 @@ public class VehicleRepairController {
       return ResponseEntity.ok().build();
     }
     return ResponseEntity.notFound().build();
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
+    // Find the repair ticket
+    if (!repairRepository.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
+
+    // Delete it from PostgreSQL
+    repairRepository.deleteById(id);
+
+    return ResponseEntity.noContent().build();
   }
 }
