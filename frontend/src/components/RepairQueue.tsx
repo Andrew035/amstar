@@ -50,6 +50,9 @@ export const RepairQueue: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [repairToDelete, setRepairToDelete] = useState<number | null>(null);
 
+  // Vehicle Image Deep Dive State
+  const [viewedRepair, setViewedRepair] = useState<VehicleRepair | null>(null);
+
   const isAdmin = ['admin1', 'admin2', 'admin3'].includes(currentUser);
 
   useEffect(() => {
@@ -315,7 +318,123 @@ export const RepairQueue: React.FC = () => {
         </div>
       )}
 
-      {/* Inline CSS for Admin Hover Delete Effect */}
+      {/* Vehicle Deep Dive Modal */}
+      {viewedRepair && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setViewedRepair(null)} // Clicking the dark background closes it
+        >
+          <div
+            style={{
+              background: '#fff',
+              padding: '2rem',
+              borderRadius: '12px',
+              width: '600px',
+              maxWidth: '90%',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '2px solid #eee',
+                paddingBottom: '0.5rem',
+                marginBottom: '1rem'
+              }}
+            >
+              <h3 style={{ margin: 0, color: '#0b3068', fontSize: '1.4rem' }}>Vehicle Details</h3>
+              <button onClick={() => setViewedRepair(null)} style={{ background: 'none', border: 'none', fontSize: '2rem', cursor: 'pointer', color: '#999', lineHeight: '1' }}>&times;</button>
+            </div>
+
+            {viewedRepair.vehicle?.carImageUrl ? (
+              <img
+                src={viewedRepair.vehicle.carImageUrl}
+                alt="Vehicle Zoomed"
+                style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '8px', marginBottom: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+              />
+            ) : (
+              <div style={{ width: '100%', height: '300px', background: '#f8f9fa', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem', color: '#999', border: '1px dashed #ccc' }}>
+                No Image Available
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', fontSize: '1rem' }}>
+              <div>
+                <strong style={{ color: '#555', fontSize: '0.85rem', textTransform: 'uppercase' }}>Customer</strong><br />
+                <div style={{ marginTop: '0.4rem', fontSize: '1.1rem', fontWeight: 'bold' }}>{viewedRepair.customerName}</div>
+              </div>
+              <div>
+                <strong style={{ color: '#555', fontSize: '0.85rem', textTransform: 'uppercase' }}>Vehicle</strong><br />
+                <div style={{ marginTop: '0.4rem', fontSize: '1.1rem', fontWeight: 'bold' }}>{viewedRepair.vehicle?.year} {viewedRepair.vehicle?.make} {viewedRepair.vehicle?.model}</div>
+              </div>
+              <div>
+                <strong style={{ color: '#555', fontSize: '0.85rem', textTransform: 'uppercase' }}>VIN Number</strong><br />
+                <div style={{ marginTop: '0.4rem', fontSize: '1.1rem', fontWeight: 'bold', border: 'none' }}>{viewedRepair.vehicle?.vin || 'N/A'}</div>
+              </div>
+              <div>
+                <strong style={{ color: '#555', fontSize: '0.85rem', textTransform: 'uppercase' }}>License Plate</strong><br />
+                {viewedRepair.vehicle?.licensePlate ? (
+                  <div style={{ marginTop: '0.4rem', padding: '3px 6px', border: '1px solid #333', textAlign: 'center', borderRadius: '4px', background: '#eee', display: 'inline-block', minWidth: '100px', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <strong style={{ fontSize: '1.1rem', display: 'block', letterSpacing: '2px' }}>{viewedRepair.vehicle.licensePlate}</strong>
+                    <small style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', color: '#555' }}>{viewedRepair.vehicle.state}</small>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '1.1rem', background: '#eee', padding: '2px 6px', borderRadius: '4px' }}>N/A</span>
+                )}
+              </div>
+
+              <div style={{ gridColumn: '1 / -1', background: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', border: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                {/* Left side */}
+                <div>
+                  <strong style={{ color: '#555', fontSize: '0.85rem', textTransform: 'uppercase' }}>Required Service</strong><br />
+                  <span style={{ fontSize: '1.2rem', color: '#d62027', fontWeight: 'bold' }}>{viewedRepair.serviceType}</span>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <span style={{ padding: '4px 10px', background: viewedRepair.severity >= 4 ? '#d9534f' : viewedRepair.severity >= 3 ? '#f0ad4e' : '#5cb85c', color: '3fff', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                      Severity Level {viewedRepair.severity}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right side */}
+                <div style={{ textAlign: 'right' }}>
+                  <strong style={{ color: '#555', fontSize: '0.85rem', textTransform: 'uppercase' }}>Assigned Technician</strong><br />
+                  <span style={{ fontSize: '1.2rem', color: '#0b3068', fontWeight: 'bold' }}>{viewedRepair.assignedWorker || 'Unassigned'}</span>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <span style={{
+                      padding: '4px 10px',
+                      background: getStatusColor(viewedRepair.status),
+                      color: '#fff',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      display: 'inline-block'
+                    }}>
+                      {viewedRepair.status?.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Hover CSS & Row Highlight CSS */}
       <style>{`
         .admin-row {
           transition: background-color 0.15s ease-in-out;
@@ -324,6 +443,8 @@ export const RepairQueue: React.FC = () => {
           background-color: #fee2e2 !important;
           cursor: pointer;
         }
+        .vehicle-img { transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+        .vehicle-img:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); position: relative; z-index: 10;}
       `}</style>
 
       {/* Tab Navigation Menu */}
@@ -479,7 +600,7 @@ export const RepairQueue: React.FC = () => {
                       className={isAdmin ? 'admin-row' : ''}
                       title={isAdmin ? "Click to delete this repair" : ""}
                       onClick={() => isAdmin && handleDeleteClick(item.id!)}
-                      style={{ backgroundColor: index === 0 && !searchTerm ? '#fff3cd' : 'transparent' }}
+                      style={{ backgroundColor: viewedRepair?.id === item.id ? '#e0f2fe' : (index === 0 && !searchTerm ? '#fff3cd' : 'transparent') }}
                     >
                       <td><strong>#{index + 1}</strong></td>
                       <td><strong>{item.priorityScore?.toFixed(1)}</strong></td>
@@ -489,7 +610,15 @@ export const RepairQueue: React.FC = () => {
                           <img
                             src={item.vehicle.carImageUrl}
                             alt={`${item.vehicle.make} ${item.vehicle.model}`}
-                            style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
+                            className='vehicle-img'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewedRepair(item);
+                            }}
+                            style={{
+                              width: '80px', height: '50px', borderRadius: '6px', objectFit: 'cover',
+                              border: viewedRepair?.id === item.id ? '2px solid #3498db' : '2px solid transparent'
+                            }}
                           />
                         ) : (
                           <span style={{ color: '#999' }}>No Image</span>
@@ -614,7 +743,15 @@ export const RepairQueue: React.FC = () => {
                             <img
                               src={item.vehicle.carImageUrl}
                               alt={`${item.vehicle.make} ${item.vehicle.model}`}
-                              style={{ width: '80px', borderRadius: '6px', objectFit: 'cover' }}
+                              className='vehicle-img'
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewedRepair(item);
+                              }}
+                              style={{
+                                width: '80px', height: '50px', borderRadius: '6px', objectFit: 'cover',
+                                border: viewedRepair?.id === item.id ? '2px solid #3498db' : '2px solid transparent'
+                              }}
                             />
                           ) : (
                             <span style={{ color: '#999' }}>No Image</span>
