@@ -26,6 +26,13 @@ public class VehicleRepair {
   private String assignedWorker;
   private LocalDate actualCompletionDate;
 
+  private Double retailPrice = 0.0;
+  private Double leasePrice = 0.0;
+  private Double laborPrice = 0.0;
+  private Boolean includeRetail = false;
+  private Boolean includeLease = false;
+  private Boolean includeLabor = false;
+
   @Transient
   private double priorityScore;
 
@@ -119,5 +126,53 @@ public class VehicleRepair {
 
   public void setActualCompletionDate(LocalDate actualCompletionDate) {
     this.actualCompletionDate = actualCompletionDate;
+  }
+
+  public Double getRetailPrice() {
+    return retailPrice;
+  }
+
+  public void setRetailPrice(Double retailPrice) {
+    this.retailPrice = retailPrice;
+  }
+
+  public Boolean getIncludeRetail() {
+    return includeRetail;
+  }
+
+  public void setIncludeRetail(Boolean includeRetail) {
+    this.includeRetail = includeRetail;
+  }
+
+  public Double getLeasePrice() {
+    return leasePrice;
+  }
+
+  public void setLeasePrice(Double leasePrice) {
+    this.leasePrice = leasePrice;
+  }
+
+  public Boolean getIncludeLease() {
+    return includeLease;
+  }
+
+  public void setIncludeLease(Boolean includeLease) {
+    this.includeLease = includeLease;
+  }
+
+  public Double getLaborPrice() {
+    return laborPrice;
+  }
+
+  public void setLaborPrice(Double laborPrice) {
+    this.laborPrice = laborPrice;
+  }
+
+  public Boolean getIncludeLabor() {
+    return includeLabor;
+  }
+
+  public void setIncludeLabor(Boolean includeLabor) {
+    this.includeLabor = includeLabor;
   }
 }

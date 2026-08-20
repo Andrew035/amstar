@@ -35,6 +35,93 @@ const CircularProgress = ({ percent, color, label, count }: { percent: number, c
   );
 };
 
+// Pricing Card Component
+const PricingCard = ({ item, onSavePricing }: { item: any, onSavePricing: (id: number, payload: any) => void }) => {
+  // Local state initialized with backend values (if they exist) or defaults
+  const [retailPrice, setRetailPrice] = useState<number>(item.retailPrice || 0);
+  const [leasePrice, setLeasePrice] = useState<number>(item.leasePrice || 0);
+  const [laborPrice, setLaborPrice] = useState<number>(item.laborPrice || 0);
+
+  const [includeRetail, setIncludeRetail] = useState<boolean>(item.includeRetail || false);
+  const [includeLease, setIncludeLease] = useState<boolean>(item.includeLease || false);
+  const [includeLabor, setIncludeLabor] = useState<boolean>(item.includeLabor || false);
+
+  const currentTotal = (includeRetail ? retailPrice : 0) + (includeLease ? leasePrice : 0) + (includeLabor ? laborPrice : 0);
+
+  const handleSave = () => {
+    onSavePricing(item.id, {
+      retailPrice, leasePrice, laborPrice,
+      includeRetail, includeLease, includeLabor
+    });
+  };
+
+  const inputStyle = { width: '80px', padding: '4px', marginLeft: '8px', border: '1px solid #ccc', borderRadius: '4px' };
+
+  return (
+    <div style={{ display: 'flex', background: '#fff', borderRadius: '8px', border: '1px solid #eee', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+      {/* Left Side: Pure Vehicle Info */}
+      <div style={{ flex: 1, padding: '1rem', borderRight: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {item.vehicle?.carImageUrl ? (
+          <img src={item.vehicle.carImageUrl} alt="Vehicle" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px' }} />
+        ) : (
+          <div style={{ width: '100%', height: '120px', background: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', color: '#aaa' }}>No Image</div>
+        )}
+
+        <h4 style={{ margin: '0.5rem 0 0 0', color: '#0b3068' }}>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</h4>
+
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+          <div>
+            <small style={{ color: '#777', display: 'block' }}>VIN</small>
+            <span style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{item.vehicle?.vin || 'N/A'}</span>
+          </div>
+        </div>
+
+        <div style={{ marginTop: '0.5rem' }}>
+          <small style={{ color: '#777', display: 'block' }}>TECHNICIANS</small>
+          <span style={{ fontSize: '0.85', fontWeight: 'bold', color: '#d62027' }}>{item.assignedWorker || 'Unassigned'}</span>
+        </div>
+      </div>
+
+      {/* Right Side: Pricing Controls */}
+      <div style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#f8f9fa' }}>
+        <div>
+          <h4 style={{ margin: '0 0 1rem 0', color: '#333' }}>Pricing Calculator</h4>
+
+          <label style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={includeRetail} onChange={e => setIncludeRetail(e.target.checked)} style={{ marginRight: '8px' }} />
+            Retail Price: $
+            <input type="number" value={retailPrice} onChange={e => setRetailPrice(Number(e.target.value))} style={inputStyle} disabled={!includeRetail} />
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={includeLease} onChange={e => setIncludeLease(e.target.checked)} style={{ marginRight: '8px' }} />
+            Lease Price: $
+            <input type="number" value={leasePrice} onChange={e => setLeasePrice(Number(e.target.value))} style={inputStyle} disabled={!includeLease} />
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={includeLabor} onChange={e => setIncludeLabor(e.target.checked)} style={{ marginRight: '8px' }} />
+            Labor Price: $
+            <input type="number" value={laborPrice} onChange={e => setLaborPrice(Number(e.target.value))} style={inputStyle} disabled={!includeLabor} />
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '2px solid #ddd', paddingTop: '0.75rem' }}>
+          <div>
+            <small style={{ color: '#777', display: 'block', textTransform: 'uppercase' }}>Total Billed</small>
+            <strong style={{ fontSize: '1.4rem', color: '#27ae60' }}>${currentTotal.toFixed(2)}</strong>
+          </div>
+          <button onClick={handleSave} style={{ padding: '0.5rem 1rem', background: '#0b3068', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+            Save Prices
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+  )
+}
+
 export const RepairQueue: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -44,7 +131,7 @@ export const RepairQueue: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Tab Navigation State   
-  const [currentTab, setCurrentTab] = useState<'DASHBOARD' | 'ACTIVE' | 'HISTORY'>('DASHBOARD');
+  const [currentTab, setCurrentTab] = useState<'DASHBOARD' | 'ACTIVE' | 'HISTORY' | 'PRICING'>('DASHBOARD');
 
   // Custom Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
@@ -118,6 +205,7 @@ export const RepairQueue: React.FC = () => {
   }
 
   const handleAssignWorker = async (id: number, workerUsername: string) => {
+    if (!isAdmin) return;
     const token = localStorage.getItem("amstar_token");
     try {
       const response = await fetch(`http://localhost:8080/api/repairs/${id}/assign`, {
@@ -131,6 +219,26 @@ export const RepairQueue: React.FC = () => {
       }
     } catch (error) {
       console.error("Failed to update status:", error)
+    }
+  }
+
+  // Pricing Save
+  const handleSavePricing = async (id: number, payload: any) => {
+    const token = localStorage.getItem('amstar_token');
+    try {
+      const response = await fetch(`http://localhost:8080/api/repairs/${id}/pricing`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (response.ok) {
+        alert("Pricing saved successfully!");
+        fetchQueue();
+      } else {
+        alert("Pricing update failed! Ensure your backend supports this endpoint.")
+      }
+    } catch (error) {
+      console.error('Failed to save pricing:', error);
     }
   }
 
@@ -276,6 +384,13 @@ export const RepairQueue: React.FC = () => {
     cursor: 'pointer',
     fontSize: '1rem'
   }
+
+  // Calculate final historical price
+  const calculateTotal = (item: any) => {
+    return (item.includeRetail ? item.retailPrice || 0 : 0) +
+      (item.includeLease ? item.leasePrice || 0 : 0) +
+      (item.includeLabor ? item.laborPrice || 0 : 0);
+  };
 
   // Wait until we know who the user is before rendering the UI
   if (!currentUser) return <div style={{ padding: '2rem' }}>Loading user data...</div>
@@ -445,6 +560,10 @@ export const RepairQueue: React.FC = () => {
         }
         .vehicle-img { transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
         .vehicle-img:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); position: relative; z-index: 10;}
+
+        .multi-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.8rem; background: #fff; min-height: 55px; }
+        .multi-select option { padding: 2px 4px; }
+        .multi-select option:checked { background: #0b3068 linear-gradient(0deg, #0b3068 0%, #0b3068 100%); color: #fff; }
       `}</style>
 
       {/* Tab Navigation Menu */}
@@ -459,12 +578,15 @@ export const RepairQueue: React.FC = () => {
           Active Shop Queue
         </button>
         {isAdmin && (
-          <button
-            onClick={() => setCurrentTab('HISTORY')}
-            style={currentTab === 'HISTORY' ? activeTabStyle : inactiveTabStyle}
-          >
-            Completed Services History
-          </button>
+          <>
+            <button onClick={() => setCurrentTab('PRICING')} style={currentTab === 'PRICING' ? activeTabStyle : inactiveTabStyle}>Pricing</button>
+            <button
+              onClick={() => setCurrentTab('HISTORY')}
+              style={currentTab === 'HISTORY' ? activeTabStyle : inactiveTabStyle}
+            >
+              Completed Services
+            </button>
+          </>
         )}
       </div>
 
@@ -539,7 +661,7 @@ export const RepairQueue: React.FC = () => {
       )}
 
       {/* Search Bar */}
-      {currentTab !== 'DASHBOARD' && (
+      {(currentTab === 'ACTIVE' || currentTab === 'HISTORY') && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
           <h2 style={{ color: '#0b3068', margin: 0 }}>
             {currentTab === 'ACTIVE'
@@ -652,17 +774,25 @@ export const RepairQueue: React.FC = () => {
                       {/* Assignment Dropdown */}
                       <td>
                         {isAdmin ? (
-                          <select
-                            value={item.assignedWorker || ''}
-                            onChange={(e) => handleAssignWorker(item.id!, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            style={tableDropdownStyle}
-                          >
-                            <option value="">Unassigned</option>
-                            <option value="worker1">Technician 1</option>
-                            <option value="worker2">Technician 2</option>
-                            <option value="worker3">Technician 3</option>
-                          </select>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <select
+                              multiple
+                              value={item.assignedWorker ? item.assignedWorker.split(', ') : []}
+                              onChange={(e) => {
+                                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                                handleAssignWorker(item.id!, selectedOptions.join(', '));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className='multi-select'
+                              title="Hold Ctrl (Windows) or Cmd (Mac) to select multiple technicians"
+                            >
+                              <option value="">Unassigned</option>
+                              <option value="worker1">Technician 1</option>
+                              <option value="worker2">Technician 2</option>
+                              <option value="worker3">Technician 3</option>
+                            </select>
+                            <small style={{ fontSize: '10px', color: '#888', marginTop: '2px' }}>(Hold Ctrl/Cmd for multiple)</small>
+                          </div>
                         ) : (
                           <strong>{item.assignedWorker || 'Unassigned'}</strong>
                         )}
@@ -706,6 +836,21 @@ export const RepairQueue: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Pricing Tab View */}
+      {currentTab === 'PRICING' && (
+        <div>
+          <h2 style={{ color: '#0b3068', borderBottom: '3px solid #d62027', paddingBottom: '0.5rem', marginBottom: '1.5rem', marginTop: 0 }}>
+            Pricing & Invoice Calculations
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))', gap: '1.5rem' }}>
+            {repairs.map(item => (
+              <PricingCard key={item.id} item={item} onSavePricing={handleSavePricing} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* History Tab View */}
       {isAdmin && currentTab === 'HISTORY' && (
         <>
@@ -725,6 +870,7 @@ export const RepairQueue: React.FC = () => {
                       <th>Service Performed</th>
                       <th>Assigned Worker</th>
                       <th>Status</th>
+                      <th>Final Price</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -768,17 +914,25 @@ export const RepairQueue: React.FC = () => {
                         <td>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
                         <td>{item.serviceType}</td>
                         <td>
-                          <select
-                            value={item.assignedWorker || ''}
-                            onChange={(e) => handleAssignWorker(item.id!, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            style={tableDropdownStyle}
-                          >
-                            <option value="">Unassigned</option>
-                            <option value="worker1">worker1</option>
-                            <option value="worker2">worker2</option>
-                            <option value="worker3">worker3</option>
-                          </select>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <select
+                              multiple
+                              value={item.assignedWorker ? item.assignedWorker.split(', ') : []}
+                              onChange={(e) => {
+                                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                                handleAssignWorker(item.id!, selectedOptions.join(', '));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className='multi-select'
+                              title="Hold Ctrl (Windows) or Cmd (Mac) to select multiple technicians"
+                            >
+                              <option value="">Unassigned</option>
+                              <option value="worker1">Technician 1</option>
+                              <option value="worker2">Technician 2</option>
+                              <option value="worker3">Technician 3</option>
+                            </select>
+                            <small style={{ fontSize: '10px', color: '#888', marginTop: '2px' }}>(Hold Ctrl/Cmd for multiple)</small>
+                          </div>
                         </td>
                         <td>
                           {isAdmin ? (
@@ -801,6 +955,9 @@ export const RepairQueue: React.FC = () => {
                           ) : (
                             <span style={tableDropdownStyle}>COMPLETED</span>
                           )}
+                        </td>
+                        <td>
+                          <strong style={{ color: '#27ae60', fontSize: '1.1rem' }}>${calculateTotal(item).toFixed(2)}</strong>
                         </td>
                       </tr>
                     ))}

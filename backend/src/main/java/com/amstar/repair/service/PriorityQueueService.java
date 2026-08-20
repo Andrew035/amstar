@@ -84,4 +84,23 @@ public class PriorityQueueService {
       return true;
     }).orElse(false);
   }
+
+  public boolean updatePricing(Long id, VehicleRepair pricingData) {
+    java.util.Optional<VehicleRepair> optionalRepair = repository.findById(id);
+
+    if (optionalRepair.isPresent()) {
+      VehicleRepair repair = optionalRepair.get();
+
+      repair.setRetailPrice(pricingData.getRetailPrice());
+      repair.setLeasePrice(pricingData.getLeasePrice());
+      repair.setLaborPrice(pricingData.getLaborPrice());
+      repair.setIncludeRetail(pricingData.getIncludeRetail());
+      repair.setIncludeLease(pricingData.getIncludeLease());
+      repair.setIncludeLabor(pricingData.getIncludeLabor());
+
+      repository.save(repair);
+      return true;
+    }
+    return false;
+  }
 }

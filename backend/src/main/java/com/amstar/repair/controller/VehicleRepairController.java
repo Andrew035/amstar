@@ -53,6 +53,16 @@ public class VehicleRepairController {
     return ResponseEntity.notFound().build();
   }
 
+  @PatchMapping("/{id}/pricing")
+  public ResponseEntity<?> updatePricing(@PathVariable Long id, @RequestBody VehicleRepair pricingData) {
+    boolean isUpdated = priorityQueueService.updatePricing(id, pricingData);
+
+    if (isUpdated) {
+      return ResponseEntity.ok().build();
+    }
+    return ResponseEntity.notFound().build();
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
     // Find the repair ticket
