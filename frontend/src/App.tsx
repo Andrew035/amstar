@@ -20,6 +20,17 @@ export const App: React.FC = () => {
   const [repairToDelete, setRepairToDelete] = useState<number | null>(null);
   const [viewedRepair, setViewedRepair] = useState<VehicleRepair | null>(null);
 
+  // Global Toast Notification State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Helper function to display toast and auto-dismiss after 3 seconds
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  }
+
   const isAdmin = ['admin1', 'admin2', 'admin3'].includes(currentUser || '');
 
   useEffect(() => {
@@ -131,9 +142,15 @@ export const App: React.FC = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
-      if (response.ok) fetchQueue();
+      if (response.ok) {
+        showToast("Pricing updated successfully!", "success");
+        fetchQueue();
+      } else {
+        showToast("Failed to save pricing parameters.", "error");
+      }
     } catch (error) {
       console.error("Failed to save pricing:", error);
+      showToast("Network error. Could not save pricing.", "error");
     }
   };
 
@@ -151,9 +168,15 @@ export const App: React.FC = () => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (response.ok) fetchQueue();
+      if (response.ok) {
+        showToast("Repair permanently deleted.", "success");
+        fetchQueue();
+      } else {
+        showToast("Failed to delete the repair.", "error");
+      }
     } catch (error) {
       console.error("Failed to delete repair:", error);
+      showToast("Network error. Could not delete repair.", "error");
     } finally {
       setIsDeleteModalOpen(false);
       setRepairToDelete(null);
@@ -181,6 +204,17 @@ export const App: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-slate-50'>
+
+      {/* Inline Animation CSS for the Toast */}
+      <style>
+        {`
+          @keyframes slideUp {
+            from { transform: translateY(150%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          .animate-slide-up { animation: slideUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        `}
+      </style>
 
       {/* Top Navigation */}
       {currentUser && <Navbar isAdmin={isAdmin} currentUser={currentUser} onLogout={handleLogout} />}
@@ -345,6 +379,14 @@ export const App: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Modern Floating Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-8 right-8 px-6 py-4 rounded-xl shadow-2xl text-white font-bold text-sm z-[9999] flex items-center gap-3 animate-slide-up border ${toast.type === 'success' ? 'bg-emerald-600 border-emerald-500' : 'bg-red-600 border-red-500'}`}>
+          <span className='text-lg'>{toast.type === 'success' ? '\u2713' : '⚠️'}</span>
+          <span>{toast.message}</span>
         </div>
       )}
     </div>

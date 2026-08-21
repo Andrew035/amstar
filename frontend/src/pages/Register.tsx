@@ -7,6 +7,7 @@ export const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export const Register: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     if (password !== confirmPassword) {
       setError("Passwords do not match!");
@@ -34,10 +36,12 @@ export const Register: React.FC = () => {
         throw new Error('Registration failed. Username might be taken.');
       }
 
-      alert("Registration successful! Please log in.");
-      navigate('/login');
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect to server.');
+      setSuccessMessage("Registration successful! Redirecting to login...");
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
+    } catch (error: any) {
+      setError(error.message || 'Failed to connect to server.');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,6 +61,7 @@ export const Register: React.FC = () => {
         <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">Create Technician Account</h2>
 
         {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm font-bold rounded-lg text-center border border-red-100">{error}</div>}
+        {successMessage && <div className='mb-4 p-3 bg-emerald-50 text-emerald-600 text-sm font-bold rounded-lg text-center border border-emerald-100 flex items-center justify-center gap-2'>{successMessage}</div>}
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
