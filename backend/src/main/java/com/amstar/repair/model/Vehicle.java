@@ -16,6 +16,8 @@ public class Vehicle {
   private String make;
   private String model;
   private Integer year;
+
+  @Column(length = 2000)
   private String carImageUrl;
 
   public Vehicle() {

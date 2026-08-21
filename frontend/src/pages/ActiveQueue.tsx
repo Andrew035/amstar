@@ -2,6 +2,97 @@ import React, { useState } from "react";
 import type { VehicleRepair } from "../types/repair";
 import { RepairForm } from "../components/RepairForm";
 
+// Custom Worker Dropdown
+const MultiWorkerDropdown: React.FC<{
+  currentWorkers: string | undefined;
+  onAssign: (workers: string) => void;
+}> = ({ currentWorkers, onAssign }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  // State to hold the exact screen coordinates for the dropdown
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  const workersList = [
+    { id: 'Technician 1', name: 'Technician 1' },
+    { id: 'Technician 2', name: 'Technician 2' },
+    { id: 'Technician 3', name: 'Technician 3' },
+  ];
+
+  const selectedArray = currentWorkers ? currentWorkers.split(', ').filter(w => w !== '') : [];
+
+  const handleToggle = (id: string) => {
+    if (selectedArray.includes(id)) {
+      onAssign(selectedArray.filter(w => w !== id).join(', '));
+    } else {
+      onAssign([...selectedArray, id].join(', '));
+    }
+  };
+
+  const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+
+    // Get the exact pixel coordinates of the button on the screen
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setCoords({
+      top: rect.bottom + 4, // 4 pixels below the button
+      left: rect.left // Aligned to the left edge of the button
+    });
+
+    setIsOpen(true);
+  }
+
+  return (
+    <div className="relative">
+      {/* Dropdown Trigger */}
+      <div
+        onClick={openDropdown}
+        className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs font-bold text-slate-700 cursor-pointer flex justify-between items-center min-w-[120px] hover:border-amstar-blue transition shadow-sm"
+      >
+        <span className="truncate">
+          {selectedArray.length === 0 ? 'Unassigned' : `${selectedArray.length} Selected`}
+        </span>
+        <span className="text-[10px] ml-2 text-slate-400">▼</span>
+      </div>
+
+      {/* Dropdown Menu with Checkboxes */}
+      {isOpen && (
+        <>
+          {/* Invisible overlay to close dropdown when click outside */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
+            onWheel={() => setIsOpen(false)} // Closes if the user tries to scroll away
+            onTouchMove={() => setIsOpen(false)}
+          ></div>
+
+          <div
+            className="fixed bg-white border border-slate-200 shadow-2xl rounded-lg z-[101] overflow-hidden w-48"
+            style={{ top: coords.top, left: coords.left }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="bg-slate-50 px-3 py-2 border-b border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+              Assign Technicians
+            </div>
+            <div className="max-h-48 overflow-y-auto p-1">
+              {workersList.map(worker => (
+                <label key={worker.id} className="flex items-center gap-3 px-2 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
+                  <input
+                    type="checkbox"
+                    checked={selectedArray.includes(worker.id)}
+                    onChange={() => handleToggle(worker.id)}
+                    className="w-4 h-4 rounded text-amstar-blue focus:ring-amstar-blue border-slate-300 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-slate-700">{worker.id}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export const ActiveQueue: React.FC<{
   repairs: VehicleRepair[];
   isAdmin: boolean;
@@ -87,7 +178,7 @@ export const ActiveQueue: React.FC<{
             {searchTerm ? 'No active repairs match your search.' : 'No active repairs in the shop queue.'}
           </div>
         ) : (
-          <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-slate-100 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-bold">
                 <tr>
@@ -159,20 +250,10 @@ export const ActiveQueue: React.FC<{
                     {/* Multi-worker Selection */}
                     <td className="p-3">
                       {isAdmin ? (
-                        <select
-                          multiple
-                          value={item.assignedWorker ? item.assignedWorker.split(', ') : []}
-                          onChange={e => {
-                            const selected = Array.from(e.target.selectedOptions, opt => opt.value);
-                            onAssignWorker(item.id!, selected.join(', '));
-                          }}
-                          onClick={e => e.stopPropagation()}
-                          className="text-xs p-1 border border-slate-300 rounded bg-white w-28 h-12 focus:ring-1 focus:ring-amstar-blue"
-                        >
-                          <option value="worker1">Technician 1</option>
-                          <option value="worker1">Technician 2</option>
-                          <option value="worker1">Technician 3</option>
-                        </select>
+                        <MultiWorkerDropdown
+                          currentWorkers={item.assignedWorker}
+                          onAssign={(workers) => onAssignWorker(item.id!, workers)}
+                        />
                       ) : (
                         <span className="font-bold text-slate-700">{item.assignedWorker || 'Unassigned'}</span>
                       )}

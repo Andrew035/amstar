@@ -36,7 +36,7 @@ const PricingCard: React.FC<{
       {/* Vehicle Info */}
       <div className='p-5 flex-1 border-b md:border-b-0 md:border-r border-slate-100 flex-col gap-3'>
         {item.vehicle?.carImageUrl ? (
-          <img src={item.vehicle.carImageUrl} alt="Vehicle Image" className='w-full h-32 object-cover rounded-lg' />
+          <img src={item.vehicle.carImageUrl} alt="Vehicle Image" className='w-full h-64 object-cover rounded-lg' />
         ) : (
           <div className='w-full h-32 bg-slate-100 flex items-center justify-center rounded-lg text-slate-400 text-xs font-bold'>
             NO IMAGE

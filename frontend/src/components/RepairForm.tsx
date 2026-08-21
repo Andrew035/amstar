@@ -14,19 +14,33 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
   const [serviceType, setServiceType] = useState('');
   const [severity, setSeverity] = useState<number>(3);
   const [expectedCompletionDate, setExpectedCompletionDate] = useState('');
-  const [assignedWorker, setAssignedWorker] = useState<string>('');
+  const [assignedWorkersArray, setAssignedWorkersArray] = useState<string[]>([]);
 
   // Vehicle Specification States
   const [vin, setVin] = useState('');
 
+  const workersList = [
+    { id: "Technician 1", name: "Technician 1" },
+    { id: "Technician 2", name: "Technician 2" },
+    { id: "Technician 3", name: "Technician 3" },
+  ]
+
   useEffect(() => {
     if (!isAdmin && currentUser) {
-      setAssignedWorker(currentUser);
+      setAssignedWorkersArray([currentUser]);
     }
   }, [currentUser, isAdmin]);
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toggleWorker = (id: string) => {
+    if (assignedWorkersArray.includes(id)) {
+      setAssignedWorkersArray(assignedWorkersArray.filter(w => w !== id));
+    } else {
+      setAssignedWorkersArray([...assignedWorkersArray, id]);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +100,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
       severity,
       entryDate,
       expectedCompletionDate,
-      assignedWorker: isAdmin ? assignedWorker : currentUser, // Admin choice OR Worker default
+      assignedWorker: isAdmin ? assignedWorkersArray.join(', ') : currentUser, // Admin choice OR Worker default
       status: 'PENDING',
       vehicle: {
         vin: vin || "Unknown",
@@ -120,7 +134,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
       setServiceType('');
       setSeverity(3);
       setExpectedCompletionDate('');
-      if (isAdmin) setAssignedWorker('');
+      if (isAdmin) setAssignedWorkersArray([]);
 
       // Trigger the queue to refresh
       onSuccess();
@@ -229,19 +243,27 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
         </div>
 
         {isAdmin && (
-          <div>
-            <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Assign To Worker (Optional)</label>
-            <select
-              value={assignedWorker}
-              onChange={e => setAssignedWorker(e.target.value)}
-              required
-              style={sharedInputStyle}
-            >
-              <option value="">Unassigned</option>
-              <option value="worker1">Technician 1</option>
-              <option value="worker2">Technician 2</option>
-              <option value="worker3">Technician 3</option>
-            </select>
+          <div className='md:col-span-2'>
+            <label className='block text-sm font-bold text-slate-600 mb-2'>Assign Technician(s) <span className='font-normal text-xs text-slate-400 ml-2'>(Optional)</span></label>
+            <div className='flex flex-wrap gap-2'>
+              {workersList.map(w => {
+                const isSelected = assignedWorkersArray.includes(w.id);
+                return (
+                  <button
+                    type='button'
+                    key={w.id}
+                    onClick={() => toggleWorker(w.id)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition border shadow-sm ${isSelected
+                      ? 'bg-amstar-blue text-white border-amstar-blue hover:bg-slate-800'
+                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                      }`}
+                  >
+                    {isSelected && <span className='mr-1.5'>{'\u2713'}</span>}
+                    {w.name}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         )}
 
