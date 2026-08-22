@@ -63,6 +63,16 @@ public class VehicleRepairController {
     return ResponseEntity.notFound().build();
   }
 
+  @PatchMapping("/{id}/service")
+  public ResponseEntity<?> updateServiceType(@PathVariable Long id,
+      @RequestBody java.util.Map<String, String> request) {
+    boolean isUpdated = priorityQueueService.updateServiceType(id, request.get("serviceType"));
+    if (isUpdated) {
+      return ResponseEntity.ok().build();
+    }
+    return ResponseEntity.notFound().build();
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
     // Find the repair ticket

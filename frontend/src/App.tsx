@@ -134,6 +134,19 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleServiceChange = async (id: number, newService: string) => {
+    if (!isAdmin) return;
+    const token = localStorage.getItem('amstar_token');
+    try {
+      const response = await fetch(`http://localhost:8080/api/repairs/${id}/service`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ serviceType: newService })
+      });
+      if (response.ok) fetchQueue();
+    } catch (error) { console.error("Failed to update service:", error); }
+  };
+
   const handleSavePricing = async (id: number, payload: any) => {
     const token = localStorage.getItem('amstar_token');
     try {
@@ -183,15 +196,18 @@ export const App: React.FC = () => {
     }
   };
 
-  // Self-learning severity map calculation
+  // === NEW: DELIMITED SERVICE PARSING ===
   const historicalServiceMap: Record<string, number> = {};
-  const sortedRepairs = [...repairs].sort((a, b) => (b.id || 0) - (a.id || 0));
-  sortedRepairs.forEach(r => {
+  [...repairs].sort((a, b) => (b.id || 0) - (a.id || 0)).forEach(r => {
     if (r.serviceType && r.severity) {
-      const s = r.serviceType.toUpperCase().trim();
-      if (s && !historicalServiceMap[s]) {
-        historicalServiceMap[s] = r.severity;
-      }
+      // Split by comma, trim spaces, convert to uppercase, and remove empty strings
+      const services = r.serviceType.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
+
+      services.forEach(serviceName => {
+        if (!historicalServiceMap[serviceName]) {
+          historicalServiceMap[serviceName] = r.severity;
+        }
+      });
     }
   });
 
@@ -244,6 +260,7 @@ export const App: React.FC = () => {
                 onRefresh={fetchQueue}
                 onStatusChange={handleStatusChange}
                 onAssignWorker={handleAssignWorker}
+                onServiceChange={handleServiceChange}
                 onDeleteClick={handleDeleteClick}
                 onViewDeepDive={setViewedRepair}
                 viewedRepairId={viewedRepair?.id}
@@ -271,7 +288,10 @@ export const App: React.FC = () => {
               (currentUser && isAdmin) ? (
                 <HistoryPage
                   repairs={repairs}
+                  historicalServiceMap={historicalServiceMap}
                   onStatusChange={handleStatusChange}
+                  onAssignWorker={handleAssignWorker}
+                  onServiceChange={handleServiceChange}
                   onViewDeepDive={setViewedRepair}
                   onDeleteClick={handleDeleteClick}
                   viewedRepairId={viewedRepair?.id}

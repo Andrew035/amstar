@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import type { VehicleRepair } from '../types/repair';
 
-// Tailwind Pricing Card Component
+// === UNIFIED DESIGN SYSTEM STYLES ===
+const SEARCH_INPUT_STYLE = "w-full sm:w-80 px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-800 shadow-sm transition-all focus:outline-none focus:border-amstar-blue focus:ring-2 focus:ring-amstar-blue/20";
+const NUMBER_INPUT_STYLE = "w-24 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-800 shadow-sm transition-all text-right focus:outline-none focus:border-amstar-blue focus:ring-2 focus:ring-amstar-blue/20 disabled:opacity-40 disabled:bg-slate-100 disabled:cursor-not-allowed";
+
 const PricingCard: React.FC<{
   item: VehicleRepair;
   onSavePricing: (id: number, payload: any) => void;
@@ -14,145 +17,210 @@ const PricingCard: React.FC<{
   const [includeLease, setIncludeLease] = useState<boolean>(item.includeLease || false);
   const [includeLabor, setIncludeLabor] = useState<boolean>(item.includeLabor || false);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const currentTotal =
     (includeRetail ? retailPrice : 0) +
     (includeLease ? leasePrice : 0) +
     (includeLabor ? laborPrice : 0);
 
-  const handleSave = () => {
-    onSavePricing(item.id!, {
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onSavePricing(item.id!, {
       retailPrice,
       leasePrice,
       laborPrice,
       includeRetail,
       includeLease,
-      includeLabor
+      includeLabor,
     });
+    // Small delay to let the UI feel like it "did work" before resetting button state
+    setTimeout(() => setIsSaving(false), 400);
   };
 
-  return (
-    <div className='bg-white rounded-xl border- border-slate-200 overflow-hidden shadow-sm flex flex-col md:flex-row'>
+  // Helper for dynamic row styling
+  const getRowStyle = (isActive: boolean) =>
+    `flex items-center justify-between text-sm p-3 rounded-xl border transition-all duration-200 ${isActive
+      ? 'bg-blue-50/40 border-amstar-blue/30 shadow-inner'
+      : 'bg-white border-slate-200 shadow-sm hover:border-slate-300'
+    }`;
 
-      {/* Vehicle Info */}
-      <div className='p-5 flex-1 border-b md:border-b-0 md:border-r border-slate-100 flex-col gap-3'>
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col md:flex-row h-full">
+
+      {/* Left Side: Vehicle Info */}
+      <div className="p-5 flex-1 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col gap-3">
         {item.vehicle?.carImageUrl ? (
-          <img src={item.vehicle.carImageUrl} alt="Vehicle Image" className='w-full h-64 object-cover rounded-lg' />
+          <img src={item.vehicle.carImageUrl} alt="Vehicle" className="w-full h-36 object-cover rounded-xl shadow-sm" />
         ) : (
-          <div className='w-full h-32 bg-slate-100 flex items-center justify-center rounded-lg text-slate-400 text-xs font-bold'>
-            NO IMAGE
+          <div className="w-full h-36 bg-slate-50 flex items-center justify-center rounded-xl border border-dashed border-slate-200 text-slate-400 text-xs font-bold tracking-widest uppercase">
+            No Image
           </div>
         )}
-        <div>
-          <h3 className='font-bold text-amstar-blue text-base'>
+
+        <div className="mt-1">
+          <h3 className="font-black text-amstar-blue text-lg leading-tight">
             {item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}
           </h3>
-          <p className='text-xs text-slate-500 font-semibold'>{item.serviceType}</p>
+          <p className="text-xs text-slate-500 font-bold mt-1">{item.serviceType}</p>
         </div>
-        <div className='grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100'>
+
+        <div className="grid grid-cols-2 gap-3 text-xs pt-3 border-t border-slate-100 mt-auto">
           <div>
-            <span className='mb-2 text-slate-400 block font-medium'>VIN</span>
-            <span className='font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700'>{item.vehicle?.vin || 'N/A'}</span>
+            <span className="text-slate-400 block font-bold uppercase tracking-wider mb-1">VIN</span>
+            <span className="font-mono bg-slate-100 px-2 py-1 rounded-md text-slate-700 shadow-inner border border-slate-200 block truncate">{item.vehicle?.vin || 'N/A'}</span>
           </div>
           <div>
-            <span className='mb-2 text-slate-400 block font-medium'>LICENSE PLATE</span>
-            <span className='font-bold bg-slate-100 px-1.5 py-0.5 rounded'>{item.vehicle?.licensePlate} ({item.vehicle?.state})</span>
+            <span className="text-slate-400 block font-bold uppercase tracking-wider mb-1">License Plate</span>
+            <div className="inline-block border border-slate-300 bg-slate-50 px-2 py-1 rounded-md text-center font-bold shadow-sm">
+              {item.vehicle?.licensePlate} <span className="text-[9px] block text-slate-500 leading-none">{item.vehicle?.state}</span>
+            </div>
           </div>
         </div>
-        <div className='text-xs'>
-          <span className='pt-4 font-slate-400 block font-medium'>ASSIGNED WORKER(S)</span>
-          <span className='pt-2 font-semibold text-amstar-red'>{item.assignedWorker || 'Unassigned'}</span>
+
+        <div className="text-xs mt-1">
+          <span className="text-slate-400 block font-bold uppercase tracking-wider mb-1">Technician(s)</span>
+          <span className="font-bold text-slate-700">{item.assignedWorker || 'Unassigned'}</span>
         </div>
       </div>
 
-      {/* Pricing Inputs */}
-      <div className='p-5 flex-1 bg-slate-50 flex flex-col justify-between space-y-4'>
-        <div className='space-y-3'>
-          <h4 className='text-xs font-black uppercase tracking-wider text-slate-500'>Invoice Breakdown</h4>
+      {/* Right Side: Interactive Pricing Controls */}
+      <div className="p-5 flex-1 bg-slate-50/50 flex flex-col justify-between space-y-5">
 
-          <label className='flex items-center justify-between text-sm bg-white p-2.5 rounded-lg border border-slate-200'>
-            <span className='flex items-center gap-2 font-medium text-slate-700'>
-              <input type='checkbox' checked={includeRetail} onChange={e => setIncludeRetail(e.target.checked)} className='rounded text-amstar-blue' />
+        <div className="space-y-3">
+          <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Invoice Breakdown</h4>
+
+          <label className={getRowStyle(includeRetail)}>
+            <span className="flex items-center gap-3 font-bold text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={includeRetail} onChange={e => setIncludeRetail(e.target.checked)} className="w-4 h-4 rounded text-amstar-blue focus:ring-amstar-blue border-slate-300 cursor-pointer transition-all" />
               Retail Price
             </span>
-            <div className='flex items-center gap-1 font-bold'>
-              <span>$</span>
+            <div className="flex items-center gap-1.5 font-black text-slate-600">
+              <span className={includeRetail ? 'text-amstar-blue' : 'text-slate-400'}>$</span>
               <input
-                type='number'
+                type="number"
                 disabled={!includeRetail}
-                value={retailPrice}
+                value={retailPrice === 0 ? '' : retailPrice}
                 onChange={e => setRetailPrice(Number(e.target.value))}
-                className='w-20 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-right disabled:opacity-40'
+                placeholder="0.00"
+                className={NUMBER_INPUT_STYLE}
               />
             </div>
           </label>
 
-          <label className='flex items-center justify-between text-sm bg-white p-2.5 rounded-lg border border-slate-200'>
-            <span className='flex items-center gap-2 font-medium text-slate-700'>
-              <input type='checkbox' checked={includeLease} onChange={e => setIncludeLease(e.target.checked)} className='rounded text-amstar-blue' />
+          <label className={getRowStyle(includeLease)}>
+            <span className="flex items-center gap-3 font-bold text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={includeLease} onChange={e => setIncludeLease(e.target.checked)} className="w-4 h-4 rounded text-amstar-blue focus:ring-amstar-blue border-slate-300 cursor-pointer transition-all" />
               Lease Price
             </span>
-            <div className='flex items-center gap-1 font-bold'>
-              <span>$</span>
+            <div className="flex items-center gap-1.5 font-black text-slate-600">
+              <span className={includeLease ? 'text-amstar-blue' : 'text-slate-400'}>$</span>
               <input
-                type='number'
+                type="number"
                 disabled={!includeLease}
-                value={leasePrice}
+                value={leasePrice === 0 ? '' : leasePrice}
                 onChange={e => setLeasePrice(Number(e.target.value))}
-                className='w-20 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-right disabled:opacity-40'
+                placeholder="0.00"
+                className={NUMBER_INPUT_STYLE}
               />
             </div>
           </label>
 
-          <label className='flex items-center justify-between text-sm bg-white p-2.5 rounded-lg border border-slate-200'>
-            <span className='flex items-center gap-2 font-medium text-slate-700'>
-              <input type='checkbox' checked={includeLabor} onChange={e => setIncludeLabor(e.target.checked)} className='rounded text-amstar-blue' />
+          <label className={getRowStyle(includeLabor)}>
+            <span className="flex items-center gap-3 font-bold text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={includeLabor} onChange={e => setIncludeLabor(e.target.checked)} className="w-4 h-4 rounded text-amstar-blue focus:ring-amstar-blue border-slate-300 cursor-pointer transition-all" />
               Labor Price
             </span>
-            <div className='flex items-center gap-1 font-bold'>
-              <span>$</span>
+            <div className="flex items-center gap-1.5 font-black text-slate-600">
+              <span className={includeLabor ? 'text-amstar-blue' : 'text-slate-400'}>$</span>
               <input
-                type='number'
+                type="number"
                 disabled={!includeLabor}
-                value={laborPrice}
+                value={laborPrice === 0 ? '' : laborPrice}
                 onChange={e => setLaborPrice(Number(e.target.value))}
-                className='w-20 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-right disabled:opacity-40'
+                placeholder="0.00"
+                className={NUMBER_INPUT_STYLE}
               />
             </div>
           </label>
         </div>
 
-        <div className='pt-4 border-t border-slate-200 flex items-center justify-between'>
+        <div className="pt-4 border-t border-slate-200 flex items-center justify-between mt-auto">
           <div>
-            <span className='text-xs text-slate-500 font-bold block uppercase'>Total Price</span>
-            <span className='text-2xl font-black text-emerald-600'>${currentTotal.toFixed(2)}</span>
+            <span className="text-xs text-slate-400 font-black block uppercase tracking-widest mb-1">Total Billed</span>
+            <span className="text-3xl font-black text-emerald-600 tracking-tight">${currentTotal.toFixed(2)}</span>
           </div>
           <button
             onClick={handleSave}
-            className='px-4 py-2 bg-amstar-blue hover:bg-slate-800 text-white rounded-lg text-xs font-bold shadow transition'
+            disabled={isSaving}
+            className="px-6 py-2.5 bg-amstar-blue hover:bg-slate-800 text-white rounded-lg text-sm font-bold shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Save Pricing
+            {isSaving ? 'Saving...' : 'Save Pricing'}
           </button>
         </div>
+
       </div>
+
     </div>
-  )
+  );
 };
 
 export const PricingPage: React.FC<{
   repairs: VehicleRepair[];
   onSavePricing: (id: number, payload: any) => void;
 }> = ({ repairs, onSavePricing }) => {
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter repairs by search term
+  const filteredRepairs = repairs
+    .filter(item => {
+      if (!searchTerm) return true;
+      const lower = searchTerm.toLowerCase();
+      return (
+        item.customerName?.toLowerCase().includes(lower) ||
+        item.vehicle?.licensePlate?.toLowerCase().includes(lower) ||
+        item.vehicle?.vin?.toLowerCase().includes(lower) ||
+        item.vehicle?.make?.toLowerCase().includes(lower) ||
+        item.vehicle?.model?.toLowerCase().includes(lower) ||
+        item.assignedWorker?.toLowerCase().includes(lower) ||
+        item.serviceType?.toLowerCase().includes(lower)
+      );
+    })
+    // Optional: Sort by active first, then completed
+    .sort((a, b) => {
+      if (a.status !== 'COMPLETED' && b.status === 'COMPLETED') return -1;
+      if (a.status === 'COMPLETED' && b.status !== 'COMPLETED') return 1;
+      return (b.id || 0) - (a.id || 0);
+    });
+
   return (
-    <div className='space-y-6'>
-      <div className='border-b-2 border-amstar-red pb-2'>
-        <h2 className='text-2xl font-black text-amstar-blue'>Pricing</h2>
+    <div className="space-y-6">
+
+      {/* Header & Unified Search */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-2 border-amstar-red pb-2 gap-4">
+        <h2 className="text-2xl font-black text-amstar-blue">Pricing & Invoice Calculator</h2>
+        <input
+          type="text"
+          placeholder="Search by name, VIN, plate, vehicle..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={SEARCH_INPUT_STYLE}
+        />
       </div>
 
-      <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
-        {repairs.map(item => (
-          <PricingCard key={item.id} item={item} onSavePricing={onSavePricing} />
-        ))}
-      </div>
+      {filteredRepairs.length === 0 ? (
+        <div className="p-12 text-center bg-white rounded-xl border border-dashed border-slate-300 text-slate-500 font-medium">
+          {searchTerm ? 'No vehicles match your search.' : 'No vehicles in the system to price.'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {filteredRepairs.map(item => (
+            <PricingCard key={item.id} item={item} onSavePricing={onSavePricing} />
+          ))}
+        </div>
+      )}
+
     </div>
-  )
-}
+  );
+};

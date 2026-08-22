@@ -103,4 +103,12 @@ public class PriorityQueueService {
     }
     return false;
   }
+
+  public boolean updateServiceType(Long id, String newServiceType) {
+    return repository.findById(id).map(repair -> {
+      repair.setServiceType(newServiceType);
+      repository.save(repair);
+      return true;
+    }).orElse(false);
+  }
 }
