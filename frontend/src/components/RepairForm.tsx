@@ -13,7 +13,7 @@ const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => voi
     const rect = e.currentTarget.getBoundingClientRect();
     setCoords({ top: rect.bottom + 4, left: rect.left });
     if (value) {
-      const [y, m, d] = value.split('-');
+      const [y, m] = value.split('-');
       setCurrentView(new Date(parseInt(y), parseInt(m) - 1, 1));
     } else {
       setCurrentView(new Date());
