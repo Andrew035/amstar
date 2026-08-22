@@ -140,6 +140,65 @@ const getSeverityColor = (severity: number) => {
   }
 };
 
+// === EXTRACTED SHARED STATUS STYLES ===
+const getStatusStyle = (status?: string) => {
+  switch (status) {
+    case 'PENDING': return 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600';
+    case 'IN_PROGRESS': return 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600';
+    default: return 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600';
+  }
+};
+
+// === NEW: UNIFIED STATUS DROPDOWN ===
+const StatusDropdown: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const options = [
+    { val: "PENDING", label: "PENDING" },
+    { val: "IN_PROGRESS", label: "IN PROGRESS" },
+    { val: "COMPLETED", label: "COMPLETED" }
+  ];
+
+  const currentLabel = options.find(o => o.val === value)?.label || value?.replace('_', ' ');
+
+  const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCoords({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 130) });
+    setIsOpen(true);
+  };
+
+  const handleSelect = (val: string) => {
+    onChange(val);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative w-full min-w-[120px]">
+      <div onClick={openDropdown} className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)}`}>
+        <span className="truncate flex-1 text-center">{currentLabel}</span>
+      </div>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
+          <div className="fixed bg-white border border-slate-200 shadow-2xl rounded-lg z-[101] overflow-hidden" style={{ top: coords.top, left: coords.left, width: coords.width }} onClick={e => e.stopPropagation()}>
+            {options.map(opt => (
+              <div
+                key={opt.val}
+                onClick={() => handleSelect(opt.val)}
+                className="px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors text-center"
+              >
+                {opt.label}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 export const ActiveQueue: React.FC<{
   repairs: VehicleRepair[]; isAdmin: boolean; currentUser: string; historicalServiceMap: Record<string, number>;
   onRefresh: () => void; onStatusChange: (id: number, status: string) => void; onAssignWorker: (id: number, workers: string) => void;
@@ -154,14 +213,6 @@ export const ActiveQueue: React.FC<{
       const lower = searchTerm.toLowerCase();
       return (item.customerName?.toLowerCase().includes(lower) || item.vehicle?.licensePlate?.toLowerCase().includes(lower) || item.vehicle?.vin?.toLowerCase().includes(lower) || item.vehicle?.make?.toLowerCase().includes(lower) || item.vehicle?.model?.toLowerCase().includes(lower) || item.assignedWorker?.toLowerCase().includes(lower) || item.serviceType?.toLowerCase().includes(lower));
     }).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
-
-  const getStatusStyle = (status?: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600';
-      case 'IN_PROGRESS': return 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600';
-      default: return 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600';
-    }
-  };
 
   return (
     <div className='space-y-6'>
@@ -181,7 +232,7 @@ export const ActiveQueue: React.FC<{
               <tr>
                 <th className="p-3">Customer</th><th className="p-3">Vehicle Image</th>
                 <th className="p-3">License Plate</th><th className="p-3">Vehicle Details</th><th className="p-3">VIN</th><th className="p-3">Service</th>
-                <th className="p-3">Severity</th><th className="p-3">Entry Date</th><th className="p-3">Due Date</th><th className="p-3">Technician(s)</th><th className="p-3">Status</th>
+                <th className="p-3">Severity</th><th className="p-3">Entry Date</th><th className="p-3">Due Date</th><th className="p-3">Technician(s)</th><th className="p-3 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -190,7 +241,6 @@ export const ActiveQueue: React.FC<{
                   <td className="p-3 font-semibold text-slate-800">{item.customerName}</td>
                   <td className="p-3">{item.vehicle?.carImageUrl ? <img src={item.vehicle.carImageUrl} alt="Vehicle Image" onClick={e => { e.stopPropagation(); onViewDeepDive(item); }} className="w-16 h-10 object-cover rounded shadow-sm hover:scale-110 transition duration-200" /> : <span className="text-slate-400">No Image</span>}</td>
 
-                  {/* === UPDATED: UNIFIED LICENSE PLATE DESIGN === */}
                   <td className="p-3">
                     <div className="inline-block border border-slate-300 bg-slate-50 px-2 py-1 rounded-md text-center font-bold shadow-sm min-w-[70px]">
                       {item.vehicle?.licensePlate}
@@ -224,17 +274,9 @@ export const ActiveQueue: React.FC<{
 
                   <td className="p-3" onClick={e => e.stopPropagation()}>
                     {isAdmin ? (
-                      <select
-                        value={item.status || 'PENDING'}
-                        onChange={e => onStatusChange(item.id!, e.target.value)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-slate-400/50 appearance-none text-center ${getStatusStyle(item.status)}`}
-                      >
-                        <option value="PENDING" className="bg-white text-slate-800">PENDING</option>
-                        <option value="IN_PROGRESS" className="bg-white text-slate-800">IN PROGRESS</option>
-                        <option value="COMPLETED" className="bg-white text-slate-800">COMPLETED</option>
-                      </select>
+                      <StatusDropdown value={item.status || 'PENDING'} onChange={(val) => onStatusChange(item.id!, val)} />
                     ) : (
-                      <span className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm ${getStatusStyle(item.status)}`}>{item.status?.replace('_', ' ')}</span>
+                      <div className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-center border ${getStatusStyle(item.status)}`}>{item.status?.replace('_', ' ')}</div>
                     )}
                   </td>
                 </tr>
