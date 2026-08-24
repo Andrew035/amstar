@@ -101,7 +101,7 @@ export default {
 
 - [ ] **Step 3: Add the font imports to `frontend/src/main.tsx`**
 
-Insert these two lines immediately after `import './index.css';`:
+Insert these three lines immediately after `import './index.css';`:
 
 ```tsx
 import '@fontsource-variable/oswald';
@@ -198,7 +198,8 @@ git commit -m "feat(ui): add Shop Floor steel design tokens and self-hosted font
 
 **Interfaces:**
 - Consumes: the Tailwind tokens from Task 1.
-- Produces: named exports `SHARED_INPUT_STYLE`, `SEARCH_INPUT_STYLE`, `NUMBER_INPUT_STYLE`, `TABLE_DROPDOWN_STYLE`, `INLINE_INPUT_STYLE`, `PANEL_STYLE`, `PANEL_HEADING_STYLE`, `FLOATING_PANEL_STYLE`, `PANEL_ROW_STYLE`, `LABEL_STYLE`, `getSeverityColor(severity: number): string`, `getSeverityGlow(severity: number): string`. Tasks 3–9 import from here.
+- Produces: named exports `SHARED_INPUT_STYLE`, `SEARCH_INPUT_STYLE`, `NUMBER_INPUT_STYLE`, `TABLE_DROPDOWN_STYLE`, `INLINE_INPUT_STYLE`, `PANEL_STYLE`, `PANEL_HEADING_STYLE`, `FLOATING_PANEL_STYLE`, `PANEL_ROW_STYLE`, `LABEL_STYLE`, `getSeverityColor(severity: number): string`, `getSeverityGlow(severity: number): string`, `getStatusStyle(status?: string): string`. Tasks 3–9 import from here.
+- **Every export must have a consumer** by the end of Task 8. `PANEL_HEADING_STYLE` is consumed by Tasks 5 and 6 for table `<th>` cells; `getStatusStyle` by Tasks 5 and 6.
 
 - [ ] **Step 1: Create `frontend/src/styles/controls.ts`**
 
@@ -264,6 +265,21 @@ const LAMP_GLOW =
 
 export const getSeverityGlow = (severity: number): string =>
   severity >= 5 ? LAMP_GLOW : "";
+
+// Ticket status chips. This helper was previously duplicated byte-for-byte in
+// ActiveQueue.tsx and History.tsx. Its IN_PROGRESS branch used `bg-blue-500`,
+// which has the same invisible-on-navy problem as severity level 2, so the whole
+// ramp moves onto the sev tokens. Bright chips take dark text.
+export const getStatusStyle = (status?: string): string => {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-sev-3 text-amstar-ground border-sev-3 hover:brightness-110';
+    case 'IN_PROGRESS':
+      return 'bg-sev-2 text-amstar-ground border-sev-2 hover:brightness-110';
+    default:
+      return 'bg-sev-1 text-amstar-ground border-sev-1 hover:brightness-110';
+  }
+};
 ```
 
 - [ ] **Step 2: Verify it compiles**
@@ -519,7 +535,7 @@ git commit -m "feat(ui): convert dashboard to Shop Floor theme with gauge dials"
 
 - [ ] **Step 1: Delete the local constants and helper, import the shared ones**
 
-Delete lines 5–7 (`SEARCH_INPUT_STYLE`, `TABLE_DROPDOWN_STYLE`, `INLINE_INPUT_STYLE`) and the local `getSeverityColor` at line 132–140. Add after the existing imports:
+Delete lines 5–7 (`SEARCH_INPUT_STYLE`, `TABLE_DROPDOWN_STYLE`, `INLINE_INPUT_STYLE`), the local `getSeverityColor` at lines 132–140, and the local `getStatusStyle` at lines 144–150. Add after the existing imports:
 
 ```tsx
 import {
@@ -529,10 +545,14 @@ import {
   FLOATING_PANEL_STYLE,
   PANEL_ROW_STYLE,
   PANEL_STYLE,
+  PANEL_HEADING_STYLE,
   getSeverityColor,
   getSeverityGlow,
+  getStatusStyle,
 } from '../styles/controls';
 ```
+
+`getStatusStyle` is called at line 179 inside `StatusDropdown`; leave that call site's surrounding classes alone except to change `rounded-lg` → `rounded-sm` and drop `shadow-sm`.
 
 - [ ] **Step 2: Convert the three floating panels**
 
@@ -572,7 +592,7 @@ Apply these substitutions across the file:
 | `rounded-xl` on panels | `rounded` |
 | `text-amstar-blue` on headings | `text-amstar-ink` plus `font-cond uppercase tracking-wider` |
 
-Table `<th>` cells get `font-cond uppercase tracking-widest text-amstar-ink-dim`. Any cell rendering an id, priority score, date, VIN, or plate gets `font-mono tabular-nums`.
+Table `<th>` cells get `PANEL_HEADING_STYLE` (its value is exactly `font-cond uppercase tracking-widest text-amstar-ink-dim`) — import the constant rather than repeating the literal. Any cell rendering an id, priority score, date, VIN, or plate gets `font-mono tabular-nums`.
 
 - [ ] **Step 5: Restore the severity badge with the lamp glow**
 
@@ -609,24 +629,36 @@ git commit -m "feat(ui): convert active queue to Shop Floor theme"
 - Consumes: the same exports as Task 5.
 - Produces: nothing.
 
-- [ ] **Step 1: Import the shared constants**
+- [ ] **Step 1: Delete the local constants and helper, and resolve the name collision**
 
-`History.tsx` has no local style constants of its own, but it does have three floating panels at lines 30, 88, and 141. Add after the existing imports:
+**Read this step carefully — `History.tsx` contains a naming trap.**
+
+`History.tsx` declares two local constants of its own:
+
+- Line 4: `SEARCH_INPUT_STYLE` — byte-identical to `ActiveQueue.tsx`'s and `Pricing.tsx`'s. Straight swap for the shared one.
+- Line 5: `TABLE_DROPDOWN_STYLE` — **a misnomer.** Its value is `"px-3 py-1.5 bg-transparent border border-transparent hover:border-slate-300 focus:bg-white ... cursor-pointer uppercase"`, which is `ActiveQueue.tsx`'s **`INLINE_INPUT_STYLE`**, not its `TABLE_DROPDOWN_STYLE`. The same identifier means two different things in the two files.
+
+So: delete lines 4 and 5, and delete the local `getStatusStyle` at lines 100–106 (byte-identical to `ActiveQueue.tsx`'s). Then rewrite the two usages of the old local `TABLE_DROPDOWN_STYLE` — **line 23** and **line 84** — to use `INLINE_INPUT_STYLE`.
+
+Do **not** import `TABLE_DROPDOWN_STYLE` into this file. Importing it under the old name would silently give History's controls a filled `amstar-field` background where they are meant to be transparent until focused.
 
 ```tsx
 import {
   SEARCH_INPUT_STYLE,
-  TABLE_DROPDOWN_STYLE,
   INLINE_INPUT_STYLE,
   FLOATING_PANEL_STYLE,
   PANEL_ROW_STYLE,
   PANEL_STYLE,
+  PANEL_HEADING_STYLE,
   getSeverityColor,
   getSeverityGlow,
+  getStatusStyle,
 } from '../styles/controls';
 ```
 
-Remove any import that ends up unused — `tsc -b` will flag unused locals and fail the build.
+`tsconfig.app.json` sets `noUnusedLocals: true` and `noUnusedParameters: true`, so any import you do not actually use will **fail the build**. Remove unused ones rather than leaving them.
+
+`getStatusStyle` is called at line 135 inside this file's `StatusDropdown`; change only `rounded-lg` → `rounded-sm` and drop `shadow-sm` at that call site.
 
 - [ ] **Step 2: Convert the three floating panels**
 
@@ -652,7 +684,7 @@ Repeating it here so this task can be read on its own:
 | `rounded-xl` on panels | `rounded` |
 | `text-amstar-blue` on headings | `text-amstar-ink` plus `font-cond uppercase tracking-wider` |
 
-Table `<th>` cells get `font-cond uppercase tracking-widest text-amstar-ink-dim`. Cells rendering ids, scores, dates, VINs, or plates get `font-mono tabular-nums`. Severity badges get `` `${getSeverityColor(n)} ${getSeverityGlow(n)}` ``.
+Table `<th>` cells get `PANEL_HEADING_STYLE`. Cells rendering ids, scores, dates, VINs, or plates get `font-mono tabular-nums`. Severity badges get `` `${getSeverityColor(n)} ${getSeverityGlow(n)}` ``.
 
 - [ ] **Step 4: Verify**
 
