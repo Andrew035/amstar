@@ -61,8 +61,10 @@ export const getSeverityGlow = (severity: number): string =>
   severity >= 5 ? LAMP_GLOW : "";
 
 // All five sev-* values are bright, so severity chips take dark text — matching
-// getStatusStyle's treatment of status chips. Never pair text-white with bg-sev-*.
-export const SEVERITY_TEXT = "text-amstar-ground";
+// getStatusStyle's treatment of status chips. text-black (not amstar-ground) is
+// required: amstar-ground against sev-5 #ff3b41 is only 4.42:1, under WCAG AA.
+// Never pair text-white with bg-sev-*.
+export const SEVERITY_TEXT = "text-black";
 
 // Ticket status chips. This helper was previously duplicated byte-for-byte in
 // ActiveQueue.tsx and History.tsx. Its IN_PROGRESS branch used `bg-blue-500`,
