@@ -1,0 +1,44 @@
+# === OS ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# === Editors / IDEs ===
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# === Secrets / local env ===
+# Datasource config comes from the environment (see docker-compose.yml),
+# so any local env files must stay out of the repo.
+.env
+.env.*
+!.env.example
+*.local
+
+# === Claude Code / agent tooling ===
+# CLAUDE.md is intentionally tracked — it is the project's shared guidance file.
+# Everything else Claude writes is per-machine or per-session.
+.claude/
+CLAUDE.local.md
+.superpowers/
+.aider*
+.cursor/
+.windsurfrules
+
+# === Build output (backend/ and frontend/ also carry their own .gitignore) ===
+target/
+node_modules/
+dist/
+dist-ssr/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
