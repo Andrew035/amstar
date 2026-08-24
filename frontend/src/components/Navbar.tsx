@@ -49,7 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isAdmin, currentUser, onLogout }
           </span>
           <button
             onClick={onLogout}
-            className="font-cond text-[11px] uppercase tracking-widest text-amstar-red hover:text-white bg-transparent hover:bg-amstar-red border border-amstar-red px-4 py-1.5 rounded-sm transition-all"
+            className="font-cond text-[11px] uppercase tracking-widest text-amstar-red-ink hover:text-white bg-transparent hover:bg-amstar-red border border-amstar-red px-4 py-1.5 rounded-sm transition-all"
           >
             Log Out
           </button>

@@ -93,7 +93,7 @@ export const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess
 
         <p className="mt-6 text-center text-sm text-amstar-ink-dim">
           Need an account?{' '}
-          <Link to="/register" className="text-amstar-red font-bold hover:underline">
+          <Link to="/register" className="text-amstar-red-ink font-bold hover:underline">
             Register here
           </Link>
         </p>

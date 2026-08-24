@@ -358,7 +358,7 @@ export const App: React.FC = () => {
             <div className="bg-amstar-surface p-4 rounded border border-amstar-line flex justify-between items-center">
               <div>
                 <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">Job & Severity</span>
-                <span className="font-bold text-amstar-red text-base">{viewedRepair.serviceType}</span>
+                <span className="font-bold text-amstar-red-ink text-base">{viewedRepair.serviceType}</span>
                 <span className="block mt-1 text-xs font-bold text-amstar-ink-dim">Level {viewedRepair.severity} Priority</span>
               </div>
               <div className="text-right">
@@ -378,7 +378,7 @@ export const App: React.FC = () => {
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-sm shadow-2xl space-y-4">
-            <h3 className="font-cond text-lg font-bold uppercase tracking-wider text-amstar-red flex items-center gap-2">
+            <h3 className="font-cond text-lg font-bold uppercase tracking-wider text-amstar-red-ink flex items-center gap-2">
               ⚠️ Permanent Deletion
             </h3>
             <p className="text-sm text-amstar-ink-dim leading-relaxed">

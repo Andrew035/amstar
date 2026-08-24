@@ -178,7 +178,7 @@ export const Dashboard: React.FC<{ repairs: VehicleRepair[] }> = ({ repairs }) =
 
         {/* Critical Approvals */}
         <div className={`${PANEL_STYLE} p-6`}>
-          <h3 className="font-cond text-base uppercase tracking-widest text-amstar-red border-b border-amstar-line-soft pb-3 mb-4">
+          <h3 className="font-cond text-base uppercase tracking-widest text-amstar-red-ink border-b border-amstar-line-soft pb-3 mb-4">
             Critical Pending Vehicles
           </h3>
           {criticalPending.length === 0 ? (

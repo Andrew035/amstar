@@ -7,6 +7,10 @@ export default {
         amstar: {
           blue: "#0b3068",
           red: "#d62027",
+          // Red as TEXT on a dark ground. amstar-red #d62027 is a fill colour — as
+          // text it measures 2.0-2.5:1 on every surface here and fails WCAG AA.
+          // Never use text-amstar-red on a dark background; use text-amstar-red-ink.
+          "red-ink": "#ff9ca0",
           ground: "#13243d",
           surface: "#1b3459",
           raised: "#22406b",
