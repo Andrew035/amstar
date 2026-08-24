@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import {
   SHARED_INPUT_STYLE,
@@ -125,13 +125,18 @@ const SEVERITY_LABELS: Record<number, string> = {
 
 const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => {
   const levels = [1, 2, 3, 4, 5];
+  const btnRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, level: number) => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      e.preventDefault();
-      const next = e.key === 'ArrowRight' ? Math.min(5, level + 1) : Math.max(1, level - 1);
-      onChange(next);
-    }
+  // Derive from the CURRENT value, not the pressed button's own level, and move
+  // DOM focus to the newly selected segment. Without the focus move the same
+  // button keeps receiving keydown, and selection never advances past one step.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const next = e.key === 'ArrowRight' ? Math.min(5, value + 1) : Math.max(1, value - 1);
+    if (next === value) return;
+    onChange(next);
+    btnRefs.current[next - 1]?.focus();
   };
 
   return (
@@ -141,6 +146,7 @@ const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => voi
         return (
           <button
             key={level}
+            ref={el => { btnRefs.current[level - 1] = el; }}
             type="button"
             role="radio"
             aria-checked={selected}
@@ -148,7 +154,7 @@ const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => voi
             title={`Level ${level} - ${SEVERITY_LABELS[level]}`}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(level)}
-            onKeyDown={e => handleKeyDown(e, level)}
+            onKeyDown={handleKeyDown}
             className={`flex-1 min-h-[44px] rounded font-cond text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amstar-red/40 ${selected
               ? 'text-white border border-amstar-red bg-amstar-red/[0.16] shadow-[inset_0_0_12px_rgba(214,32,39,0.35)]'
               : 'text-amstar-ink-faint border border-amstar-line hover:border-amstar-red/60'
