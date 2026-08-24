@@ -226,7 +226,7 @@ export const ActiveQueue: React.FC<{
             </thead>
             <tbody className="divide-y divide-amstar-line-soft">
               {activeRepairs.map((item, index) => (
-                <tr key={item.id} onClick={() => isAdmin && onDeleteClick(item.id!)} className={`transition ${isAdmin ? 'hover:bg-red-50 cursor-pointer' : ''} ${viewedRepairId === item.id ? 'bg-sky-50' : index === 0 && !searchTerm ? 'bg-amber-50' : 'bg-amstar-surface'}`} title={isAdmin ? 'Click to delete this repair' : ''}>
+                <tr key={item.id} onClick={() => isAdmin && onDeleteClick(item.id!)} className={`transition ${isAdmin ? 'hover:bg-amstar-red/20 cursor-pointer' : ''} ${viewedRepairId === item.id ? 'bg-amstar-raised' : index === 0 && !searchTerm ? 'bg-sev-3/20' : 'bg-amstar-surface'}`} title={isAdmin ? 'Click to delete this repair' : ''}>
                   <td className="p-3 font-semibold text-amstar-ink">{item.customerName}</td>
                   <td className="p-3">{item.vehicle?.carImageUrl ? <img src={item.vehicle.carImageUrl} alt="Vehicle Image" onClick={e => { e.stopPropagation(); onViewDeepDive(item); }} className="w-16 h-10 object-cover rounded shadow-sm hover:scale-110 transition duration-200" /> : <span className="text-amstar-ink-faint">No Image</span>}</td>
 
