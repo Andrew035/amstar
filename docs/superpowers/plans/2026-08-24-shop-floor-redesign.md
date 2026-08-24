@@ -970,10 +970,14 @@ Also update the "Hand-rolled dropdowns and date picker" bullet: the list of cont
 
 ```bash
 cd frontend
-grep -rn 'bg-white\|slate-50\|slate-100\|slate-200\|slate-300\|slate-400\|slate-500\|slate-600\|slate-700\|slate-800' --include='*.tsx' src/
+grep -rnE 'bg-white|(bg|hover:bg|focus:bg|text|border|divide)-(slate|gray|zinc|red|sky|amber|emerald|blue|orange|green|rose|yellow|indigo)-(50|100|200|300)' --include='*.tsx' src/
 ```
 
 Expected: **no matches.** The pre-change baseline was 37 `bg-white` occurrences across the frontend. Any hit here is a surface that was missed — fix it before committing.
+
+This is the **widened** pattern from Amendment B. The original narrow version (`bg-white` plus `slate-*` only) let pastel tints on other palettes — `bg-red-50`, `bg-sky-50`, `bg-amber-50`, `bg-blue-50`, `bg-emerald-50` — pass every sweep, and those encode real UI states. Do not narrow it back.
+
+Legitimate survivors, which this pattern deliberately does not match: saturated `-500`/`-600`/`-700` values such as `red-600`/`red-700` on primary action buttons, `emerald-*`/`red-*` on the toast, and `text-emerald-600` on the History total-price cell.
 
 ```bash
 grep -rn 'z-\[101\]' --include='*.tsx' src/
@@ -1007,6 +1011,55 @@ git commit -m "feat(ui): convert modals and toast, document Shop Floor conventio
 ```
 
 ---
+
+## Amendment A (mid-execution, after Task 4 review)
+
+**Problem.** Task 4's review computed the contrast of the severity badges: `text-white` over `bg-sev-4` `#fb7d3c` is **2.59:1** and over `bg-sev-5` `#ff3b41` is **3.53:1**, both well under the WCAG AA 4.5:1 floor for small text. All five `sev-*` values are bright, so `text-white` is wrong on every one of them.
+
+This also contradicts a decision already made in this plan: `getStatusStyle` (Task 2) gives bright status chips **dark** text (`text-amstar-ground`) for precisely this reason. Severity badges kept `text-white`, so the two chip families in the same table disagree.
+
+**Fix.** `controls.ts` gains one export:
+
+```ts
+// All five sev-* values are bright, so severity chips take dark text — matching
+// getStatusStyle's treatment of status chips. Never pair text-white with bg-sev-*.
+export const SEVERITY_TEXT = "text-amstar-ground";
+```
+
+Every severity badge uses `` `${SEVERITY_TEXT} ${getSeverityColor(n)} ${getSeverityGlow(n)}` `` and **never** `text-white`.
+
+Sites: `Dashboard.tsx` (1, retrofit), `ActiveQueue.tsx` (1, Task 5), `History.tsx` (1, Task 6). `RepairForm.tsx`'s segmented selector is unaffected — its selected segment is `text-white` on a translucent red *fill over a dark ground*, not on a bright `sev-*` background, so it stays as specified.
+
+Task 4b applies this to `controls.ts` and `Dashboard.tsx`. Tasks 5 and 6 adopt it natively.
+
+## Amendment B (mid-execution, after Task 5 review)
+
+**Problem — a hole in the verification design, not in any implementation.** Every task's grep sweep and the Task 9 full sweep search only for `bg-white` and `slate-*`. Light *tints on other palettes* — `bg-red-50`, `bg-sky-50`, `bg-amber-50`, `bg-blue-50`, `bg-emerald-50`, `border-red-100`, `border-emerald-100`, `border-blue-200` — pass through every sweep untouched and render as near-white patches on the dark theme. No task's substitution table covers them.
+
+**Corrected sweep pattern.** Replace the `slate-`/`bg-white` sweep everywhere it appears with:
+
+```bash
+grep -rnE 'bg-white|(bg|hover:bg|focus:bg|text|border|divide)-(slate|gray|zinc|red|sky|amber|emerald|blue|orange|green|rose|yellow|indigo)-(50|100|200|300)' --include='*.tsx' src/
+```
+
+Legitimate survivors are the saturated `-500`/`-600` values inside helpers being deleted anyway, and `red-600`/`red-700` on the primary action buttons.
+
+**Site inventory and replacements.** These are meaningful UI states, not decoration, so each keeps its meaning:
+
+| File | Current | Meaning | Replacement |
+|---|---|---|---|
+| `ActiveQueue.tsx:229` | `hover:bg-red-50` | click-to-delete affordance (admin only) | `hover:bg-amstar-red/20` |
+| `ActiveQueue.tsx:229` | `bg-sky-50` | row currently open in the deep-dive modal | `bg-amstar-raised` |
+| `ActiveQueue.tsx:229` | `bg-amber-50` | **top-priority ticket** (`index === 0 && !searchTerm`) — the next job | `bg-sev-3/20` |
+| `History.tsx:197` | `hover:bg-red-50` | click-to-delete affordance | `hover:bg-amstar-red/20` |
+| `History.tsx:197` | `bg-sky-50` | row open in the deep-dive modal | `bg-amstar-raised` |
+| `RepairForm.tsx:96` | `bg-blue-50 border-blue-200` | "today" in the date picker | `bg-amstar-raised border-amstar-red/50` |
+| `Pricing.tsx:44` | `bg-blue-50/40 border-amstar-blue/30` | edited/dirty pricing row | `bg-amstar-raised border-amstar-red/40` |
+| `Register.tsx:64` | `bg-emerald-50 text-emerald-600 border-emerald-100` | success message | `bg-sev-1/20 text-sev-1 border-sev-1/50` |
+
+`RepairForm.tsx:117-119` (`bg-emerald-500`/`bg-blue-500`/`bg-amber-500` in the `SeverityDropdown` options array) and `History.tsx:102-104` (local `getStatusStyle`) need no treatment — both are inside code Tasks 7 and 6 delete outright.
+
+**Assignment.** `ActiveQueue.tsx` is already complete, so its three row-highlight fixes are batched into Task 6 alongside `History.tsx`'s two — the same change in two files. Tasks 7 and 8 pick up their own rows above.
 
 ## Self-Review Notes
 
