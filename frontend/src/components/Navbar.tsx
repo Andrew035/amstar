@@ -10,21 +10,23 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ isAdmin, currentUser, onLogout }) => {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     // select-none prevents highlighting, transition-all unifies hover effects
-    `px-4 py-2 rounded-lg font-bold text-sm transition-all select-none ${isActive
-      ? 'bg-amstar-blue text-white shadow-md'
-      : 'text-slate-600 hover:bg-slate-100 hover:text-amstar-blue'
+    `px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm transition-all select-none ${isActive
+      ? 'bg-amstar-raised text-white shadow-[inset_0_-2px_0_#d62027]'
+      : 'text-amstar-ink-dim hover:bg-amstar-raised/50 hover:text-white'
     }`;
 
   return (
-    <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
+    <header className="bg-amstar-blue border-b border-amstar-line sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
 
-        {/* Brand Title */}
+        {/* Brand: welded AM badge + wordmark */}
         <div className="flex items-center gap-3 select-none">
-          <div className="w-4 h-8 bg-amstar-red rounded-sm" />
+          <div className="w-9 h-9 bg-amstar-red rounded-sm grid place-items-center font-cond font-bold text-white text-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.28),0_1px_0_rgba(255,255,255,0.2)]">
+            AM
+          </div>
           <div>
-            <h1 className="text-lg font-black text-amstar-blue tracking-tight leading-none">AM STAR</h1>
-            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Transmissions</span>
+            <h1 className="font-cond text-lg font-bold text-white tracking-tight leading-none">AM STAR</h1>
+            <span className="font-cond text-[10px] font-bold text-amstar-ink-faint tracking-[0.22em] uppercase">Transmissions</span>
           </div>
         </div>
 
@@ -42,12 +44,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isAdmin, currentUser, onLogout }
 
         {/* User Account / Logout */}
         <div className="flex items-center gap-4 select-none">
-          <span className="text-xs font-bold bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 shadow-inner">
+          <span className="font-cond text-[11px] uppercase tracking-widest bg-amstar-raised border border-amstar-line px-3 py-1.5 rounded-sm text-amstar-ink-dim">
             {isAdmin ? `Admin: ${currentUser}` : `Viewer: ${currentUser}`}
           </span>
           <button
             onClick={onLogout}
-            className="text-xs font-black text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 hover:border-red-600 px-4 py-1.5 rounded-lg transition-all shadow-sm"
+            className="font-cond text-[11px] uppercase tracking-widest text-amstar-red hover:text-white bg-transparent hover:bg-amstar-red border border-amstar-red px-4 py-1.5 rounded-sm transition-all"
           >
             Log Out
           </button>
