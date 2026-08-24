@@ -145,7 +145,7 @@ const PricingCard: React.FC<{
         <div className="pt-4 border-t border-amstar-line-soft flex items-center justify-between mt-auto">
           <div>
             <span className={LABEL_STYLE}>Total Billed</span>
-            <span className="font-mono tabular-nums text-3xl font-black text-sev-1 tracking-tight">${currentTotal.toFixed(2)}</span>
+            <span className="font-mono tabular-nums text-3xl font-black text-emerald-400 tracking-tight">${currentTotal.toFixed(2)}</span>
           </div>
           <button
             onClick={handleSave}

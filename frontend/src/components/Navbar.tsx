@@ -11,7 +11,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isAdmin, currentUser, onLogout }
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     // select-none prevents highlighting, transition-all unifies hover effects
     `px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm transition-all select-none ${isActive
-      ? 'bg-amstar-raised text-white shadow-[inset_0_-2px_0_#d62027]'
+      ? 'bg-amstar-raised text-white shadow-[inset_0_-2px_0_theme(colors.amstar.red)]'
       : 'text-amstar-ink-dim hover:bg-amstar-raised/50 hover:text-white'
     }`;
 

@@ -73,10 +73,10 @@ export const SEVERITY_TEXT = "text-black";
 export const getStatusStyle = (status?: string): string => {
   switch (status) {
     case 'PENDING':
-      return 'bg-sev-3 text-amstar-ground border-sev-3 hover:brightness-110';
+      return 'bg-sev-3 text-black border-sev-3 hover:brightness-110';
     case 'IN_PROGRESS':
-      return 'bg-sev-2 text-amstar-ground border-sev-2 hover:brightness-110';
+      return 'bg-sev-2 text-black border-sev-2 hover:brightness-110';
     default:
-      return 'bg-sev-1 text-amstar-ground border-sev-1 hover:brightness-110';
+      return 'bg-sev-1 text-black border-sev-1 hover:brightness-110';
   }
 };

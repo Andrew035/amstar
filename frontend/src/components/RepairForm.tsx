@@ -6,6 +6,7 @@ import {
   PANEL_ROW_STYLE,
   LABEL_STYLE,
   PANEL_STYLE,
+  PANEL_HEADING_STYLE,
 } from '../styles/controls';
 
 // === NEW: CUSTOM DATE PICKER ===
@@ -131,9 +132,26 @@ const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => voi
   // DOM focus to the newly selected segment. Without the focus move the same
   // button keeps receiving keydown, and selection never advances past one step.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    let next: number;
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        next = Math.min(5, value + 1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        next = Math.max(1, value - 1);
+        break;
+      case 'Home':
+        next = 1;
+        break;
+      case 'End':
+        next = 5;
+        break;
+      default:
+        return;
+    }
     e.preventDefault();
-    const next = e.key === 'ArrowRight' ? Math.min(5, value + 1) : Math.max(1, value - 1);
     if (next === value) return;
     onChange(next);
     btnRefs.current[next - 1]?.focus();
@@ -220,7 +238,7 @@ const ServiceAutocomplete: React.FC<{
       />
       {isOpen && filteredServices.length > 0 && (
         <>
-          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
+          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
           <div className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`} style={{ top: coords.top, left: coords.left, width: coords.width }}>
             {filteredServices.map(service => (
               <div key={service} onMouseDown={(e) => { e.preventDefault(); handleSelect(service); }} className={`${PANEL_ROW_STYLE} uppercase`}>
@@ -239,6 +257,7 @@ const US_STATES: Record<string, string> = { "AL": "Alabama", "AK": "Alaska", "AZ
 const StateSearch: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(value);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   useEffect(() => { setSearch(value); }, [value]);
   const filteredStates = Object.entries(US_STATES).filter(([abbr, name]) => abbr.toLowerCase().includes(search.toLowerCase()) || name.toLowerCase().includes(search.toLowerCase()));
   const handleSelect = (abbr: string) => { setSearch(abbr); onChange(abbr); setIsOpen(false); };
@@ -249,18 +268,26 @@ const StateSearch: React.FC<{ value: string; onChange: (val: string) => void }> 
     if (exactMatch) { setSearch(exactMatch[0]); onChange(exactMatch[0]); }
     else { const fallback = cleanSearch.substring(0, 2).toUpperCase(); setSearch(fallback); onChange(fallback); }
   };
+  const openDropdown = (e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>) => {
+    const rect = e.target.getBoundingClientRect();
+    setCoords({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 192) });
+    setIsOpen(true);
+  };
   return (
     <div className="relative w-24 shrink-0">
       <label className={LABEL_STYLE}>State</label>
-      <input type="text" value={search} onChange={e => { setSearch(e.target.value); setIsOpen(true); }} onFocus={() => setIsOpen(true)} onBlur={handleBlur} placeholder="MD" className={`${SHARED_INPUT_STYLE} text-center font-bold uppercase tabular-nums`} />
+      <input type="text" value={search} onChange={e => { setSearch(e.target.value); openDropdown(e); }} onFocus={openDropdown} onBlur={handleBlur} placeholder="MD" className={`${SHARED_INPUT_STYLE} text-center font-bold uppercase tabular-nums`} />
       {isOpen && filteredStates.length > 0 && (
-        <div className="absolute top-full left-0 mt-1 w-48 max-h-48 overflow-y-auto bg-amstar-raised border border-amstar-line rounded shadow-2xl z-[100] overflow-hidden">
-          {filteredStates.map(([abbr, name]) => (
-            <div key={abbr} onMouseDown={(e) => { e.preventDefault(); handleSelect(abbr); }} className={`${PANEL_ROW_STYLE} flex justify-between items-center`}>
-              <span className="truncate">{name}</span><span className="text-amstar-ink-dim ml-2 shrink-0">{abbr}</span>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
+          <div className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`} style={{ top: coords.top, left: coords.left, width: coords.width }} onClick={e => e.stopPropagation()}>
+            {filteredStates.map(([abbr, name]) => (
+              <div key={abbr} onMouseDown={(e) => { e.preventDefault(); handleSelect(abbr); }} className={`${PANEL_ROW_STYLE} flex justify-between items-center`}>
+                <span className="truncate">{name}</span><span className="text-amstar-ink-dim ml-2 shrink-0">{abbr}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -290,7 +317,7 @@ const FormWorkerDropdown: React.FC<{ currentWorkers: string; onAssign: (workers:
         <>
           <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
           <div className={`${FLOATING_PANEL_STYLE} w-64`} style={{ top: coords.top, left: coords.left }} onClick={e => e.stopPropagation()}>
-            <div className="bg-amstar-raised px-3 py-2 border-b border-amstar-line-soft text-[10px] font-black text-amstar-ink-dim uppercase tracking-wider">Assign Technicians</div>
+            <div className={`${PANEL_HEADING_STYLE} bg-amstar-raised px-3 py-2 border-b border-amstar-line-soft text-[10px] font-black`}>Assign Technicians</div>
             <div className="max-h-48 overflow-y-auto p-1">
               {workersList.map(worker => (
                 <label key={worker} className="flex items-center gap-3 px-3 py-2 hover:bg-amstar-surface rounded-sm cursor-pointer transition">

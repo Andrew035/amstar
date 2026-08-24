@@ -90,7 +90,7 @@ const EditableServiceCell: React.FC<{ value: string; historicalMap: Record<strin
       <input type="text" value={search} onChange={e => { const upper = e.target.value.toUpperCase(); setSearch(upper); openDropdown(e); }} onFocus={openDropdown} onBlur={handleBlur} className={INLINE_INPUT_STYLE} onClick={e => e.stopPropagation()} />
       {isOpen && filteredServices.length > 0 && (
         <>
-          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
+          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
           <div className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`} style={{ top: coords.top, left: coords.left, width: coords.width }} onClick={e => e.stopPropagation()}>
             {filteredServices.map(service => (
               <div key={service} onMouseDown={(e) => { e.preventDefault(); handleSelect(service); }} className={`${PANEL_ROW_STYLE} uppercase`}>{service}</div>
@@ -214,7 +214,7 @@ export const HistoryPage: React.FC<{
                     <MultiWorkerDropdown currentWorkers={item.assignedWorker} onAssign={(workers) => onAssignWorker(item.id!, workers)} />
                   </td>
 
-                  <td className='p-3 font-black text-emerald-600 text-sm'>${calculateTotal(item).toFixed(2)}</td>
+                  <td className='p-3 font-black text-emerald-400 text-sm'>${calculateTotal(item).toFixed(2)}</td>
 
                   <td className="p-3" onClick={e => e.stopPropagation()}>
                     <StatusDropdown value={item.status || 'PENDING'} onChange={(val) => onStatusChange(item.id!, val)} />

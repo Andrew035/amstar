@@ -124,7 +124,7 @@ const EditableServiceCell: React.FC<{
       />
       {isOpen && filteredServices.length > 0 && (
         <>
-          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
+          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
           <div className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`} style={{ top: coords.top, left: coords.left, width: coords.width }} onClick={e => e.stopPropagation()}>
             {filteredServices.map(service => (
               <div key={service} onMouseDown={(e) => { e.preventDefault(); handleSelect(service); }} className={`${PANEL_ROW_STYLE} uppercase`}>

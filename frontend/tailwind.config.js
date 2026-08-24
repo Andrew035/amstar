@@ -19,7 +19,11 @@ export default {
           "line-soft": "#264a7d",
           ink: "#eef3fa",
           "ink-dim": "#a4bcdc",
-          "ink-faint": "#7794bf",
+          // Must clear 4.5:1 (WCAG AA, small text) on every ground in the theme —
+          // ground, field, blue, surface, and raised alike. #7794bf failed on
+          // surface (4.03:1) and raised (3.36:1); #93aed4 clears all five while
+          // staying visibly dimmer than ink-dim.
+          "ink-faint": "#93aed4",
         },
         sev: {
           1: "#10b981",
