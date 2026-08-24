@@ -1061,6 +1061,41 @@ Legitimate survivors are the saturated `-500`/`-600` values inside helpers being
 
 **Assignment.** `ActiveQueue.tsx` is already complete, so its three row-highlight fixes are batched into Task 6 alongside `History.tsx`'s two — the same change in two files. Tasks 7 and 8 pick up their own rows above.
 
+## Amendment C (mid-execution, after Task 7 review)
+
+**Problem — a functional bug in this plan's own Task 7 Step 3 code.** `SeveritySegments`'s arrow-key handler was written as `onKeyDown={e => handleKeyDown(e, level)}`, deriving the next value from **the pressed button's own fixed `level`** rather than from the current `value`, and never moving DOM focus.
+
+Because all five buttons are stable across renders (`key={level}`), focus stays on whichever button the user originally reached. The same closure therefore handles every subsequent keypress:
+
+- From `value=3`, press → : `handleKeyDown(e, 3)` → `min(5, 4)` = 4. Focus still on the level-3 button.
+- Press → again: `handleKeyDown(e, 3)` **again** → 4 again. **Stuck.**
+
+Levels 1 and 5 are unreachable by keyboard from any non-adjacent start. `tsc` cannot see this, no grep catches it, and with no visual check available it would have shipped.
+
+**Fix.** Derive from `value`, and move focus to the newly selected segment. Replace the handler and add a ref array:
+
+```tsx
+const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => {
+  const levels = [1, 2, 3, 4, 5];
+  const btnRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // Derive from the CURRENT value, not the pressed button's own level, and move
+  // DOM focus to the newly selected segment. Without the focus move the same
+  // button keeps receiving keydown, and selection never advances past one step.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const next = e.key === 'ArrowRight' ? Math.min(5, value + 1) : Math.max(1, value - 1);
+    if (next === value) return;
+    onChange(next);
+    btnRefs.current[next - 1]?.focus();
+  };
+```
+
+Each button gains `ref={el => { btnRefs.current[level - 1] = el; }}` and its handler becomes the bare `onKeyDown={handleKeyDown}`. `useRef` must be added to the existing `react` import. The ref callback uses a block body deliberately — an arrow with an expression body returns a value, which React 19 rejects as a ref callback.
+
+Everything else about the component (five segments, `type="button"`, `role="radiogroup"`/`role="radio"`, `aria-checked`, roving `tabIndex`, `min-h-[44px]`, controlled-value behavior) was verified correct and is unchanged.
+
 ## Self-Review Notes
 
 Checked against the spec:

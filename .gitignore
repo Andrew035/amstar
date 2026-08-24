@@ -23,6 +23,11 @@ desktop.ini
 !.env.example
 *.local
 
+# === Browser automation scratch ===
+# Playwright MCP writes console logs, page snapshots, and any downloads here.
+# Never commit it — downloads that land in this directory can be arbitrary.
+.playwright-mcp/
+
 # === Claude Code / agent tooling ===
 # CLAUDE.md is intentionally tracked — it is the project's shared guidance file.
 # Everything else Claude writes is per-machine or per-session.
