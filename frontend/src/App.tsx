@@ -39,7 +39,7 @@ export const App: React.FC = () => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUser(payload.sub);
-      } catch (error) {
+      } catch {
         console.error("Invalid token format");
       }
     }
@@ -54,7 +54,7 @@ export const App: React.FC = () => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUser(payload.sub);
         return true;
-      } catch (error) {
+      } catch {
         console.error("Invalid token format");
         localStorage.removeItem('amstar_token');
       }
@@ -315,56 +315,56 @@ export const App: React.FC = () => {
         >
           <div
             onClick={e => e.stopPropagation()}
-            className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-2xl border border-slate-100"
+            className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-xl shadow-2xl"
           >
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-xl font-bold text-amstar-blue">Vehicle Snapshot</h3>
-              <button onClick={() => setViewedRepair(null)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">
+            <div className="flex justify-between items-center border-b border-amstar-line pb-3 mb-4">
+              <h3 className="font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink">Vehicle Snapshot</h3>
+              <button onClick={() => setViewedRepair(null)} className="text-amstar-ink-faint hover:text-amstar-ink text-2xl leading-none">
                 &times;
               </button>
             </div>
 
             {viewedRepair.vehicle?.carImageUrl ? (
-              <img src={viewedRepair.vehicle.carImageUrl} alt="Vehicle" className="w-full h-64 object-cover rounded-xl mb-4 shadow" />
+              <img src={viewedRepair.vehicle.carImageUrl} alt="Vehicle" className="w-full h-64 object-cover rounded mb-4 border border-amstar-line" />
             ) : (
-              <div className="w-full h-48 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold text-sm mb-4">
+              <div className="w-full h-48 bg-amstar-field rounded flex items-center justify-center text-amstar-ink-faint font-cond uppercase tracking-widest text-sm mb-4">
                 No Photo Available
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4 text-sm mb-4">
               <div>
-                <span className="text-xs text-slate-400 font-bold uppercase block">Customer</span>
-                <span className="font-bold text-slate-800">{viewedRepair.customerName}</span>
+                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">Customer</span>
+                <span className="font-bold text-amstar-ink">{viewedRepair.customerName}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-400 font-bold uppercase block">Vehicle</span>
-                <span className="font-bold text-slate-800">
+                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">Vehicle</span>
+                <span className="font-bold text-amstar-ink">
                   {viewedRepair.vehicle?.year} {viewedRepair.vehicle?.make} {viewedRepair.vehicle?.model}
                 </span>
               </div>
               <div>
-                <span className="text-xs text-slate-400 font-bold uppercase block">VIN</span>
-                <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded text-slate-700">{viewedRepair.vehicle?.vin || 'N/A'}</span>
+                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">VIN</span>
+                <span className="font-mono tabular-nums text-xs bg-amstar-field px-2 py-1 rounded text-amstar-ink">{viewedRepair.vehicle?.vin || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-400 font-bold uppercase block">Plate</span>
-                <div className="inline-block border border-slate-400 bg-slate-100 px-3 py-1 rounded text-center font-bold">
-                  {viewedRepair.vehicle?.licensePlate} <span className="text-[10px] block text-slate-500">{viewedRepair.vehicle?.state}</span>
+                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">Plate</span>
+                <div className="inline-block border border-amstar-line bg-amstar-field px-3 py-1 rounded font-mono tabular-nums text-center font-bold">
+                  {viewedRepair.vehicle?.licensePlate} <span className="text-[10px] block text-amstar-ink-dim">{viewedRepair.vehicle?.state}</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex justify-between items-center">
+            <div className="bg-amstar-surface p-4 rounded border border-amstar-line flex justify-between items-center">
               <div>
-                <span className="text-xs text-slate-400 font-bold uppercase block">Job & Severity</span>
+                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">Job & Severity</span>
                 <span className="font-bold text-amstar-red text-base">{viewedRepair.serviceType}</span>
-                <span className="block mt-1 text-xs font-bold text-slate-600">Level {viewedRepair.severity} Priority</span>
+                <span className="block mt-1 text-xs font-bold text-amstar-ink-dim">Level {viewedRepair.severity} Priority</span>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400 font-bold uppercase block">Assigned Tech(s)</span>
-                <span className="font-bold text-slate-800 text-sm block">{viewedRepair.assignedWorker || 'Unassigned'}</span>
-                <span className="inline-block mt-1 text-xs font-bold bg-amstar-blue text-white px-2 py-0.5 rounded">
+                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">Assigned Tech(s)</span>
+                <span className="font-bold text-amstar-ink text-sm block">{viewedRepair.assignedWorker || 'Unassigned'}</span>
+                <span className="inline-block mt-1 text-xs font-bold bg-amstar-blue text-white px-2 py-0.5 rounded-sm font-cond uppercase tracking-wider border border-amstar-line">
                   {viewedRepair.status}
                 </span>
               </div>
@@ -377,23 +377,23 @@ export const App: React.FC = () => {
       {/* Tailwind Delete Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 space-y-4">
-            <h3 className="text-lg font-bold text-red-600 flex items-center gap-2">
+          <div className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-sm shadow-2xl space-y-4">
+            <h3 className="font-cond text-lg font-bold uppercase tracking-wider text-amstar-red flex items-center gap-2">
               ⚠️ Permanent Deletion
             </h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-sm text-amstar-ink-dim leading-relaxed">
               Are you sure you want to delete this ticket? This action removes it permanently from the PostgreSQL database.
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition"
+                className="px-4 py-2 bg-transparent border border-amstar-line hover:bg-amstar-surface text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition"
+                className="px-4 py-2 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest text-xs shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition"
               >
                 Delete Ticket
               </button>
@@ -404,7 +404,7 @@ export const App: React.FC = () => {
 
       {/* Modern Floating Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-8 right-8 px-6 py-4 rounded-xl shadow-2xl text-white font-bold text-sm z-[9999] flex items-center gap-3 animate-slide-up border ${toast.type === 'success' ? 'bg-emerald-600 border-emerald-500' : 'bg-red-600 border-red-500'}`}>
+        <div className={`fixed bottom-8 right-8 px-6 py-4 rounded-sm shadow-2xl text-white font-bold text-sm z-[9999] flex items-center gap-3 animate-slide-up border border-amstar-line ${toast.type === 'success' ? 'bg-emerald-700' : 'bg-red-600'}`}>
           <span className='text-lg'>{toast.type === 'success' ? '\u2713' : '⚠️'}</span>
           <span>{toast.message}</span>
         </div>
