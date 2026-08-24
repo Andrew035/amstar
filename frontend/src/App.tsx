@@ -216,10 +216,10 @@ export const App: React.FC = () => {
     window.location.reload();
   };
 
-  if (loading) return <div className='p-8 text-center text-slate-500'>Connecting to AMStar database...</div>
+  if (loading) return <div className='p-8 text-center text-amstar-ink-dim'>Connecting to AMStar database...</div>
 
   return (
-    <div className='min-h-screen bg-slate-50'>
+    <div className='min-h-screen bg-amstar-ground'>
 
       {/* Inline Animation CSS for the Toast */}
       <style>
