@@ -1,6 +1,6 @@
 import React from 'react';
 import type { VehicleRepair } from '../types/repair';
-import { getSeverityColor, getSeverityGlow, PANEL_STYLE } from '../styles/controls';
+import { getSeverityColor, getSeverityGlow, PANEL_STYLE, SEVERITY_TEXT } from '../styles/controls';
 
 const MonthlyReportCard = ({ repairs }: { repairs: VehicleRepair[] }) => {
   const now = new Date();
@@ -192,7 +192,7 @@ export const Dashboard: React.FC<{ repairs: VehicleRepair[] }> = ({ repairs }) =
                     <span className="text-xs text-amstar-ink-dim block">{item.serviceType}</span>
                   </div>
                   <div className="text-right shrink-0 ml-4">
-                    <span className={`px-2 py-0.5 text-white rounded-sm font-cond text-xs uppercase tracking-wider ${getSeverityColor(item.severity)} ${getSeverityGlow(item.severity)}`}>
+                    <span className={`px-2 py-0.5 ${SEVERITY_TEXT} rounded-sm font-cond text-xs uppercase tracking-wider ${getSeverityColor(item.severity)} ${getSeverityGlow(item.severity)}`}>
                       Level {item.severity}
                     </span>
                     <span className="font-mono text-xs text-amstar-ink-faint block mt-0.5 tabular-nums">Score: {item.priorityScore?.toFixed(1)}</span>
