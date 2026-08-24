@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const SHARED_INPUT_STYLE = "w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-800 shadow-sm transition-all focus:outline-none focus:border-amstar-blue focus:ring-2 focus:ring-amstar-blue/20";
+import {
+  SHARED_INPUT_STYLE,
+  FLOATING_PANEL_STYLE,
+  PANEL_ROW_STYLE,
+  LABEL_STYLE,
+  PANEL_STYLE,
+} from '../styles/controls';
 
 // === NEW: CUSTOM DATE PICKER ===
 const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
@@ -57,9 +63,9 @@ const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => voi
       {/* Hidden input to maintain HTML5 'required' validation */}
       <input type="text" readOnly required value={value} className="absolute opacity-0 w-0 h-0 -z-10" />
 
-      <div onClick={handleOpen} className={`${SHARED_INPUT_STYLE} flex justify-between items-center cursor-pointer ${!value ? 'text-slate-400' : 'text-slate-800 font-bold'}`}>
+      <div onClick={handleOpen} className={`${SHARED_INPUT_STYLE} flex justify-between items-center cursor-pointer ${!value ? 'text-amstar-ink-faint' : 'text-amstar-ink font-bold'}`}>
         <span className="truncate">{displayValue || "Select Date..."}</span>
-        <svg className="w-4 h-4 text-slate-400 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg className="w-4 h-4 text-amstar-ink-faint shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
         </svg>
       </div>
@@ -67,17 +73,17 @@ const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => voi
       {isOpen && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
-          <div className="fixed bg-white border border-slate-200 shadow-2xl rounded-xl z-[101] overflow-hidden p-4 w-64 select-none" style={{ top: coords.top, left: coords.left }} onClick={e => e.stopPropagation()}>
+          <div className={`${FLOATING_PANEL_STYLE} p-4 w-64 select-none`} style={{ top: coords.top, left: coords.left }} onClick={e => e.stopPropagation()}>
 
             <div className="flex justify-between items-center mb-4 px-1">
-              <button type="button" onClick={handlePrevMonth} className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded text-slate-500 font-black transition-colors">{"<"}</button>
-              <span className="text-sm font-black text-amstar-blue">{monthNames[currentView.getMonth()]} {currentView.getFullYear()}</span>
-              <button type="button" onClick={handleNextMonth} className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded text-slate-500 font-black transition-colors">{">"}</button>
+              <button type="button" onClick={handlePrevMonth} className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors">{"<"}</button>
+              <span className="text-sm font-black text-amstar-ink">{monthNames[currentView.getMonth()]} {currentView.getFullYear()}</span>
+              <button type="button" onClick={handleNextMonth} className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors">{">"}</button>
             </div>
 
             <div className="grid grid-cols-7 gap-1 text-center mb-2">
               {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                <span key={d} className="text-[10px] font-black text-slate-400 uppercase">{d}</span>
+                <span key={d} className="text-[10px] font-black text-amstar-ink-faint uppercase">{d}</span>
               ))}
             </div>
 
@@ -93,7 +99,7 @@ const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => voi
                     key={day}
                     onClick={() => handleSelectDate(day)}
                     className={`w-7 h-7 mx-auto rounded flex items-center justify-center text-xs font-bold cursor-pointer transition-colors
-                      ${isSelected ? 'bg-amstar-blue text-white shadow-md' : isToday ? 'text-amstar-blue bg-blue-50 border border-blue-200' : 'text-slate-700 hover:bg-slate-100'}
+                      ${isSelected ? 'bg-amstar-blue text-white shadow-md' : isToday ? 'text-amstar-ink bg-amstar-raised border border-amstar-red/50' : 'text-amstar-ink hover:bg-amstar-surface'}
                     `}
                   >
                     {day}
@@ -109,62 +115,49 @@ const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => voi
   );
 };
 
-const SeverityDropdown: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+const SEVERITY_LABELS: Record<number, string> = {
+  1: 'Minor',
+  2: 'Low',
+  3: 'Moderate',
+  4: 'Major',
+  5: 'Critical',
+};
 
-  const options = [
-    { val: 1, label: "Level 1 - Low", color: "bg-emerald-500" },
-    { val: 2, label: "Level 2 - Minor", color: "bg-blue-500" },
-    { val: 3, label: "Level 3 - Standard", color: "bg-amber-500" },
-    { val: 4, label: "Level 4 - Major/Urgent", color: "bg-orange-500" },
-    { val: 5, label: "Level 5 - Critical", color: "bg-red-600" }
-  ];
+const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => {
+  const levels = [1, 2, 3, 4, 5];
 
-  const currentOption = options.find(o => o.val === value);
-
-  const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-    setIsOpen(true);
-  };
-
-  const handleSelect = (val: number) => {
-    onChange(val);
-    setIsOpen(false);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, level: number) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const next = e.key === 'ArrowRight' ? Math.min(5, level + 1) : Math.max(1, level - 1);
+      onChange(next);
+    }
   };
 
   return (
-    <div className="relative w-full">
-      <div onClick={openDropdown} className={`${SHARED_INPUT_STYLE} flex justify-between items-center cursor-pointer font-bold`}>
-        <span className="truncate flex items-center gap-2.5">
-          {currentOption ? (
-            <>
-              <span className={`w-2.5 h-2.5 rounded-full ${currentOption.color} shrink-0 shadow-sm`}></span>
-              {currentOption.label}
-            </>
-          ) : "Select Level..."}
-        </span>
-        <span className="text-xs ml-2 text-slate-400 shrink-0">▼</span>
-      </div>
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
-          <div className="fixed bg-white border border-slate-200 shadow-2xl rounded-lg z-[101] overflow-hidden" style={{ top: coords.top, left: coords.left, width: coords.width }} onClick={e => e.stopPropagation()}>
-            {options.map(opt => (
-              <div
-                key={opt.val}
-                onClick={() => handleSelect(opt.val)}
-                className="px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors flex items-center gap-2.5"
-              >
-                <span className={`w-2.5 h-2.5 rounded-full ${opt.color} shrink-0 shadow-sm`}></span>
-                {opt.label}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+    <div role="radiogroup" aria-label="Severity Level" className="flex gap-1.5">
+      {levels.map(level => {
+        const selected = value === level;
+        return (
+          <button
+            key={level}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-label={`Level ${level} - ${SEVERITY_LABELS[level]}`}
+            title={`Level ${level} - ${SEVERITY_LABELS[level]}`}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(level)}
+            onKeyDown={e => handleKeyDown(e, level)}
+            className={`flex-1 min-h-[44px] rounded font-cond text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amstar-red/40 ${selected
+              ? 'text-white border border-amstar-red bg-amstar-red/[0.16] shadow-[inset_0_0_12px_rgba(214,32,39,0.35)]'
+              : 'text-amstar-ink-faint border border-amstar-line hover:border-amstar-red/60'
+            }`}
+          >
+            {level}
+          </button>
+        );
+      })}
     </div>
   );
 };
@@ -222,9 +215,9 @@ const ServiceAutocomplete: React.FC<{
       {isOpen && filteredServices.length > 0 && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
-          <div className="fixed bg-white border border-slate-200 shadow-2xl rounded-lg z-[101] overflow-hidden max-h-48 overflow-y-auto" style={{ top: coords.top, left: coords.left, width: coords.width }}>
+          <div className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`} style={{ top: coords.top, left: coords.left, width: coords.width }}>
             {filteredServices.map(service => (
-              <div key={service} onMouseDown={(e) => { e.preventDefault(); handleSelect(service); }} className="px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
+              <div key={service} onMouseDown={(e) => { e.preventDefault(); handleSelect(service); }} className={`${PANEL_ROW_STYLE} uppercase`}>
                 {service}
               </div>
             ))}
@@ -252,13 +245,13 @@ const StateSearch: React.FC<{ value: string; onChange: (val: string) => void }> 
   };
   return (
     <div className="relative w-24 shrink-0">
-      <label className="block text-sm font-bold text-slate-600 mb-1">State</label>
-      <input type="text" value={search} onChange={e => { setSearch(e.target.value); setIsOpen(true); }} onFocus={() => setIsOpen(true)} onBlur={handleBlur} placeholder="MD" className={`${SHARED_INPUT_STYLE} text-center font-bold uppercase`} />
+      <label className={LABEL_STYLE}>State</label>
+      <input type="text" value={search} onChange={e => { setSearch(e.target.value); setIsOpen(true); }} onFocus={() => setIsOpen(true)} onBlur={handleBlur} placeholder="MD" className={`${SHARED_INPUT_STYLE} text-center font-bold uppercase tabular-nums`} />
       {isOpen && filteredStates.length > 0 && (
-        <div className="absolute top-full left-0 mt-1 w-48 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-2xl z-[100] overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 w-48 max-h-48 overflow-y-auto bg-amstar-raised border border-amstar-line rounded shadow-2xl z-[100] overflow-hidden">
           {filteredStates.map(([abbr, name]) => (
-            <div key={abbr} onMouseDown={(e) => { e.preventDefault(); handleSelect(abbr); }} className="px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 flex justify-between items-center transition-colors">
-              <span className="truncate">{name}</span><span className="text-amstar-blue ml-2 shrink-0">{abbr}</span>
+            <div key={abbr} onMouseDown={(e) => { e.preventDefault(); handleSelect(abbr); }} className={`${PANEL_ROW_STYLE} flex justify-between items-center`}>
+              <span className="truncate">{name}</span><span className="text-amstar-ink-dim ml-2 shrink-0">{abbr}</span>
             </div>
           ))}
         </div>
@@ -283,20 +276,20 @@ const FormWorkerDropdown: React.FC<{ currentWorkers: string; onAssign: (workers:
     <>
       <div onClick={openDropdown} className={`${SHARED_INPUT_STYLE} flex justify-between items-center cursor-pointer`}>
         <span className="truncate" title={selectedArray.length === 0 ? 'Select technicians...' : selectedArray.join(', ')}>
-          {selectedArray.length === 0 ? <span className="text-slate-400">Select technicians...</span> : selectedArray.join(', ')}
+          {selectedArray.length === 0 ? <span className="text-amstar-ink-faint">Select technicians...</span> : selectedArray.join(', ')}
         </span>
-        <span className="text-xs ml-2 text-slate-400 shrink-0">▼</span>
+        <span className="text-xs ml-2 text-amstar-ink-faint shrink-0">▼</span>
       </div>
       {isOpen && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
-          <div className="fixed bg-white border border-slate-200 shadow-2xl rounded-lg z-[101] overflow-hidden w-64" style={{ top: coords.top, left: coords.left }} onClick={e => e.stopPropagation()}>
-            <div className="bg-slate-50 px-3 py-2 border-b border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-wider">Assign Technicians</div>
+          <div className={`${FLOATING_PANEL_STYLE} w-64`} style={{ top: coords.top, left: coords.left }} onClick={e => e.stopPropagation()}>
+            <div className="bg-amstar-raised px-3 py-2 border-b border-amstar-line-soft text-[10px] font-black text-amstar-ink-dim uppercase tracking-wider">Assign Technicians</div>
             <div className="max-h-48 overflow-y-auto p-1">
               {workersList.map(worker => (
-                <label key={worker} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 rounded cursor-pointer transition">
-                  <input type="checkbox" checked={selectedArray.includes(worker)} onChange={() => handleToggle(worker)} className="w-4 h-4 rounded text-amstar-blue focus:ring-amstar-blue border-slate-300 cursor-pointer" />
-                  <span className="text-sm font-bold text-slate-700">{worker}</span>
+                <label key={worker} className="flex items-center gap-3 px-3 py-2 hover:bg-amstar-surface rounded-sm cursor-pointer transition">
+                  <input type="checkbox" checked={selectedArray.includes(worker)} onChange={() => handleToggle(worker)} className="w-4 h-4 rounded text-amstar-blue focus:ring-amstar-blue border-amstar-line cursor-pointer" />
+                  <span className="text-sm font-bold text-amstar-ink">{worker}</span>
                 </label>
               ))}
             </div>
@@ -346,7 +339,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
             else if (summaryData.thumbnail?.source) finalImageUrl = summaryData.thumbnail.source;
           }
         }
-      } catch (err) { console.warn("Background decoding failed."); }
+      } catch { console.warn("Background decoding failed."); }
     }
 
     const payload = {
@@ -360,42 +353,42 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
       setCustomerName(''); setVin(''); setLicensePlate(''); setServiceType(''); setSeverity(3); setExpectedCompletionDate('');
       if (isAdmin) setAssignedWorkers('');
       onSuccess();
-    } catch (err) { setError('Failed to submit. Ensure you are logged in and the server is running.'); }
+    } catch { setError('Failed to submit. Ensure you are logged in and the server is running.'); }
     finally { setIsSubmitting(false); }
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8 overflow-visible">
-      <h3 className="mt-0 border-b border-slate-100 pb-3 mb-4 text-lg font-bold text-amstar-blue">New Vehicle Intake</h3>
-      {error && <div className="text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg mb-4 text-sm font-bold">{error}</div>}
+    <div className={`${PANEL_STYLE} p-6 mb-8 overflow-visible`}>
+      <h3 className="mt-0 border-b border-amstar-line-soft pb-3 mb-4 font-cond text-lg font-bold uppercase tracking-wider text-amstar-ink">New Vehicle Intake</h3>
+      {error && <div className="text-white bg-amstar-red/20 border border-amstar-red p-3 rounded-lg mb-4 text-sm font-bold">{error}</div>}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div><label className="block text-sm font-bold text-slate-600 mb-1">Customer Name</label><input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} required className={SHARED_INPUT_STYLE} /></div>
-        <div><label className="block text-sm font-bold text-slate-600 mb-1">VIN (17-Digits)</label><input type="text" value={vin} onChange={e => setVin(e.target.value.toUpperCase())} maxLength={17} placeholder='e.g. 1G1RC...' className={`${SHARED_INPUT_STYLE} font-mono`} /></div>
-        <div className="flex gap-3"><div className="flex-1"><label className="block text-sm font-bold text-slate-600 mb-1">Plate</label><input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} required className={SHARED_INPUT_STYLE} /></div><StateSearch value={vehicleState} onChange={setVehicleState} /></div>
+        <div><label className={LABEL_STYLE}>Customer Name</label><input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} required className={SHARED_INPUT_STYLE} /></div>
+        <div><label className={LABEL_STYLE}>VIN (17-Digits)</label><input type="text" value={vin} onChange={e => setVin(e.target.value.toUpperCase())} maxLength={17} placeholder='e.g. 1G1RC...' className={`${SHARED_INPUT_STYLE} font-mono tabular-nums`} /></div>
+        <div className="flex gap-3"><div className="flex-1"><label className={LABEL_STYLE}>Plate</label><input type="text" value={licensePlate} onChange={e => setLicensePlate(e.target.value)} required className={`${SHARED_INPUT_STYLE} tabular-nums`} /></div><StateSearch value={vehicleState} onChange={setVehicleState} /></div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-600 mb-1">Service Required</label>
+          <label className={LABEL_STYLE}>Service Required</label>
           <ServiceAutocomplete value={serviceType} onChange={setServiceType} historicalMap={historicalServiceMap} onAutoSetSeverity={setSeverity} />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-600 mb-1">Severity Level</label>
-          <SeverityDropdown value={severity} onChange={setSeverity} />
+          <label className={LABEL_STYLE}>Severity Level</label>
+          <SeveritySegments value={severity} onChange={setSeverity} />
         </div>
 
         {/* === REPLACED NATIVE DATE WITH CUSTOM COMPONENT === */}
         <div>
-          <label className="block text-sm font-bold text-slate-600 mb-1">Target Completion</label>
+          <label className={LABEL_STYLE}>Target Completion</label>
           <CustomDatePicker value={expectedCompletionDate} onChange={setExpectedCompletionDate} />
         </div>
 
         {isAdmin && (
           <div className="md:col-span-2">
-            <label className="block text-sm font-bold text-slate-600 mb-1">Assign Technician(s) <span className="font-normal text-xs text-slate-400 ml-2">(Optional)</span></label>
+            <label className={LABEL_STYLE}>Assign Technician(s) <span className="font-normal text-xs text-amstar-ink-faint ml-2 normal-case tracking-normal">(Optional)</span></label>
             <div className="relative"><FormWorkerDropdown currentWorkers={assignedWorkers} onAssign={setAssignedWorkers} /></div>
           </div>
         )}
-        <div className="md:col-span-2 lg:col-span-4 flex justify-end mt-2 pt-5 border-t border-slate-100"><button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-amstar-red hover:bg-red-700 text-white rounded-lg shadow-md transition-all font-bold disabled:opacity-70 disabled:cursor-not-allowed">{isSubmitting ? 'Decoding VIN & Submitting...' : 'Add Vehicle to Queue'}</button></div>
+        <div className="md:col-span-2 lg:col-span-4 flex justify-end mt-2 pt-5 border-t border-amstar-line-soft"><button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-all font-bold disabled:opacity-70 disabled:cursor-not-allowed">{isSubmitting ? 'Decoding VIN & Submitting...' : 'Add Vehicle to Queue'}</button></div>
       </form>
     </div>
   );
