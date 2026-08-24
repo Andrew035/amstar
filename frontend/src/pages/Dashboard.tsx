@@ -1,17 +1,6 @@
 import React from 'react';
 import type { VehicleRepair } from '../types/repair';
-
-// === NEW: UNIVERSAL SEVERITY COLOR HELPER ===
-const getSeverityColor = (severity: number) => {
-  switch (severity) {
-    case 1: return 'bg-emerald-500';
-    case 2: return 'bg-blue-500';
-    case 3: return 'bg-amber-500';
-    case 4: return 'bg-orange-500';
-    case 5: return 'bg-red-600';
-    default: return 'bg-slate-500';
-  }
-};
+import { getSeverityColor, getSeverityGlow, PANEL_STYLE } from '../styles/controls';
 
 const MonthlyReportCard = ({ repairs }: { repairs: VehicleRepair[] }) => {
   const now = new Date();
@@ -36,11 +25,11 @@ const MonthlyReportCard = ({ repairs }: { repairs: VehicleRepair[] }) => {
     : '0.0';
 
   const avgSeverityNum = parseFloat(avgSeverityStr);
-  let avgTextColor = 'text-emerald-500';
-  if (avgSeverityNum >= 4.5) avgTextColor = 'text-red-600';
-  else if (avgSeverityNum >= 3.5) avgTextColor = 'text-orange-500';
-  else if (avgSeverityNum >= 2.5) avgTextColor = 'text-amber-500';
-  else if (avgSeverityNum >= 1.5) avgTextColor = 'text-blue-500';
+  let avgTextColor = 'text-sev-1';
+  if (avgSeverityNum >= 4.5) avgTextColor = 'text-sev-5';
+  else if (avgSeverityNum >= 3.5) avgTextColor = 'text-sev-4';
+  else if (avgSeverityNum >= 2.5) avgTextColor = 'text-sev-3';
+  else if (avgSeverityNum >= 1.5) avgTextColor = 'text-sev-2';
 
   const serviceCounts: Record<string, number> = {};
   completedThisMonth.forEach(r => {
@@ -59,39 +48,39 @@ const MonthlyReportCard = ({ repairs }: { repairs: VehicleRepair[] }) => {
   });
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-      <div className="flex justify-between items-end border-b border-slate-100 pb-3 mb-4">
+    <div className={`${PANEL_STYLE} p-6`}>
+      <div className="flex justify-between items-end border-b border-amstar-line-soft pb-3 mb-4">
         <div>
-          <h3 className="text-lg font-black text-amstar-blue uppercase tracking-tight">Shop Performance Report</h3>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{monthName} {currentYear}</p>
+          <h3 className="font-cond text-lg font-bold text-amstar-ink uppercase tracking-wider">Shop Performance Report</h3>
+          <p className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest">{monthName} {currentYear}</p>
         </div>
-        <span className="bg-sky-100 text-sky-700 font-bold px-3 py-1 rounded-full text-xs">
+        <span className="bg-amstar-raised text-amstar-ink-dim font-cond uppercase tracking-widest px-3 py-1 rounded-sm text-[11px] border border-amstar-line">
           Live Data
         </span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-x divide-slate-100">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-x divide-amstar-line-soft">
         <div className="px-4 text-center">
-          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Completed</span>
-          <span className="text-3xl font-black text-emerald-600">{completedThisMonth.length}</span>
-          <span className="block text-[10px] text-slate-400 font-medium mt-1">Vehicles fixed</span>
+          <span className="block font-cond text-xs text-amstar-ink-dim uppercase tracking-wider mb-1">Completed</span>
+          <span className="font-mono text-3xl font-bold tabular-nums text-sev-1">{completedThisMonth.length}</span>
+          <span className="block text-[10px] text-amstar-ink-faint font-medium mt-1">Vehicles fixed</span>
         </div>
 
         <div className="px-4 text-center">
-          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">New Intake</span>
-          <span className="text-3xl font-black text-blue-600">{intakeThisMonth.length}</span>
-          <span className="block text-[10px] text-slate-400 font-medium mt-1">Vehicles added</span>
+          <span className="block font-cond text-xs text-amstar-ink-dim uppercase tracking-wider mb-1">New Intake</span>
+          <span className="font-mono text-3xl font-bold tabular-nums text-sev-2">{intakeThisMonth.length}</span>
+          <span className="block text-[10px] text-amstar-ink-faint font-medium mt-1">Vehicles added</span>
         </div>
 
         <div className="px-4 text-center">
-          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Severity</span>
-          <span className={`text-3xl font-black transition-colors ${avgTextColor}`}>{avgSeverityStr}</span>
-          <span className="block text-[10px] text-slate-400 font-medium mt-1">Out of 5.0</span>
+          <span className="block font-cond text-xs text-amstar-ink-dim uppercase tracking-wider mb-1">Avg Severity</span>
+          <span className={`font-mono text-3xl font-bold tabular-nums transition-colors ${avgTextColor}`}>{avgSeverityStr}</span>
+          <span className="block text-[10px] text-amstar-ink-faint font-medium mt-1">Out of 5.0</span>
         </div>
 
         <div className="px-4 text-center flex flex-col justify-center">
-          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Top Service</span>
-          <span className="text-sm font-bold text-slate-700 leading-tight line-clamp-2">{topService}</span>
+          <span className="block font-cond text-xs text-amstar-ink-dim uppercase tracking-wider mb-1">Top Service</span>
+          <span className="text-sm font-bold text-amstar-ink leading-tight line-clamp-2">{topService}</span>
         </div>
       </div>
     </div>
@@ -104,9 +93,9 @@ const CircularProgress = ({ percent, color, label, count }: { percent: number; c
   const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-1">
+    <div className={`${PANEL_STYLE} flex flex-col items-center p-6 flex-1`}>
       <svg width="100" height="100">
-        <circle stroke="#f1f5f9" fill="transparent" strokeWidth="8" r={radius} cx="50" cy="50" />
+        <circle stroke="#162b48" fill="transparent" strokeWidth="8" r={radius} cx="50" cy="50" />
         <circle
           stroke={color}
           fill="transparent"
@@ -120,11 +109,18 @@ const CircularProgress = ({ percent, color, label, count }: { percent: number; c
           className="transition-all duration-1000 ease-out"
           transform="rotate(-90 50 50)"
         />
-        <text x="50" y="50" fill="#0f172a" fontSize="1.5rem" fontWeight="bold" textAnchor="middle" dy=".3em">
+        {/* Tick marks at the cardinal points */}
+        <g stroke="#2d5590" strokeWidth="1.5">
+          <line x1="50" y1="4" x2="50" y2="10" />
+          <line x1="96" y1="50" x2="90" y2="50" />
+          <line x1="50" y1="96" x2="50" y2="90" />
+          <line x1="4" y1="50" x2="10" y2="50" />
+        </g>
+        <text x="50" y="50" fill="#eef3fa" fontSize="1.5rem" fontWeight="bold" textAnchor="middle" dy=".3em" fontFamily='"Roboto Mono", ui-monospace, monospace'>
           {count}
         </text>
       </svg>
-      <div className="text-sm font-bold text-slate-600 mt-3 text-center">{label}</div>
+      <div className="font-cond uppercase tracking-widest text-sm text-amstar-ink-dim mt-3 text-center">{label}</div>
     </div>
   );
 };
@@ -145,32 +141,32 @@ export const Dashboard: React.FC<{ repairs: VehicleRepair[] }> = ({ repairs }) =
   return (
     <div className="space-y-6">
       <div className="border-b-2 border-amstar-red pb-2">
-        <h2 className="text-2xl font-black text-amstar-blue">Real-Time Shop Metrics</h2>
+        <h2 className="font-cond text-2xl font-bold uppercase tracking-wider text-amstar-ink">Real-Time Shop Metrics</h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <CircularProgress percent={pendingPercent} color="#f59e0b" label="Vehicles Pending" count={pendingCount} />
-        <CircularProgress percent={inProgressPercent} color="#3b82f6" label="Vehicles In Progress" count={inProgressCount} />
+        <CircularProgress percent={pendingPercent} color="#f0a02a" label="Vehicles Pending" count={pendingCount} />
+        <CircularProgress percent={inProgressPercent} color="#38bdf8" label="Vehicles In Progress" count={inProgressCount} />
         <CircularProgress percent={completedPercent} color="#10b981" label="Vehicles Completed" count={completedCount} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Active Bays */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <h3 className="text-base font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4">
+        <div className={`${PANEL_STYLE} p-6`}>
+          <h3 className="font-cond text-base uppercase tracking-widest text-amstar-ink-dim border-b border-amstar-line-soft pb-3 mb-4">
             Active Bays (In Progress)
           </h3>
           {activeWorkers.length === 0 ? (
-            <p className="text-sm text-slate-400">No technicians are currently working on active jobs.</p>
+            <p className="text-sm text-amstar-ink-faint">No technicians are currently working on active jobs.</p>
           ) : (
-            <ul className="divide-y divide-slate-100 max-h-64 overflow-y-auto pr-2">
+            <ul className="divide-y divide-amstar-line-soft max-h-64 overflow-y-auto pr-2">
               {activeWorkers.map(item => (
                 <li key={item.id} className="py-3 flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shrink-0" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-sev-2 animate-pulse shrink-0" />
                   <div>
-                    <span className="font-bold text-slate-800">{item.assignedWorker}</span>
-                    <span className="text-xs text-slate-500 block">
+                    <span className="font-bold text-amstar-ink">{item.assignedWorker}</span>
+                    <span className="text-xs text-amstar-ink-dim block">
                       {item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model} — {item.serviceType}
                     </span>
                   </div>
@@ -181,26 +177,25 @@ export const Dashboard: React.FC<{ repairs: VehicleRepair[] }> = ({ repairs }) =
         </div>
 
         {/* Critical Approvals */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <h3 className="text-base font-bold text-red-600 border-b border-slate-100 pb-3 mb-4">
+        <div className={`${PANEL_STYLE} p-6`}>
+          <h3 className="font-cond text-base uppercase tracking-widest text-amstar-red border-b border-amstar-line-soft pb-3 mb-4">
             Critical Pending Vehicles
           </h3>
           {criticalPending.length === 0 ? (
-            <p className="text-sm text-slate-400">No critical tickets are pending.</p>
+            <p className="text-sm text-amstar-ink-faint">No critical tickets are pending.</p>
           ) : (
-            <ul className="divide-y divide-slate-100 max-h-64 overflow-y-auto pr-2">
+            <ul className="divide-y divide-amstar-line-soft max-h-64 overflow-y-auto pr-2">
               {criticalPending.map(item => (
                 <li key={item.id} className="py-3 flex justify-between items-center">
                   <div>
-                    <strong className="text-slate-800 text-sm">{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</strong>
-                    <span className="text-xs text-slate-500 block">{item.serviceType}</span>
+                    <strong className="text-amstar-ink text-sm">{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</strong>
+                    <span className="text-xs text-amstar-ink-dim block">{item.serviceType}</span>
                   </div>
                   <div className="text-right shrink-0 ml-4">
-                    {/* === UPDATED: UNIVERSAL SEVERITY COLORS APPLIED HERE === */}
-                    <span className={`px-2 py-0.5 text-white rounded text-xs font-bold shadow-sm ${getSeverityColor(item.severity)}`}>
+                    <span className={`px-2 py-0.5 text-white rounded-sm font-cond text-xs uppercase tracking-wider ${getSeverityColor(item.severity)} ${getSeverityGlow(item.severity)}`}>
                       Level {item.severity}
                     </span>
-                    <span className="text-xs text-slate-400 block mt-0.5">Score: {item.priorityScore?.toFixed(1)}</span>
+                    <span className="font-mono text-xs text-amstar-ink-faint block mt-0.5 tabular-nums">Score: {item.priorityScore?.toFixed(1)}</span>
                   </div>
                 </li>
               ))}
