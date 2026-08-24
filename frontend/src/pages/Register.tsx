@@ -62,7 +62,7 @@ export const Register: React.FC = () => {
         <h2 className="font-cond text-xl uppercase tracking-wider text-amstar-ink-dim mb-6 text-center">Create Technician Account</h2>
 
         {error && <div className="mb-4 p-3 bg-amstar-red/20 text-white text-sm font-bold rounded-lg text-center border border-amstar-red">{error}</div>}
-        {successMessage && <div className='mb-4 p-3 bg-sev-1/20 text-sev-1 text-sm font-bold rounded-lg text-center border border-sev-1/50 flex items-center justify-center gap-2'>{successMessage}</div>}
+        {successMessage && <div className='mb-4 p-3 bg-sev-1/20 text-white text-sm font-bold rounded-lg text-center border border-sev-1 flex items-center justify-center gap-2'>{successMessage}</div>}
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
