@@ -1091,6 +1091,44 @@ Darkening the background is preferred over switching the success toast to dark t
 
 Verified fine and needing no change: the deep-dive modal's status chip, `text-white` on `bg-amstar-blue` `#0b3068`, at **12.83:1**.
 
+## Amendment E (after Task 9 review) — red as text on dark is systemically broken
+
+**The worst plan defect of this run.** Task 9's Step 1 table asserted, of `font-bold text-amstar-red` on `bg-amstar-surface`: *"unchanged — red on amstar-surface reads fine."* That claim was never computed. It measures **2.43:1**.
+
+`amstar-red` `#d62027` is a dark, saturated red. It works as a **fill** under white text (5.13:1) and as a border. As **text on a dark ground it cannot clear AA anywhere**:
+
+| Foreground | on `amstar-surface` | on `amstar-raised` | on `amstar-blue` |
+|---|---|---|---|
+| `amstar-red` `#d62027` | 2.43:1 ❌ | 2.03:1 ❌ | 2.50:1 ❌ |
+| `sev-5` `#ff3b41` | 3.54:1 ❌ | 2.96:1 ❌ | 3.64:1 ❌ |
+| **`#ff9ca0`** | **6.25:1 ✅** | **5.22:1 ✅** | **6.42:1 ✅** |
+
+The Task 9 reviewer found the two instances inside its own diff. An audit of the whole tree found **six**, four of them in files already reviewed and approved — the per-task reviews could not see them because each reviewer is scoped to one task's diff. This is the class of defect only a whole-tree audit catches.
+
+**Fix — add a text-specific red token.** `amstar-red` stays frozen and keeps its fill/border role. New token in `tailwind.config.js`:
+
+```js
+// Red as TEXT on a dark ground. amstar-red #d62027 is a fill colour — as text it
+// measures 2.0-2.5:1 on every surface in this theme and fails WCAG AA. Never use
+// text-amstar-red on a dark background; use text-amstar-red-ink.
+"red-ink": "#ff9ca0",
+```
+
+All six `text-amstar-red` usages become `text-amstar-red-ink`:
+
+| File | Line | Element |
+|---|---|---|
+| `App.tsx` | 361 | deep-dive modal service name |
+| `App.tsx` | 381 | "Permanent Deletion" heading |
+| `Navbar.tsx` | 52 | Log Out button label (keeps `hover:text-white` on `hover:bg-amstar-red`, 5.13:1) |
+| `Login.tsx` | 96 | "Register here" link |
+| `Register.tsx` | 115 | "Log in" link |
+| `Dashboard.tsx` | 181 | "Critical Pending Vehicles" heading |
+
+`bg-amstar-red` and `border-amstar-red` are untouched everywhere — those roles are fine.
+
+**Deferred, for the final review to triage:** `border-amstar-red` against dark grounds measures ~2.4:1, under the 3:1 WCAG floor for non-text UI boundaries. Every current use pairs the border with another cue (a fill, a label, or a focus ring), so nothing depends on the border alone — but a future control that does would fail.
+
 ## Amendment C (mid-execution, after Task 7 review)
 
 **Problem — a functional bug in this plan's own Task 7 Step 3 code.** `SeveritySegments`'s arrow-key handler was written as `onKeyDown={e => handleKeyDown(e, level)}`, deriving the next value from **the pressed button's own fixed `level`** rather than from the current `value`, and never moving DOM focus.
