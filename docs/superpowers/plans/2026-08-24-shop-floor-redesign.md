@@ -1055,11 +1055,41 @@ Legitimate survivors are the saturated `-500`/`-600` values inside helpers being
 | `History.tsx:197` | `bg-sky-50` | row open in the deep-dive modal | `bg-amstar-raised` |
 | `RepairForm.tsx:96` | `bg-blue-50 border-blue-200` | "today" in the date picker | `bg-amstar-raised border-amstar-red/50` |
 | `Pricing.tsx:44` | `bg-blue-50/40 border-amstar-blue/30` | edited/dirty pricing row | `bg-amstar-raised border-amstar-red/40` |
-| `Register.tsx:64` | `bg-emerald-50 text-emerald-600 border-emerald-100` | success message | `bg-sev-1/20 text-sev-1 border-sev-1/50` |
+| `Register.tsx:64` | `bg-emerald-50 text-emerald-600 border-emerald-100` | success message | `bg-sev-1/20 text-white border-sev-1` — **corrected, see below** |
 
 `RepairForm.tsx:117-119` (`bg-emerald-500`/`bg-blue-500`/`bg-amber-500` in the `SeverityDropdown` options array) and `History.tsx:102-104` (local `getStatusStyle`) need no treatment — both are inside code Tasks 7 and 6 delete outright.
 
 **Assignment.** `ActiveQueue.tsx` is already complete, so its three row-highlight fixes are batched into Task 6 alongside `History.tsx`'s two — the same change in two files. Tasks 7 and 8 pick up their own rows above.
+
+### Amendment B correction (after Task 8 review)
+
+The success-box row above originally read `bg-sev-1/20 text-sev-1 border-sev-1/50`. That was **wrong** and shipped a WCAG AA failure at **3.55:1**.
+
+Root cause worth remembering: `sev-1` is a *background* token, designed to be paired with dark text (`SEVERITY_TEXT`). Using it as a **foreground over a translucent tint of itself** puts two similar luminances against each other — the green text sits at L≈0.36 and the composited green-tinted background at L≈0.066, far closer than the white-on-red pattern it was modelled on. **The `text-<colour>` on `bg-<same colour>/20` pattern does not generalise.** It happens to work for red only because white is the foreground.
+
+Corrected values, mirroring the already-passing error box:
+
+| Element | Value | Ratio |
+|---|---|---|
+| Success box (`Register.tsx`) | `bg-sev-1/20 text-white border-sev-1` | **9.00:1** |
+| Error box (existing, unchanged) | `bg-amstar-red/20 text-white border-amstar-red` | 11.97:1 |
+
+Also corrected in the same pass — `Pricing.tsx` "Total Billed" (`text-emerald-600` on the new `bg-amstar-ground/40`) measured 3.62:1 and passed only via the large-text exemption, because Task 8 darkened the background beneath it without recomputing. It becomes `text-sev-1`, which measures **5.38:1** and clears AA at any size while staying green.
+
+## Amendment D (pre-emptive, before Task 9)
+
+Contrast computed **ahead of** implementation this time, rather than caught in review. The toast keeps its emerald/red split per Task 9 Step 3, but the success variant fails as specified:
+
+| Toast | Current | Ratio | Action |
+|---|---|---|---|
+| Success | `text-white` on `bg-emerald-600` `#059669` | **3.77:1** | **FAIL** → `bg-emerald-700` `#047857` = **5.48:1** |
+| Error | `text-white` on `bg-red-600` `#dc2626` | 4.83:1 | passes, leave it |
+
+Toast text is `text-sm font-bold` — small text, so the 4.5:1 floor applies, not the 3:1 large-text exemption.
+
+Darkening the background is preferred over switching the success toast to dark text: it keeps `text-white` on **both** toasts, so the two states stay visually consistent and only one class changes.
+
+Verified fine and needing no change: the deep-dive modal's status chip, `text-white` on `bg-amstar-blue` `#0b3068`, at **12.83:1**.
 
 ## Amendment C (mid-execution, after Task 7 review)
 
