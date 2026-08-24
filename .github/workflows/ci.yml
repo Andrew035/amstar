@@ -18,7 +18,7 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cahce: maven
+        cache: maven
 
     - name: Run Backend Tests
       run: |
