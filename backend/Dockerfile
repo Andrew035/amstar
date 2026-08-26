@@ -8,4 +8,7 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=build /app/target/repair-service-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
+RUN useradd -r -u 1001 amstar && chown -R amstar:amstar /app
+USER amstar
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -3,6 +3,7 @@ package com.amstar.repair.service;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -13,10 +14,13 @@ import java.util.List;
 public class PriorityQueueService {
   private final VehicleRepairRepository repository;
   private final VehicleLookupService lookupService;
+  private final TicketAssemblyService assembly;
 
-  public PriorityQueueService(VehicleRepairRepository repository, VehicleLookupService lookupService) {
+  public PriorityQueueService(VehicleRepairRepository repository, VehicleLookupService lookupService,
+      TicketAssemblyService assembly) {
     this.repository = repository;
     this.lookupService = lookupService;
+    this.assembly = assembly;
   }
 
   public double calculatePriorityScore(VehicleRepair repair) {
@@ -46,6 +50,7 @@ public class PriorityQueueService {
     return activeRepairs;
   }
 
+  @Transactional
   public VehicleRepair createRepair(VehicleRepair repair) {
     if (repair.getEntryDate() == null) {
       repair.setEntryDate(LocalDate.now());
@@ -57,9 +62,13 @@ public class PriorityQueueService {
     // Intercept the repair to fetch the car image and details before saving
     lookupService.enrichVehicleData(repair);
 
+    // Resolve the inbound comma strings into customer / vehicle / join rows
+    assembly.assemble(repair);
+
     return repository.save(repair);
   }
 
+  @Transactional
   public boolean updateRepairStatus(Long id, String newStatus) {
     return repository.findById(id).map(repair -> {
       repair.setStatus(newStatus);
@@ -77,6 +86,7 @@ public class PriorityQueueService {
     }).orElse(false);
   }
 
+  @Transactional
   public boolean assignWorker(Long id, String workerUsername) {
     return repository.findById(id).map(repair -> {
       repair.setAssignedWorker(workerUsername);
@@ -85,6 +95,7 @@ public class PriorityQueueService {
     }).orElse(false);
   }
 
+  @Transactional
   public boolean updatePricing(Long id, VehicleRepair pricingData) {
     java.util.Optional<VehicleRepair> optionalRepair = repository.findById(id);
 
@@ -104,9 +115,10 @@ public class PriorityQueueService {
     return false;
   }
 
+  @Transactional
   public boolean updateServiceType(Long id, String newServiceType) {
     return repository.findById(id).map(repair -> {
-      repair.setServiceType(newServiceType);
+      assembly.applyServices(repair, newServiceType);
       repository.save(repair);
       return true;
     }).orElse(false);

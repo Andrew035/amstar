@@ -10,20 +10,53 @@ public class Vehicle {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "customer_id")
+  private Customer customer;
+
+  @Column(name = "license_plate", length = 12)
   private String licensePlate;
+
+  @Column(length = 2)
   private String state;
+
+  @Column(length = 17)
   private String vin;
+
+  @Column(length = 60)
   private String make;
+
+  @Column(length = 60)
   private String model;
+
+  // Column renamed from "year": YEAR is a reserved word in several engines.
+  @Column(name = "model_year")
   private Integer year;
 
-  @Column(length = 2000)
+  @Column(name = "car_image_url", length = 2000)
   private String carImageUrl;
 
   public Vehicle() {
   }
 
   // Getters and Setters
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Customer getCustomer() {
+    return customer;
+  }
+
+  public void setCustomer(Customer customer) {
+    this.customer = customer;
+  }
+
   public String getLicensePlate() {
     return licensePlate;
   }

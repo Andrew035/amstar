@@ -10,10 +10,10 @@ import {
   getStatusStyle,
 } from '../styles/controls';
 
-const MultiWorkerDropdown: React.FC<{ currentWorkers: string | undefined; onAssign: (workers: string) => void; }> = ({ currentWorkers, onAssign }) => {
+const MultiWorkerDropdown: React.FC<{ currentWorkers: string | undefined; onAssign: (workers: string) => void; technicianNames: string[]; }> = ({ currentWorkers, onAssign, technicianNames }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const workersList = ["Technician 1", "Technician 2", "Technician 3"];
+  const workersList = technicianNames;
   const selectedArray = currentWorkers ? currentWorkers.split(',').map(w => w.trim()).filter(w => w !== '') : [];
 
   const handleToggle = (workerName: string) => {
@@ -154,9 +154,9 @@ const StatusDropdown: React.FC<{ value: string; onChange: (val: string) => void 
 
 export const HistoryPage: React.FC<{
   repairs: VehicleRepair[]; historicalServiceMap: Record<string, number>;
-  onStatusChange: (id: number, status: string) => void; onAssignWorker: (id: number, workers: string) => void; onServiceChange: (id: number, service: string) => void;
+  onStatusChange: (id: number, status: string) => void; onAssignWorker: (id: number, workers: string) => void; technicianNames: string[]; onServiceChange: (id: number, service: string) => void;
   onViewDeepDive: (repair: VehicleRepair) => void; onDeleteClick: (id: number) => void; viewedRepairId?: number | null;
-}> = ({ repairs, historicalServiceMap, onStatusChange, onAssignWorker, onServiceChange, onViewDeepDive, onDeleteClick, viewedRepairId }) => {
+}> = ({ repairs, historicalServiceMap, technicianNames, onStatusChange, onAssignWorker, onServiceChange, onViewDeepDive, onDeleteClick, viewedRepairId }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const completedRepairs = repairs
@@ -211,7 +211,7 @@ export const HistoryPage: React.FC<{
                   </td>
 
                   <td className='p-1' onClick={e => e.stopPropagation()}>
-                    <MultiWorkerDropdown currentWorkers={item.assignedWorker} onAssign={(workers) => onAssignWorker(item.id!, workers)} />
+                    <MultiWorkerDropdown currentWorkers={item.assignedWorker} technicianNames={technicianNames} onAssign={(workers) => onAssignWorker(item.id!, workers)} />
                   </td>
 
                   <td className='p-3 font-black text-emerald-400 text-sm'>${calculateTotal(item).toFixed(2)}</td>

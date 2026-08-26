@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -23,6 +24,9 @@ import org.springframework.http.HttpMethod;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtFilter;
+
+  @Value("${amstar.cors.allowed-origin}")
+  private String allowedOrigin;
 
   // Inject custom JWT filter
   public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
@@ -48,7 +52,11 @@ public class SecurityConfig {
             // Unmask backend errors (prevents 500 error from turning into 403s)
             .requestMatchers("/error").permitAll()
             // Secure the repairs endpoints (both exact match and sub-paths)
-            .requestMatchers("/api/repairs/**").authenticated() // Temporarily open while testing
+            .requestMatchers(HttpMethod.GET, "/api/repairs/**").authenticated() // Temporarily open while testing
+            .requestMatchers(HttpMethod.GET, "/api/technicians", "/api/services").authenticated()
+            // Writes: managers only. Enforced here, not just in the UI.
+            .requestMatchers("/api/repairs/**").hasRole("ADMIN")
+            .requestMatchers("/api/technicians/**").hasRole("ADMIN")
             .anyRequest().authenticated())
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -60,7 +68,7 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     // Allow the React frontend
-    configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+    configuration.setAllowedOrigins(Arrays.asList(allowedOrigin));
     // Allow the standard HTTP methods
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     // Allow headers like Content-Type and our Authorization token

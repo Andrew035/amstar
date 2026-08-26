@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/repairs")
-@CrossOrigin(origins = "*")
 public class VehicleRepairController {
   private final PriorityQueueService priorityQueueService;
   private final VehicleRepairRepository repairRepository;

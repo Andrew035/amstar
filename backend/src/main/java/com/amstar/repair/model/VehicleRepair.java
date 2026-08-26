@@ -1,8 +1,14 @@
 package com.amstar.repair.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "service_tickets")
@@ -12,34 +18,131 @@ public class VehicleRepair {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne(cascade = CascadeType.ALL)
-  @JoinColumn(name = "vehicle_id", referencedColumnName = "id")
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "vehicle_id", nullable = false)
   private Vehicle vehicle;
 
-  private String customerName;
-  private String serviceType; // e.g., "Full Transmission Rebuild"
-  private int severity; // Scale 1 (Low) to 5 (Critical/Hard Rebuild)
-  private LocalDate entryDate;
-  private LocalDate expectedCompletionDate;
-  private String status; // PENDING, IN_PROGRESS, COMPLETED
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "customer_id")
+  private Customer customer;
 
-  private String assignedWorker;
+  @Column(nullable = false)
+  private int severity;
+
+  @Column(nullable = false, length = 20)
+  private String status = "PENDING";
+
+  @Column(name = "entry_date", nullable = false)
+  private LocalDate entryDate;
+
+  @Column(name = "expected_completion_date")
+  private LocalDate expectedCompletionDate;
+
+  @Column(name = "actual_completion_date")
   private LocalDate actualCompletionDate;
 
-  private Double retailPrice = 0.0;
-  private Double leasePrice = 0.0;
-  private Double laborPrice = 0.0;
+  @Column(name = "retail_price", nullable = false, precision = 10, scale = 2)
+  private BigDecimal retailPrice = BigDecimal.ZERO;
+
+  @Column(name = "lease_price", nullable = false, precision = 10, scale = 2)
+  private BigDecimal leasePrice = BigDecimal.ZERO;
+
+  @Column(name = "labor_price", nullable = false, precision = 10, scale = 2)
+  private BigDecimal laborPrice = BigDecimal.ZERO;
+
+  @Column(name = "include_retail", nullable = false)
   private Boolean includeRetail = false;
+
+  @Column(name = "include_lease", nullable = false)
   private Boolean includeLease = false;
+
+  @Column(name = "include_labor", nullable = false)
   private Boolean includeLabor = false;
+
+  @ManyToMany(fetch = FetchType.EAGER)
+  @OrderBy("name")
+  @JoinTable(name = "ticket_services", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
+  private Set<ServiceType> services = new LinkedHashSet<>();
+
+  @ManyToMany(fetch = FetchType.EAGER)
+  @OrderBy("fullName")
+  @JoinTable(name = "ticket_technicians", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "technician_id"))
+  private Set<Technician> technicians = new LinkedHashSet<>();
 
   @Transient
   private double priorityScore;
 
+  // Inbound comma strings, parked here until the service layer resolves
+  // them into rows. Never persisted; see PriorityQueueService.
+  @Transient
+  private String serviceTypeInput;
+
+  @Transient
+  private String assignedWorkerInput;
+
+  @Transient
+  private String customerNameInput;
+
   public VehicleRepair() {
   }
 
-  // Getters and Setters
+  // Legacy JSON compatibility
+  // The frontend still reads serviceType/assignedWorker/customerName as
+  // comma-joined strings. These getters rebuild them from the join tables
+  // so no page has to change yet. Hibernate uses field access (@Id is on a
+  // field), so it ignores these getters entirely.
+
+  @JsonProperty("serviceType")
+  public String getServiceType() {
+    return services.stream()
+        .map(ServiceType::getName)
+        .collect(Collectors.joining(", "));
+  }
+
+  @JsonProperty("serviceType")
+  public void setServiceType(String serviceType) {
+    this.serviceTypeInput = serviceType;
+  }
+
+  @JsonProperty("assignedWorker")
+  public String getAssignedWorker() {
+    return technicians.stream()
+        .map(Technician::getFullName)
+        .collect(Collectors.joining(", "));
+  }
+
+  @JsonProperty("assignedWorker")
+  public void setAssignedWorker(String assignedWorker) {
+    this.assignedWorkerInput = assignedWorker;
+  }
+
+  @JsonProperty("customerName")
+  public String getCustomerName() {
+    return customer == null ? null : customer.getFullName();
+  }
+
+  @JsonProperty("customerName")
+  public void setCustomerName(String customerName) {
+    this.customerNameInput = customerName;
+  }
+
+  @JsonIgnore
+  public String getServiceTypeInput() {
+    return serviceTypeInput;
+  }
+
+  @JsonIgnore
+  public String getAssignedWorkerInput() {
+    return assignedWorkerInput;
+  }
+
+  @JsonIgnore
+  public String getCustomerNameInput() {
+    return customerNameInput;
+  }
+
+  // Standard accessors
+
   public Long getId() {
     return id;
   }
@@ -56,20 +159,12 @@ public class VehicleRepair {
     this.vehicle = vehicle;
   }
 
-  public String getCustomerName() {
-    return customerName;
+  public Customer getCustomer() {
+    return customer;
   }
 
-  public void setCustomerName(String customerName) {
-    this.customerName = customerName;
-  }
-
-  public String getServiceType() {
-    return serviceType;
-  }
-
-  public void setServiceType(String serviceType) {
-    this.serviceType = serviceType;
+  public void setCustomer(Customer customer) {
+    this.customer = customer;
   }
 
   public int getSeverity() {
@@ -78,6 +173,14 @@ public class VehicleRepair {
 
   public void setSeverity(int severity) {
     this.severity = severity;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
   }
 
   public LocalDate getEntryDate() {
@@ -96,30 +199,6 @@ public class VehicleRepair {
     this.expectedCompletionDate = expectedCompletionDate;
   }
 
-  public String getStatus() {
-    return status;
-  }
-
-  public void setStatus(String status) {
-    this.status = status;
-  }
-
-  public double getPriorityScore() {
-    return priorityScore;
-  }
-
-  public void setPriorityScore(double priorityScore) {
-    this.priorityScore = priorityScore;
-  }
-
-  public String getAssignedWorker() {
-    return assignedWorker;
-  }
-
-  public void setAssignedWorker(String assignedWorker) {
-    this.assignedWorker = assignedWorker;
-  }
-
   public LocalDate getActualCompletionDate() {
     return actualCompletionDate;
   }
@@ -128,12 +207,28 @@ public class VehicleRepair {
     this.actualCompletionDate = actualCompletionDate;
   }
 
-  public Double getRetailPrice() {
+  public BigDecimal getRetailPrice() {
     return retailPrice;
   }
 
-  public void setRetailPrice(Double retailPrice) {
+  public void setRetailPrice(BigDecimal retailPrice) {
     this.retailPrice = retailPrice;
+  }
+
+  public BigDecimal getLeasePrice() {
+    return leasePrice;
+  }
+
+  public void setLeasePrice(BigDecimal leasePrice) {
+    this.leasePrice = leasePrice;
+  }
+
+  public BigDecimal getLaborPrice() {
+    return laborPrice;
+  }
+
+  public void setLaborPrice(BigDecimal laborPrice) {
+    this.laborPrice = laborPrice;
   }
 
   public Boolean getIncludeRetail() {
@@ -144,14 +239,6 @@ public class VehicleRepair {
     this.includeRetail = includeRetail;
   }
 
-  public Double getLeasePrice() {
-    return leasePrice;
-  }
-
-  public void setLeasePrice(Double leasePrice) {
-    this.leasePrice = leasePrice;
-  }
-
   public Boolean getIncludeLease() {
     return includeLease;
   }
@@ -160,19 +247,35 @@ public class VehicleRepair {
     this.includeLease = includeLease;
   }
 
-  public Double getLaborPrice() {
-    return laborPrice;
-  }
-
-  public void setLaborPrice(Double laborPrice) {
-    this.laborPrice = laborPrice;
-  }
-
   public Boolean getIncludeLabor() {
     return includeLabor;
   }
 
   public void setIncludeLabor(Boolean includeLabor) {
     this.includeLabor = includeLabor;
+  }
+
+  public Set<ServiceType> getServices() {
+    return services;
+  }
+
+  public void setServices(Set<ServiceType> services) {
+    this.services = services;
+  }
+
+  public Set<Technician> getTechnicians() {
+    return technicians;
+  }
+
+  public void setTechnicians(Set<Technician> technicians) {
+    this.technicians = technicians;
+  }
+
+  public double getPriorityScore() {
+    return priorityScore;
+  }
+
+  public void setPriorityScore(double priorityScore) {
+    this.priorityScore = priorityScore;
   }
 }

@@ -10,13 +10,19 @@ public class User {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(unique = true, nullable = false)
+  @Column(nullable = false, unique = true, length = 160)
+  private String email;
+
+  @Column(nullable = false)
   private String username;
 
   @Column(nullable = false)
   private String passwordHash;
 
-  private String role; // e.g., "ADMIN", "TECHNICIAN"
+  @Column(name = "is_active", nullable = false)
+  private Boolean isActive = true;
+
+  private String role; // e.g., "ADMIN", "SHOP_VIEW"
 
   // Getters and Setters
   public Long getId() {
@@ -25,6 +31,14 @@ public class User {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
   }
 
   public String getUsername() {
@@ -41,6 +55,14 @@ public class User {
 
   public void setPasswordHash(String passwordHash) {
     this.passwordHash = passwordHash;
+  }
+
+  public Boolean getIsActive() {
+    return isActive;
+  }
+
+  public void setIsActive(Boolean isActive) {
+    this.isActive = isActive;
   }
 
   public String getRole() {

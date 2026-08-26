@@ -8,6 +8,7 @@ import {
   PANEL_STYLE,
   PANEL_HEADING_STYLE,
 } from '../styles/controls';
+import { API_BASE } from '../config';
 
 // === NEW: CUSTOM DATE PICKER ===
 const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
@@ -176,7 +177,7 @@ const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => voi
             className={`flex-1 min-h-[44px] rounded font-cond text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amstar-red/40 ${selected
               ? 'text-white border border-amstar-red bg-amstar-red/[0.16] shadow-[inset_0_0_12px_rgba(214,32,39,0.35)]'
               : 'text-amstar-ink-faint border border-amstar-line hover:border-amstar-red/60'
-            }`}
+              }`}
           >
             {level}
           </button>
@@ -293,10 +294,10 @@ const StateSearch: React.FC<{ value: string; onChange: (val: string) => void }> 
   );
 };
 
-const FormWorkerDropdown: React.FC<{ currentWorkers: string; onAssign: (workers: string) => void; }> = ({ currentWorkers, onAssign }) => {
+const FormWorkerDropdown: React.FC<{ currentWorkers: string; onAssign: (workers: string) => void; technicianNames: string[]; }> = ({ currentWorkers, onAssign, technicianNames }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const workersList = ["Technician 1", "Technician 2", "Technician 3"];
+  const workersList = technicianNames;
   const selectedArray = currentWorkers ? currentWorkers.split(',').map(w => w.trim()).filter(w => w !== '') : [];
   const handleToggle = (workerName: string) => {
     let updatedSelection = selectedArray.includes(workerName) ? selectedArray.filter(w => w !== workerName) : [...selectedArray, workerName];
@@ -333,9 +334,9 @@ const FormWorkerDropdown: React.FC<{ currentWorkers: string; onAssign: (workers:
   )
 }
 
-interface RepairFormProps { onSuccess: () => void; currentUser: string; isAdmin: boolean; historicalServiceMap: Record<string, number>; }
+interface RepairFormProps { onSuccess: () => void; currentUser: string; isAdmin: boolean; historicalServiceMap: Record<string, number>; technicianNames: string[]; }
 
-export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, isAdmin, historicalServiceMap }) => {
+export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, isAdmin, historicalServiceMap, technicianNames }) => {
   const [customerName, setCustomerName] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
   const [vehicleState, setVehicleState] = useState('MD');
@@ -344,8 +345,6 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
   const [expectedCompletionDate, setExpectedCompletionDate] = useState('');
   const [assignedWorkers, setAssignedWorkers] = useState<string>('');
   const [vin, setVin] = useState('');
-
-  useEffect(() => { if (!isAdmin && currentUser) setAssignedWorkers(currentUser); }, [currentUser, isAdmin]);
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -376,12 +375,12 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
     }
 
     const payload = {
-      customerName, serviceType, severity, entryDate: new Date().toISOString().split('T')[0], expectedCompletionDate, assignedWorker: isAdmin ? assignedWorkers : currentUser, status: 'PENDING',
-      vehicle: { vin: vin || "Unknown", licensePlate, state: vehicleState, make: finalMake, model: finalModel, year: finalYear, carImageUrl: finalImageUrl }
+      customerName, serviceType, severity, entryDate: new Date().toISOString().split('T')[0], expectedCompletionDate, assignedWorker: isAdmin ? assignedWorkers : '', status: 'PENDING',
+      vehicle: { vin: vin || null, licensePlate, state: vehicleState, make: finalMake, model: finalModel, year: finalYear, carImageUrl: finalImageUrl }
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('amstar_token')}` }, body: JSON.stringify(payload) });
+      const response = await fetch(`${API_BASE}/api/repairs`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('amstar_token')}` }, body: JSON.stringify(payload) });
       if (!response.ok) throw new Error('Failed to submit repair ticket');
       setCustomerName(''); setVin(''); setLicensePlate(''); setServiceType(''); setSeverity(3); setExpectedCompletionDate('');
       if (isAdmin) setAssignedWorkers('');
@@ -418,7 +417,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, currentUser, 
         {isAdmin && (
           <div className="md:col-span-2">
             <label className={LABEL_STYLE}>Assign Technician(s) <span className="font-normal text-xs text-amstar-ink-faint ml-2 normal-case tracking-normal">(Optional)</span></label>
-            <div className="relative"><FormWorkerDropdown currentWorkers={assignedWorkers} onAssign={setAssignedWorkers} /></div>
+            <div className="relative"><FormWorkerDropdown currentWorkers={assignedWorkers} technicianNames={technicianNames} onAssign={setAssignedWorkers} /></div>
           </div>
         )}
         <div className="md:col-span-2 lg:col-span-4 flex justify-end mt-2 pt-5 border-t border-amstar-line-soft"><button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-all font-bold disabled:opacity-70 disabled:cursor-not-allowed">{isSubmitting ? 'Decoding VIN & Submitting...' : 'Add Vehicle to Queue'}</button></div>

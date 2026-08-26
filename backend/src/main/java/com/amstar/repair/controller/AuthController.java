@@ -2,69 +2,116 @@ package com.amstar.repair.controller;
 
 import com.amstar.repair.model.User;
 import com.amstar.repair.repository.UserRepository;
-import com.amstar.repair.security.JwtAuthenticationFilter;
+import com.amstar.repair.security.JwtKeyProvider;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+  private static final String EMAIL_PATTERN = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$";
+
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
 
-  // In production, store this securely in an environment variable!
-  private final Key jwtSecretKey = Keys.hmacShaKeyFor(JwtAuthenticationFilter.SECRET.getBytes());
+  /**
+   * Emails granted ADMIN at registration. Not secret, so they live in properties.
+   */
+  private final List<String> adminEmails;
 
-  public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+  /** Shared shop signup code. From the environment - never committed. */
+  private final String signupCode;
+
+  // In production, store this securely in an environment variable!
+  private final JwtKeyProvider jwtKeyProvider;
+
+  public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtKeyProvider jwtKeyProvider,
+      @Value("${amstar.auth.admin-emails:}") List<String> adminEmails,
+      @Value("${amstar.auth.signup-code}") String signupCode) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
+    this.jwtKeyProvider = jwtKeyProvider;
+    this.adminEmails = adminEmails.stream()
+        .map(e -> e.trim().toLowerCase())
+        .filter(e -> !e.isEmpty())
+        .toList();
+    this.signupCode = signupCode;
   }
 
   // REGISTER ENDPOINT
   @PostMapping("/register")
   public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
-    if (userRepository.findByUsername(request.get("username")).isPresent()) {
-      return ResponseEntity.badRequest().body("Username already exists");
+    String email = normalizeEmail(request.get("email"));
+    String password = request.get("password");
+
+    // Gate first: a stranger who can't produce the code learns nothing else.
+    if (!signupCode.equals(request.get("signupCode"))) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Invalid signup code"));
+    }
+    if (email == null || !email.matches(EMAIL_PATTERN)) {
+      return ResponseEntity.badRequest().body(Map.of("error", "A valid email address is required"));
+    }
+    if (password == null || password.length() < 8) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least 8 characters"));
+    }
+    if (userRepository.findByEmail(email).isPresent()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "That email is already registered"));
     }
 
     User user = new User();
-    user.setUsername(request.get("username"));
-    // Hash the password before saving to the db
-    user.setPasswordHash(passwordEncoder.encode(request.get("password")));
-    user.setRole("TECHNICIAN");
+    user.setEmail(email);
+    user.setUsername(usernameFromEmail(email));
+    user.setPasswordHash(passwordEncoder.encode(password));
+    // The whole point: managers are recognized by their email at signup.
+    user.setRole(adminEmails.contains(email) ? "ADMIN" : "SHOP_VIEW");
 
     userRepository.save(user);
-    return ResponseEntity.ok("User registered successfully");
+    return ResponseEntity.ok(Map.of("message", "User registered successfully"));
   }
 
   // LOGIN ENDPOINT (Generates JWT)
   @PostMapping("/login")
   public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-    Optional<User> userOpt = userRepository.findByUsername(request.get("username"));
+    Optional<User> userOpt = userRepository.findByEmail(normalizeEmail(request.get("email")));
 
     // Check if user exists and password matches the hash
-    if (userOpt.isPresent() && passwordEncoder.matches(request.get("password"), userOpt.get().getPasswordHash())) {
+    if (userOpt.isPresent() && Boolean.TRUE.equals(userOpt.get().getIsActive())
+        && passwordEncoder.matches(request.get("password"), userOpt.get().getPasswordHash())) {
+      User user = userOpt.get();
 
-      // Generate a 10-hour JWT token
+      // Generate a 10-hour JWT token. Subject is the display name; role carries
+      // authority.
       String token = Jwts.builder()
-          .setSubject(userOpt.get().getUsername())
-          .claim("role", userOpt.get().getRole())
+          .setSubject(user.getUsername())
+          .claim("role", user.getRole())
+          .claim("email", user.getEmail())
           .setIssuedAt(new Date())
           .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-          .signWith(jwtSecretKey)
+          .signWith(jwtKeyProvider.getKey())
           .compact();
 
       return ResponseEntity.ok(Map.of("token", token));
     }
 
-    return ResponseEntity.status(401).body("Invalid credentials");
+    return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
+  }
+
+  /** "mike@amstar.com" -> "mike". Truncated to the column width. */
+  private static String usernameFromEmail(String email) {
+    String local = email.substring(0, email.indexOf('@'));
+    return local.length() > 50 ? local.substring(0, 50) : local;
+  }
+
+  private static String normalizeEmail(String raw) {
+    return raw == null ? null : raw.trim().toLowerCase();
   }
 }

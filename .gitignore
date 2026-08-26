@@ -22,6 +22,7 @@ desktop.ini
 .env.*
 !.env.example
 *.local
+docker-compose.override.yml
 
 # === Browser automation scratch ===
 # Playwright MCP writes console logs, page snapshots, and any downloads here.

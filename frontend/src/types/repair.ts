@@ -7,6 +7,30 @@ export interface Vehicle {
   model?: string;
   year?: number;
   carImageUrl?: string;
+  customer?: Customer;
+}
+
+export interface Customer {
+  id?: number;
+  fullName: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+}
+
+export interface Technician {
+  id: number;
+  fullName: string;
+  phone?: string;
+  hiredOn?: string;
+  isActive: boolean;
+}
+
+export interface ServiceType {
+  id: number;
+  name: string;
+  defaultSeverity: number;
+  isActive: boolean;
 }
 
 export interface VehicleRepair {
@@ -27,4 +51,10 @@ export interface VehicleRepair {
   includeRetail?: boolean;
   includeLease?: boolean;
   includeLabor?: boolean;
+
+  // Normalized data the backend now also sends. Nothing reads these yet -
+  // they're what the comma strings above will eventually be replaced with.
+  customer?: Customer;
+  services?: ServiceType[];
+  technicians?: Technician[];
 }

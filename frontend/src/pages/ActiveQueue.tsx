@@ -18,10 +18,11 @@ import {
 const MultiWorkerDropdown: React.FC<{
   currentWorkers: string | undefined;
   onAssign: (workers: string) => void;
-}> = ({ currentWorkers, onAssign }) => {
+  technicianNames: string[];
+}> = ({ currentWorkers, onAssign, technicianNames }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const workersList = ["Technician 1", "Technician 2", "Technician 3"];
+  const workersList = technicianNames;
 
   const selectedArray = currentWorkers ? currentWorkers.split(',').map(w => w.trim()).filter(w => w !== '') : [];
 
@@ -190,9 +191,9 @@ const StatusDropdown: React.FC<{ value: string; onChange: (val: string) => void 
 
 export const ActiveQueue: React.FC<{
   repairs: VehicleRepair[]; isAdmin: boolean; currentUser: string; historicalServiceMap: Record<string, number>;
-  onRefresh: () => void; onStatusChange: (id: number, status: string) => void; onAssignWorker: (id: number, workers: string) => void;
+  onRefresh: () => void; onStatusChange: (id: number, status: string) => void; onAssignWorker: (id: number, workers: string) => void; technicianNames: string[];
   onServiceChange: (id: number, service: string) => void; onDeleteClick: (id: number) => void; onViewDeepDive: (repair: VehicleRepair) => void; viewedRepairId?: number | null;
-}> = ({ repairs, isAdmin, currentUser, historicalServiceMap, onRefresh, onStatusChange, onAssignWorker, onServiceChange, onDeleteClick, onViewDeepDive, viewedRepairId }) => {
+}> = ({ repairs, isAdmin, currentUser, historicalServiceMap, technicianNames, onRefresh, onStatusChange, onAssignWorker, onServiceChange, onDeleteClick, onViewDeepDive, viewedRepairId }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const activeRepairs = repairs
@@ -205,7 +206,7 @@ export const ActiveQueue: React.FC<{
 
   return (
     <div className='space-y-6'>
-      {isAdmin && <RepairForm onSuccess={onRefresh} currentUser={currentUser} isAdmin={isAdmin} historicalServiceMap={historicalServiceMap} />}
+      {isAdmin && <RepairForm onSuccess={onRefresh} currentUser={currentUser} isAdmin={isAdmin} historicalServiceMap={historicalServiceMap} technicianNames={technicianNames} />}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-2 border-amstar-red pb-2 gap-4">
         <h2 className="font-cond text-2xl font-black uppercase tracking-wider text-amstar-ink">Shop Active Repairs</h2>
@@ -258,7 +259,7 @@ export const ActiveQueue: React.FC<{
                   <td className="p-3 font-mono tabular-nums font-semibold text-amstar-ink">{item.expectedCompletionDate}</td>
 
                   <td className="p-1" onClick={e => e.stopPropagation()}>
-                    {isAdmin ? <MultiWorkerDropdown currentWorkers={item.assignedWorker} onAssign={(workers) => onAssignWorker(item.id!, workers)} /> : <span className="font-bold text-amstar-ink">{item.assignedWorker || 'Unassigned'}</span>}
+                    {isAdmin ? <MultiWorkerDropdown currentWorkers={item.assignedWorker} technicianNames={technicianNames} onAssign={(workers) => onAssignWorker(item.id!, workers)} /> : <span className="font-bold text-amstar-ink">{item.assignedWorker || 'Unassigned'}</span>}
                   </td>
 
                   <td className="p-3" onClick={e => e.stopPropagation()}>

@@ -5,9 +5,7 @@ services:
     environment:
       POSTGRES_DB: amstar_db
       POSTGRES_USER: amstar_user
-      POSTGRES_PASSWORD: amstar_password
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -15,22 +13,44 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
+    restart: unless-stopped
+  
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: amstar_backend
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/amstar_db
       SPRING_DATASOURCE_USERNAME: amstar_user
-      SPRING_DATASOURCE_PASSWORD: amstar_password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      AMSTAR_SIGNUP_CODE: ${AMSTAR_SIGNUP_CODE:?AMSTAR_SIGNUP_CODE must be set (see .env.example)}
+      AMSTAR_JWT_SECRET: ${AMSTAR_JWT_SECRET:?AMSTAR_JWT_SECRET must be set (see .env.example)}
+      AMSTAR_CORS_ORIGIN: ${AMSTAR_CORS_ORIGIN:-http://localhost:5173}
     depends_on:
       postgres-db:
         condition: service_healthy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: amstar_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./frontend/dist:/srv:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

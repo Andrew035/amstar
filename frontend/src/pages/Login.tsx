@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SHARED_INPUT_STYLE, PANEL_STYLE, LABEL_STYLE } from '../styles/controls';
+import { API_BASE } from '../config';
 
 //  Tailwind Upgraded Login Page
 export const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,14 +19,14 @@ export const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess
 
     try {
       // Adjust this URL if your backend auth endpoint is different
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, password })
       });
 
       if (!response.ok) {
-        throw new Error('Invalid username or password');
+        throw new Error('Invalid email or password');
       }
 
       const data = await response.json();
@@ -59,14 +60,14 @@ export const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className={LABEL_STYLE}>Username</label>
+            <label className={LABEL_STYLE}>Email</label>
             <input
-              type="text"
+              type="email"
               required
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               className={SHARED_INPUT_STYLE}
-              placeholder="Enter your username"
+              placeholder="you@email.com"
             />
           </div>
 

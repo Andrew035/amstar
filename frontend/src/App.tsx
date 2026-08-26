@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import type { VehicleRepair } from './types/repair';
+import type { ServiceType, Technician, VehicleRepair } from './types/repair';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './pages/Dashboard';
 import { ActiveQueue } from './pages/ActiveQueue';
@@ -9,11 +9,15 @@ import { PricingPage } from './pages/Pricing';
 import { HistoryPage } from './pages/History';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { API_BASE } from './config';
 
 export const App: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [serviceCatalog, setServiceCatalog] = useState<ServiceType[]>([]);
 
   // Global Modal States
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
@@ -31,20 +35,7 @@ export const App: React.FC = () => {
     }, 3000);
   }
 
-  const isAdmin = ['admin1', 'admin2', 'admin3'].includes(currentUser || '');
-
-  useEffect(() => {
-    const token = localStorage.getItem('amstar_token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setCurrentUser(payload.sub);
-      } catch {
-        console.error("Invalid token format");
-      }
-    }
-    fetchQueue();
-  }, []);
+  const isAdmin = currentRole === 'ADMIN';
 
   // Centralized Authentication Check
   const authenticateUser = useCallback(() => {
@@ -53,6 +44,7 @@ export const App: React.FC = () => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUser(payload.sub);
+        setCurrentRole(payload.role ?? null);
         return true;
       } catch {
         console.error("Invalid token format");
@@ -60,6 +52,7 @@ export const App: React.FC = () => {
       }
     }
     setCurrentUser(null);
+    setCurrentRole(null);
     return false;
   }, []);
 
@@ -68,6 +61,7 @@ export const App: React.FC = () => {
     const isLoggedIn = authenticateUser();
     if (isLoggedIn) {
       fetchQueue();
+      fetchReferenceData();
     } else {
       setLoading(false); // Stop loading immediately if not logged in
     }
@@ -78,6 +72,7 @@ export const App: React.FC = () => {
     authenticateUser();
     setLoading(true);
     fetchQueue();
+    fetchReferenceData();
   };
 
   const fetchQueue = async () => {
@@ -85,7 +80,7 @@ export const App: React.FC = () => {
       const token = localStorage.getItem('amstar_token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:8080/api/repairs/queue', {
+      const response = await fetch(`${API_BASE}/api/repairs/queue`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -104,11 +99,29 @@ export const App: React.FC = () => {
     }
   };
 
+  const fetchReferenceData = async () => {
+    const token = localStorage.getItem('amstar_token');
+    if (!token) return;
+
+    try {
+      const headers = { 'Authorization': `Bearer ${token}` };
+      const [techResponse, serviceResponse] = await Promise.all([
+        fetch(`${API_BASE}/api/technicians`, { headers }),
+        fetch(`${API_BASE}/api/services`, { headers }),
+      ]);
+
+      if (techResponse.ok) setTechnicians(await techResponse.json());
+      if (serviceResponse.ok) setServiceCatalog(await serviceResponse.json());
+    } catch (error) {
+      console.error('Failed to fetch reference data:', error);
+    }
+  };
+
   const handleStatusChange = async (id: number, newStatus: string) => {
     if (!isAdmin) return;
     const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`http://localhost:8080/api/repairs/${id}/status`, {
+      const response = await fetch(`${API_BASE}/api/repairs/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -123,7 +136,7 @@ export const App: React.FC = () => {
     if (!isAdmin) return;
     const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`http://localhost:8080/api/repairs/${id}/assign`, {
+      const response = await fetch(`${API_BASE}/api/repairs/${id}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ worker: workerUsername })
@@ -138,19 +151,22 @@ export const App: React.FC = () => {
     if (!isAdmin) return;
     const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`http://localhost:8080/api/repairs/${id}/service`, {
+      const response = await fetch(`${API_BASE}/api/repairs/${id}/service`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ serviceType: newService })
       });
-      if (response.ok) fetchQueue();
+      if (response.ok) {
+        fetchQueue();
+        fetchReferenceData();
+      }
     } catch (error) { console.error("Failed to update service:", error); }
   };
 
   const handleSavePricing = async (id: number, payload: any) => {
     const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`http://localhost:8080/api/repairs/${id}/pricing`, {
+      const response = await fetch(`${API_BASE}/api/repairs/${id}/pricing`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
@@ -177,7 +193,7 @@ export const App: React.FC = () => {
     if (repairToDelete === null) return;
     const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`http://localhost:8080/api/repairs/${repairToDelete}`, {
+      const response = await fetch(`${API_BASE}/api/repairs/${repairToDelete}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -196,20 +212,20 @@ export const App: React.FC = () => {
     }
   };
 
-  // === NEW: DELIMITED SERVICE PARSING ===
-  const historicalServiceMap: Record<string, number> = {};
-  [...repairs].sort((a, b) => (b.id || 0) - (a.id || 0)).forEach(r => {
-    if (r.serviceType && r.severity) {
-      // Split by comma, trim spaces, convert to uppercase, and remove empty strings
-      const services = r.serviceType.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
+  // Service severities now come from the catalog table instead of being
+  // reverse-engineered from whichever ticket happened to be newest.
+  const historicalServiceMap: Record<string, number> = React.useMemo(() => {
+    const map: Record<string, number> = {};
+    serviceCatalog.forEach(service => {
+      map[service.name] = service.defaultSeverity;
+    });
+    return map;
+  }, [serviceCatalog]);
 
-      services.forEach(serviceName => {
-        if (!historicalServiceMap[serviceName]) {
-          historicalServiceMap[serviceName] = r.severity;
-        }
-      });
-    }
-  });
+  const technicianNames = React.useMemo(
+    () => technicians.map(t => t.fullName),
+    [technicians]
+  );
 
   const handleLogout = () => {
     localStorage.removeItem('amstar_token');
@@ -257,6 +273,7 @@ export const App: React.FC = () => {
                 isAdmin={isAdmin}
                 currentUser={currentUser}
                 historicalServiceMap={historicalServiceMap}
+                technicianNames={technicianNames}
                 onRefresh={fetchQueue}
                 onStatusChange={handleStatusChange}
                 onAssignWorker={handleAssignWorker}
@@ -289,6 +306,7 @@ export const App: React.FC = () => {
                 <HistoryPage
                   repairs={repairs}
                   historicalServiceMap={historicalServiceMap}
+                  technicianNames={technicianNames}
                   onStatusChange={handleStatusChange}
                   onAssignWorker={handleAssignWorker}
                   onServiceChange={handleServiceChange}

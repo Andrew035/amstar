@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SHARED_INPUT_STYLE, PANEL_STYLE, LABEL_STYLE } from '../styles/controls';
+import { API_BASE } from '../config';
 
 // Tailwind Upgraded Register Page
 export const Register: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [signupCode, setSignupCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,14 +29,15 @@ export const Register: React.FC = () => {
 
     try {
       // Adjust this URL if your backend auth endpoint is different
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, password, signupCode })
       });
 
       if (!response.ok) {
-        throw new Error('Registration failed. Username might be taken.');
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Registration failed.');
       }
 
       setSuccessMessage("Registration successful! Redirecting to login...");
@@ -66,14 +69,14 @@ export const Register: React.FC = () => {
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className={LABEL_STYLE}>Username</label>
+            <label className={LABEL_STYLE}>Email</label>
             <input
-              type="text"
+              type="email"
               required
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               className={SHARED_INPUT_STYLE}
-              placeholder="Choose a username"
+              placeholder="you@email.com"
             />
           </div>
 
@@ -98,6 +101,18 @@ export const Register: React.FC = () => {
               onChange={e => setConfirmPassword(e.target.value)}
               className={SHARED_INPUT_STYLE}
               placeholder="Repeat password"
+            />
+          </div>
+
+          <div>
+            <label className={LABEL_STYLE}>Shop Signup Code</label>
+            <input
+              type="password"
+              required
+              value={signupCode}
+              onChange={e => setSignupCode(e.target.value)}
+              className={SHARED_INPUT_STYLE}
+              placeholder="Provided by your manager"
             />
           </div>
 
