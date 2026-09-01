@@ -21,6 +21,7 @@ desktop.ini
 .env
 .env.*
 !.env.example
+!frontend/.env.production
 *.local
 docker-compose.override.yml
 

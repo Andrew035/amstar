@@ -14,8 +14,7 @@ STAMP="$(date +%Y-%m-%d_%H%M)"
 OUT="$BACKUP_DIR/amstar_${STAMP}.sql.gz"
 
 # -Fp (plain) + gzip keeps the dump greppable and restorable with psql alone.
-docker exec "$CONTAINER" pg_dump -U "$DB_USER" -d "$DB_NAME" --clean --if-
-exists \
+docker exec "$CONTAINER" pg_dump -U "$DB_USER" -d "$DB_NAME" --clean --if-exists \
   | gzip -9 > "$OUT.tmp"
 
 # Only promote the file once the dump exited 0 and produced real content,
@@ -34,6 +33,11 @@ if ! gzip -dc "$OUT" | grep -q "CREATE TABLE public.service_tickets"; then
 fi
 
 find "$BACKUP_DIR" -name 'amstar_*.sql.gz' -mtime "+$KEEP_DAYS" -delete
-echo "backup OK: $OUT ($(du -h "$OUT" | CUT -f1))"
+echo "backup OK: $OUT ($(du -h "$OUT" | cut -f1))"
 
-rclone copy "$OUT" amstar-remote:amstar-backups/
+if command -v rclone >/dev/null 2>&1; then
+  rclone copy "$OUT" amstar-remote:amstar-backups/
+  echo "backup OK (offsite): $OUT"
+else
+  echo "WARNING: rclone not installed - backup is LOCAL ONLY" >&2
+fi
