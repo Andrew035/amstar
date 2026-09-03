@@ -3,6 +3,7 @@ package com.amstar.repair.controller;
 import com.amstar.repair.model.User;
 import com.amstar.repair.repository.UserRepository;
 import com.amstar.repair.security.JwtKeyProvider;
+import com.amstar.repair.service.PasswordResetService;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -34,12 +35,16 @@ public class AuthController {
   // In production, store this securely in an environment variable!
   private final JwtKeyProvider jwtKeyProvider;
 
+  private final PasswordResetService passwordResets;
+
   public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtKeyProvider jwtKeyProvider,
+      PasswordResetService passwordResets,
       @Value("${amstar.auth.admin-emails:}") List<String> adminEmails,
       @Value("${amstar.auth.signup-code}") String signupCode) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtKeyProvider = jwtKeyProvider;
+    this.passwordResets = passwordResets;
     this.adminEmails = adminEmails.stream()
         .map(e -> e.trim().toLowerCase())
         .filter(e -> !e.isEmpty())
@@ -113,5 +118,23 @@ public class AuthController {
 
   private static String normalizeEmail(String raw) {
     return raw == null ? null : raw.trim().toLowerCase();
+  }
+
+  /** Always 200: never reveal whether an address is registered. */
+  @PostMapping("/forgot-password")
+  public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+    passwordResets.requestReset(normalizeEmail(request.get("email")));
+    return ResponseEntity.ok(Map.of(
+        "message", "If that address has an account, a reset link is on its way."));
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+    boolean ok = passwordResets.resetPassword(request.get("token"), request.get("password"));
+    if (ok) {
+      return ResponseEntity.ok(Map.of("message", "Password updated. You can sign in now."));
+    }
+    return ResponseEntity.badRequest().body(Map.of(
+        "error", "That reset link is invalid or has expired. Request a new one."));
   }
 }

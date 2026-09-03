@@ -87,12 +87,13 @@ public class PriorityQueueService {
   }
 
   @Transactional
-  public boolean assignWorker(Long id, String workerUsername) {
+  public boolean assignWorker(Long id, String workerNames) {
     return repository.findById(id).map(repair -> {
-      repair.setAssignedWorker(workerUsername);
+      assembly.applyTechnicians(repair, workerNames);
       repository.save(repair);
       return true;
     }).orElse(false);
+
   }
 
   @Transactional

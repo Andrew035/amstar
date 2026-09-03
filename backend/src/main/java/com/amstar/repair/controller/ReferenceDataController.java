@@ -62,4 +62,20 @@ public class ReferenceDataController {
   public List<ServiceType> listServices() {
     return serviceTypes.findByIsActiveTrueOrderByNameAsc();
   }
+
+  @PatchMapping("/services/{id}")
+  public ResponseEntity<?> updateService(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+    return serviceTypes.findById(id).map(service -> {
+      if (request.get("name") instanceof String name && !name.isBlank()) {
+        service.setName(name.trim().toUpperCase()); // service_name_uppercase
+      }
+      if (request.get("defaultSeverity") instanceof Number severity) {
+        service.setDefaultSeverity(severity.intValue());
+      }
+      if (request.get("isActive") instanceof Boolean active) {
+        service.setIsActive(active);
+      }
+      return ResponseEntity.ok(serviceTypes.save(service));
+    }).orElseGet(() -> ResponseEntity.notFound().build());
+  }
 }

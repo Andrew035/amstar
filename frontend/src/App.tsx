@@ -10,6 +10,8 @@ import { HistoryPage } from './pages/History';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { API_BASE } from './config';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 
 export const App: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
@@ -260,6 +262,8 @@ export const App: React.FC = () => {
           {/* Public Authentication Routes */}
           <Route path="/login" element={!currentUser ? <Login onLoginSuccess={handleLoginSuccess} /> : <Navigate to="/" replace />} />
           <Route path="/register" element={!currentUser ? <Register /> : <Navigate to="/" replace />} />
+          <Route path="/forgot-password" element={!currentUser ? <ForgotPassword /> : <Navigate to="/" replace />} />
+          <Route path="reset-password" element={<ResetPassword />} />
 
           {/* Shop Overview (Dashboard) */}
           <Route path="/" element={currentUser ? <Dashboard repairs={repairs} /> : <Navigate to="/login" replace />} />

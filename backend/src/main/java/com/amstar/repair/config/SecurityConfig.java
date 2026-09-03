@@ -57,6 +57,7 @@ public class SecurityConfig {
             // Writes: managers only. Enforced here, not just in the UI.
             .requestMatchers("/api/repairs/**").hasRole("ADMIN")
             .requestMatchers("/api/technicians/**").hasRole("ADMIN")
+            .requestMatchers("/api/services/**").hasRole("ADMIN")
             .anyRequest().authenticated())
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

@@ -99,6 +99,12 @@ export const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess
           </Link>
         </p>
 
+        <p className='mt-4 text-center text-sm'>
+          <Link to="/forgot-password" className='text-amstar-ink-dim hover:text-amstar-ink hover:underline'>
+            Forgot your passowrd?
+          </Link>
+        </p>
+
       </div>
     </div>
   );

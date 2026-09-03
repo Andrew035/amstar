@@ -375,7 +375,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({ onSuccess, isAdmin, hist
     }
 
     const payload = {
-      customerName, serviceType, severity, entryDate: new Date().toISOString().split('T')[0], expectedCompletionDate, assignedWorker: isAdmin ? assignedWorkers : '', status: 'PENDING',
+      customerName, serviceType, severity, expectedCompletionDate, assignedWorker: isAdmin ? assignedWorkers : '', status: 'PENDING',
       vehicle: { vin: vin || null, licensePlate, state: vehicleState, make: finalMake, model: finalModel, year: finalYear, carImageUrl: finalImageUrl }
     };
 
