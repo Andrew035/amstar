@@ -122,6 +122,11 @@ public class TicketAssemblyService {
     Set<ServiceType> resolved = new LinkedHashSet<>();
     for (String name : splitCsv(csv)) {
       String normalized = name.toUpperCase();
+      // services.name is varchar(80); without this the DB rejects it as a 500.
+      if (normalized.length() > 80) {
+        throw new IllegalArgumentException(
+            "Service name must be 80 characters or fewer: " + normalized.substring(0, 40) + "...");
+      }
       resolved.add(serviceTypes.findByName(normalized)
           // A service typed into the form for the first time joines the catalog,
           // seeded with this ticket's severity - what historicalServiceMap did.

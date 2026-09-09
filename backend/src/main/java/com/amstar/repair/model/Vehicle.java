@@ -1,6 +1,7 @@
 package com.amstar.repair.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 
 @Entity
 @Table(name = "vehicles")
@@ -15,18 +16,23 @@ public class Vehicle {
   private Customer customer;
 
   @Column(name = "license_plate", length = 12)
+  @Size(max = 12, message = "License plate must be 12 characters or fewer")
   private String licensePlate;
 
   @Column(length = 2)
+  @Size(min = 2, max = 2, message = "State must be a 2-letter code")
   private String state;
 
   @Column(length = 17)
+  @Size(max = 17, message = "VIN must be 17 characters or fewer")
   private String vin;
 
   @Column(length = 60)
+  @Size(max = 60, message = "Make must be 60 characters or fewer")
   private String make;
 
   @Column(length = 60)
+  @Size(max = 60, message = "Model must be 60 characters or fewer")
   private String model;
 
   // Column renamed from "year": YEAR is a reserved word in several engines.

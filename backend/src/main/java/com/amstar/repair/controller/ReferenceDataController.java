@@ -70,7 +70,12 @@ public class ReferenceDataController {
         service.setName(name.trim().toUpperCase()); // service_name_uppercase
       }
       if (request.get("defaultSeverity") instanceof Number severity) {
-        service.setDefaultSeverity(severity.intValue());
+        int value = severity.intValue();
+        if (value < 1 || value > 5) {
+          return ResponseEntity.badRequest()
+              .body(Map.<String, Object>of("error", "Severity must be between 1 and 5"));
+        }
+        service.setDefaultSeverity(value);
       }
       if (request.get("isActive") instanceof Boolean active) {
         service.setIsActive(active);

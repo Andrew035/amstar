@@ -3,6 +3,8 @@ package com.amstar.repair.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,6 +22,8 @@ public class VehicleRepair {
 
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "vehicle_id", nullable = false)
+  @NotNull(message = "A vehicle is required")
+  @Valid
   private Vehicle vehicle;
 
   @ManyToOne(fetch = FetchType.EAGER)
@@ -27,6 +31,8 @@ public class VehicleRepair {
   private Customer customer;
 
   @Column(nullable = false)
+  @Min(value = 1, message = "Severity must be between 1 and 5")
+  @Max(value = 5, message = "Severity must be between 1 and 5")
   private int severity;
 
   @Column(nullable = false, length = 20)
@@ -35,7 +41,8 @@ public class VehicleRepair {
   @Column(name = "entry_date", nullable = false)
   private LocalDate entryDate;
 
-  @Column(name = "expected_completion_date")
+  @Column(name = "expected_completion_date", nullable = false)
+  @NotNull(message = "An expected completion date is required")
   private LocalDate expectedCompletionDate;
 
   @Column(name = "actual_completion_date")
@@ -81,6 +88,7 @@ public class VehicleRepair {
   private String assignedWorkerInput;
 
   @Transient
+  @Size(max = 120, message = "Customer name must be 120 characters or fewer")
   private String customerNameInput;
 
   public VehicleRepair() {

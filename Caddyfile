@@ -1,6 +1,28 @@
 shop.example.com {
   encode gzip
 
+    handle /api/auth/forgot-password {
+      rate_limit {
+        zone reset_email {
+          key {remote_host}
+          events 3
+          window 1h
+        }
+      }
+      reverse_proxy backend:8080
+    }
+
+    handle /api/auth/* {
+      rate_limit {
+        zone auth {
+          key {remote_host}
+          events 10
+          window 1m
+        }
+      } 
+      reverse_proxy backend:8080
+    }
+
     handle /api/* {
       reverse_proxy backend:8080
     }

@@ -9,6 +9,19 @@ DB_NAME="amstar_db"
 DB_USER="amstar_user"
 KEEP_DAYS=30
 
+# Dead-man's switch. Without this, a backup that silently stops running is
+# indistinguishable from one that works. The ping URL comes from the
+# environment so the script itself stays committable.
+HC_URL="${AMSTAR_HC_URL:-}"
+ping_hc() {
+  [ -n "$HC_URL" ] || return 0
+  curl -fsS -m 10 --retry 3 "${HC_URL}$1" >/dev/null 2>&1 || true
+}
+
+# Any non-zero exit - dump failed, empty file, missing table, offsite failed -
+# reports failure before the script dies.
+trap 'rc=$?; [ $rc -ne 0 ] && ping_hc "/fail"; exit $rc' EXIT
+
 mkdir -p "$BACKUP_DIR"
 STAMP="$(date +%Y-%m-%d_%H%M)"
 OUT="$BACKUP_DIR/amstar_${STAMP}.sql.gz"
@@ -32,12 +45,25 @@ if ! gzip -dc "$OUT" | grep -q "CREATE TABLE public.service_tickets"; then
   exit 1
 fi
 
-find "$BACKUP_DIR" -name 'amstar_*.sql.gz' -mtime "+$KEEP_DAYS" -delete
-echo "backup OK: $OUT ($(du -h "$OUT" | cut -f1))"
+# Retention
+# Every backup for 7 days, then the first of each day for 90.
+# The whole DB gzips to ~4 KB, so 90 days of history costs under 10 MB.
+find "$BACKUP_DIR" -name 'amstar_*.sql.gz' -mtime +7 | while read -r old; do
+  day=$(basename "$old" | sed -E 's/amstar_([0-9]{4}-[0-9]{2}-[0-9]{2})_.*/\1/')
+  keep=$(find "$BACKUP_DIR" -name "amstar_${day}_*.sql.gz" | sort | head -1)
+  [ "$old" = "$keep" ] || rm -f "$old"
+done
+find "$BACKUP_DIR" -name 'amstar_*.sql.gz' -mtime +90 -delete
 
+echo "backup OK (local): $OUT ($(du -h "$OUT" | cut -f1))"
+
+# Offsite
 if command -v rclone >/dev/null 2>&1; then
   rclone copy "$OUT" amstar-remote:amstar-backups/
-  echo "backup OK (offsite): $OUT"
+  rclone delete --min-age 90d amstar-remote:amstar-backups/ 2>/dev/null || true
+  echo "backup OK (offsite): $(basename "$OUT")"
 else
   echo "WARNING: rclone not installed - backup is LOCAL ONLY" >&2
 fi
+
+ping_hc ""

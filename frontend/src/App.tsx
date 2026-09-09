@@ -9,7 +9,7 @@ import { PricingPage } from './pages/Pricing';
 import { HistoryPage } from './pages/History';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { API_BASE } from './config';
+import { apiFetch, ApiError } from './api';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 
@@ -36,6 +36,9 @@ export const App: React.FC = () => {
       setToast(null);
     }, 3000);
   }
+
+  const toastError = (error: unknown, fallback: string) =>
+    showToast(error instanceof ApiError ? error.message : fallback, 'error');
 
   const isAdmin = currentRole === 'ADMIN';
 
@@ -78,42 +81,28 @@ export const App: React.FC = () => {
   };
 
   const fetchQueue = async () => {
+    if (!localStorage.getItem('amstar_token')) return;
     try {
-      const token = localStorage.getItem('amstar_token');
-      if (!token) return;
-
-      const response = await fetch(`${API_BASE}/api/repairs/queue`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('amstar_token');
-        window.location.reload();
-        return;
-      }
-
-      const data = await response.json();
-      setRepairs(data);
+      setRepairs(await apiFetch<VehicleRepair[]>('/api/repairs/queue'));
     } catch (error) {
-      console.error('Failed to fetch repairs:', error);
+      // apiFetch already logged the user out on 401; anything else is worth showing.
+      if (!(error instanceof ApiError) || error.status !== 401) {
+        showToast('Could not load the queue.', 'error');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const fetchReferenceData = async () => {
-    const token = localStorage.getItem('amstar_token');
-    if (!token) return;
-
+    if (!localStorage.getItem('amstar_token')) return;
     try {
-      const headers = { 'Authorization': `Bearer ${token}` };
-      const [techResponse, serviceResponse] = await Promise.all([
-        fetch(`${API_BASE}/api/technicians`, { headers }),
-        fetch(`${API_BASE}/api/services`, { headers }),
+      const [techs, services] = await Promise.all([
+        apiFetch<Technician[]>('/api/technicians'),
+        apiFetch<ServiceType[]>('/api/services'),
       ]);
-
-      if (techResponse.ok) setTechnicians(await techResponse.json());
-      if (serviceResponse.ok) setServiceCatalog(await serviceResponse.json());
+      setTechnicians(techs);
+      setServiceCatalog(services);
     } catch (error) {
       console.error('Failed to fetch reference data:', error);
     }
@@ -121,67 +110,54 @@ export const App: React.FC = () => {
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     if (!isAdmin) return;
-    const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`${API_BASE}/api/repairs/${id}/status`, {
+      await apiFetch(`/api/repairs/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       });
-      if (response.ok) fetchQueue();
+      fetchQueue();
     } catch (error) {
-      console.error("Failed to update status:", error);
+      toastError(error, 'Could not update status.');
     }
   };
 
   const handleAssignWorker = async (id: number, workerUsername: string) => {
     if (!isAdmin) return;
-    const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`${API_BASE}/api/repairs/${id}/assign`, {
+      await apiFetch(`/api/repairs/${id}/assign`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ worker: workerUsername })
+        body: JSON.stringify({ worker: workerUsername }),
       });
-      if (response.ok) fetchQueue();
+      fetchQueue();
     } catch (error) {
-      console.error("Failed to assign worker:", error);
+      toastError(error, 'Could not assign technician.');
     }
   };
 
   const handleServiceChange = async (id: number, newService: string) => {
     if (!isAdmin) return;
-    const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`${API_BASE}/api/repairs/${id}/service`, {
+      await apiFetch(`/api/repairs/${id}/service`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ serviceType: newService })
+        body: JSON.stringify({ serviceType: newService }),
       });
-      if (response.ok) {
-        fetchQueue();
-        fetchReferenceData();
-      }
-    } catch (error) { console.error("Failed to update service:", error); }
+      fetchQueue();
+      fetchReferenceData();
+    } catch (error) {
+      toastError(error, 'Could not update service.');
+    }
   };
 
   const handleSavePricing = async (id: number, payload: any) => {
-    const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`${API_BASE}/api/repairs/${id}/pricing`, {
+      await apiFetch(`/api/repairs/${id}/pricing`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-      if (response.ok) {
-        showToast("Pricing updated successfully!", "success");
-        fetchQueue();
-      } else {
-        showToast("Failed to save pricing parameters.", "error");
-      }
+      showToast('Pricing updated successfully!', 'success');
+      fetchQueue();
     } catch (error) {
-      console.error("Failed to save pricing:", error);
-      showToast("Network error. Could not save pricing.", "error");
+      toastError(error, 'Could not save pricing.');
     }
   };
 
@@ -193,21 +169,12 @@ export const App: React.FC = () => {
 
   const confirmDelete = async () => {
     if (repairToDelete === null) return;
-    const token = localStorage.getItem('amstar_token');
     try {
-      const response = await fetch(`${API_BASE}/api/repairs/${repairToDelete}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        showToast("Repair permanently deleted.", "success");
-        fetchQueue();
-      } else {
-        showToast("Failed to delete the repair.", "error");
-      }
+      await apiFetch(`/api/repairs/${repairToDelete}`, { method: 'DELETE' });
+      showToast('Repair permanently deleted.', 'success');
+      fetchQueue();
     } catch (error) {
-      console.error("Failed to delete repair:", error);
-      showToast("Network error. Could not delete repair.", "error");
+      toastError(error, 'Could not delete the repair.');
     } finally {
       setIsDeleteModalOpen(false);
       setRepairToDelete(null);

@@ -41,7 +41,8 @@ services:
     restart: unless-stopped
 
   caddy:
-    image: caddy:2-alpine
+    build:
+      context: ./caddy
     container_name: amstar_caddy
     ports:
       - "80:80"

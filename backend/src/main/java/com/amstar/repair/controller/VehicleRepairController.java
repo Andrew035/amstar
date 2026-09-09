@@ -3,11 +3,14 @@ package com.amstar.repair.controller;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
 import com.amstar.repair.service.PriorityQueueService;
+import com.amstar.repair.model.TicketStatus;
+import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/repairs")
@@ -26,21 +29,26 @@ public class VehicleRepairController {
   }
 
   @PostMapping
-  public VehicleRepair addRepair(@RequestBody VehicleRepair repair) {
+  public VehicleRepair addRepair(@Valid @RequestBody VehicleRepair repair) {
     return priorityQueueService.createRepair(repair);
   }
 
   @PatchMapping("/{id}/status")
   public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
-    // Hand the job off to the service layer
-    boolean isUpdated = priorityQueueService.updateRepairStatus(id, request.get("status"));
+    String status = request.get("status");
+    if (!TicketStatus.isValid(status)) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "Status must be one of " + TicketStatus.ALL));
+    }
+
+    boolean isUpdated = priorityQueueService.updateRepairStatus(id, status);
 
     if (isUpdated) {
       return ResponseEntity.ok().build();
     } else {
       return ResponseEntity.notFound().build();
     }
-  };
+  }
 
   @PatchMapping("/{id}/assign")
   public ResponseEntity<?> assignWorker(@PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
@@ -54,6 +62,15 @@ public class VehicleRepairController {
 
   @PatchMapping("/{id}/pricing")
   public ResponseEntity<?> updatePricing(@PathVariable Long id, @RequestBody VehicleRepair pricingData) {
+    // tickets_price_non_negative rejects these at the database otherwise.
+    for (BigDecimal price : java.util.List.of(
+        pricingData.getRetailPrice(), pricingData.getLeasePrice(), pricingData.getLaborPrice())) {
+      if (price != null && price.signum() < 0) {
+        return ResponseEntity.badRequest()
+            .body(java.util.Map.of("error", "Prices cannot be negative"));
+      }
+    }
+
     boolean isUpdated = priorityQueueService.updatePricing(id, pricingData);
 
     if (isUpdated) {
