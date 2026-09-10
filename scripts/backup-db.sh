@@ -20,7 +20,7 @@ ping_hc() {
 
 # Any non-zero exit - dump failed, empty file, missing table, offsite failed -
 # reports failure before the script dies.
-trap 'rc=$?; [ $rc -ne 0 ] && ping_hc "/fail"; exit $rc' EXIT
+trap 'rc=$?; if [ $rc -ne 0 ]; then rm -f "${OUT:-}.tmp"; ping_hc "/fail"; fi; exit $rc' EXIT
 
 mkdir -p "$BACKUP_DIR"
 STAMP="$(date +%Y-%m-%d_%H%M)"
