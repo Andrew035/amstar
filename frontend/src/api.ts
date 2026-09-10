@@ -2,11 +2,11 @@ import { API_BASE } from "./config";
 
 /** Thrown for any non-2xx response. `message` is safe to show the user. */
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
   }
 }
 
