@@ -60,7 +60,7 @@ const PricingCard: React.FC<{
           <h3 className="font-cond text-lg font-bold uppercase tracking-wider text-amstar-ink leading-tight">
             {item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}
           </h3>
-          <p className="text-xs text-amstar-ink-dim font-bold mt-1">{item.serviceType}</p>
+          <Truncated value={item.serviceType} className='text-xs text-amstar-ink-dim font-bold mt-1' />
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs pt-3 border-t border-amstar-line-soft mt-auto">
@@ -147,15 +147,17 @@ const PricingCard: React.FC<{
           </label>
         </div>
 
-        <div className="pt-4 border-t border-amstar-line-soft flex items-center justify-between mt-auto">
-          <div>
+        <div className="pt-4 border-t border-amstar-line-soft flex items-center justify-between gap-4 mt-auto">
+          <div className='flex-1 min-w-0'>
             <span className={LABEL_STYLE}>Total Billed</span>
-            <span className="font-mono tabular-nums text-3xl font-black text-emerald-400 tracking-tight">${currentTotal.toFixed(2)}</span>
+            <span className="block truncate font-mono tabular-nums text-3xl font-black text-emerald-400 tracking-tight">${currentTotal.toFixed(2)}</span>
           </div>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-6 py-2.5 bg-amstar-red hover:bg-red-700 text-white rounded-sm text-sm font-cond uppercase tracking-widest shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="shrink-0 min-w-[170px] px-6 py-2.5 bg-amstar-red hover:bg-red-700 text-white
+            rounded-sm text-sm font-cond uppercase tracking-widest shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)]
+            transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving...' : 'Save Pricing'}
           </button>

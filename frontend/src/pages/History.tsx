@@ -10,6 +10,8 @@ import {
   getStatusStyle,
 } from '../styles/controls';
 import { panelCoords } from '../lib/floating';
+import { Truncated } from '../components/Truncated';
+import { useTruncationTooltip } from '../lib/useTruncationTooltip';
 
 const MultiWorkerDropdown: React.FC<{ currentWorkers: string | undefined; onAssign: (workers: string) => void; technicianNames: string[]; }> = ({ currentWorkers, onAssign, technicianNames }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,8 +32,12 @@ const MultiWorkerDropdown: React.FC<{ currentWorkers: string | undefined; onAssi
 
   return (
     <>
-      <div onClick={openDropdown} className={`${INLINE_INPUT_STYLE} flex justify-between items-center min-w-[130px] max-w-[180px]`}>
-        <span className="truncate" title={selectedArray.length === 0 ? 'Unassigned' : selectedArray.join(', ')}>{selectedArray.length === 0 ? 'Unassigned' : selectedArray.join(', ')}</span>
+      <div onClick={openDropdown} className={`${INLINE_INPUT_STYLE} group flex justify-between items-center min-w-[130px] max-w-[180px]`}>
+        <Truncated
+          value={selectedArray.length === 0 ? 'Unassigned' : selectedArray.join(', ')}
+          className="flex-1"
+          tapToReveal={false}
+        />
         <span className="text-[10px] ml-2 text-amstar-ink-faint shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">▼</span>
       </div>
       {isOpen && (
@@ -89,9 +95,28 @@ const EditableServiceCell: React.FC<{ value: string; historicalMap: Record<strin
     setIsOpen(true);
   };
 
+  const { anchorRef, handlers, tooltip, hide } =
+    useTruncationTooltip<HTMLInputElement>(search, false);
+
   return (
     <>
-      <input type="text" value={search} onChange={e => { const upper = e.target.value.toUpperCase(); setSearch(upper); openDropdown(e); }} onFocus={openDropdown} onBlur={handleBlur} className={INLINE_INPUT_STYLE} onClick={e => e.stopPropagation()} />
+      <input
+        type="text"
+        ref={anchorRef}
+        value={search}
+        onChange={e => {
+          const upper = e.target.value.toUpperCase();
+          setSearch(upper);
+          openDropdown(e);
+        }}
+        onFocus={e => { hide(); openDropdown(e); }}
+        onBlur={handleBlur}
+        onMouseEnter={handlers.onMouseEnter}
+        onMouseLeave={handlers.onMouseLeave}
+        onClick={e => e.stopPropagation()}
+        className={INLINE_INPUT_STYLE}
+      />
+      {tooltip}
       {isOpen && filteredServices.length > 0 && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
@@ -173,6 +198,7 @@ export const HistoryPage: React.FC<{
     .sort((a, b) => new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() - new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime());
 
   const calculateTotal = (item: VehicleRepair) => ((item.includeRetail ? item.retailPrice || 0 : 0) + (item.includeLease ? item.leasePrice || 0 : 0) + (item.includeLabor ? item.laborPrice || 0 : 0));
+
 
   return (
     <div className='space-y-6'>

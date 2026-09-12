@@ -16,6 +16,7 @@ import {
 } from '../styles/controls';
 import { panelCoords } from "../lib/floating";
 import { Truncated } from "../components/Truncated";
+import { useTruncationTooltip } from "../lib/useTruncationTooltip";
 
 const MultiWorkerDropdown: React.FC<{
   currentWorkers: string | undefined;
@@ -46,9 +47,11 @@ const MultiWorkerDropdown: React.FC<{
   return (
     <>
       <div onClick={openDropdown} className={`${TABLE_DROPDOWN_STYLE} flex justify-between items-center min-w-[130px] max-w-[180px]`}>
-        <span className="truncate" title={selectedArray.length === 0 ? 'Unassigned' : selectedArray.join(', ')}>
-          {selectedArray.length === 0 ? 'Unassigned' : selectedArray.join(', ')}
-        </span>
+        <Truncated
+          value={selectedArray.length === 0 ? 'Unassigned' : selectedArray.join(', ')}
+          className="flex-1"
+          tapToReveal={false}
+        />
         <span className="text-[10px] ml-2 text-amstar-ink-faint shrink-0">▼</span>
       </div>
       {isOpen && (
@@ -112,20 +115,27 @@ const EditableServiceCell: React.FC<{
     setIsOpen(true);
   };
 
+  const { anchorRef, handlers, tooltip, hide } =
+    useTruncationTooltip<HTMLInputElement>(search, false);
+
   return (
     <div onClick={e => e.stopPropagation()}>
       <input
         type="text"
+        ref={anchorRef}
         value={search}
         onChange={e => {
           const upper = e.target.value.toUpperCase();
           setSearch(upper);
           openDropdown(e);
         }}
-        onFocus={openDropdown}
+        onFocus={e => { hide(); openDropdown(e); }}
         onBlur={handleBlur}
+        onMouseEnter={handlers.onMouseEnter}
+        onMouseLeave={handlers.onMouseLeave}
         className={INLINE_INPUT_STYLE}
       />
+      {tooltip}
       {isOpen && filteredServices.length > 0 && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
@@ -256,11 +266,11 @@ export const ActiveQueue: React.FC<{
                     />
                   </td>
 
-                  <td className="p-1">
+                  <td className="p-1 max-w-[220px]">
                     {isAdmin ? (
                       <EditableServiceCell value={item.serviceType} historicalMap={historicalServiceMap} onChange={(newService) => onServiceChange(item.id!, newService)} />
                     ) : (
-                      <span className="font-semibold text-amstar-ink uppercase">{item.serviceType}</span>
+                      <Truncated value={item.serviceType} className="font-semibold text-amstar-ink uppercase" />
                     )}
                   </td>
 
