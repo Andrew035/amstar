@@ -89,6 +89,20 @@ public class VehicleRepairController {
     return ResponseEntity.notFound().build();
   }
 
+  @PatchMapping("/{id}/notes")
+  public ResponseEntity<?> updateNotes(@PathVariable Long id,
+      @RequestBody java.util.Map<String, String> request) {
+    String notes = request.get("notes");
+    // Mirrors tickets_notes_length; without it the DB returns a 409 instead.
+    if (notes != null && notes.length() > 5000) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "Notes must be 5000 characters or fewer"));
+    }
+
+    boolean isUpdated = priorityQueueService.updateNotes(id, notes);
+    return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
     // Find the repair ticket

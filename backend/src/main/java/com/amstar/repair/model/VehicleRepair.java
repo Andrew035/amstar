@@ -66,6 +66,9 @@ public class VehicleRepair {
   @Column(name = "include_labor", nullable = false)
   private Boolean includeLabor = false;
 
+  @Column(columnDefinition = "TEXT")
+  private String notes;
+
   @ManyToMany(fetch = FetchType.EAGER)
   @OrderBy("name")
   @JoinTable(name = "ticket_services", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
@@ -285,5 +288,13 @@ public class VehicleRepair {
 
   public void setPriorityScore(double priorityScore) {
     this.priorityScore = priorityScore;
+  }
+
+  public String getNotes() {
+    return notes;
+  }
+
+  public void setNotes(String notes) {
+    this.notes = notes;
   }
 }

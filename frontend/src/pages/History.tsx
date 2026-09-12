@@ -9,6 +9,7 @@ import {
   PANEL_HEADING_STYLE,
   getStatusStyle,
 } from '../styles/controls';
+import { panelCoords } from '../lib/floating';
 
 const MultiWorkerDropdown: React.FC<{ currentWorkers: string | undefined; onAssign: (workers: string) => void; technicianNames: string[]; }> = ({ currentWorkers, onAssign, technicianNames }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +22,10 @@ const MultiWorkerDropdown: React.FC<{ currentWorkers: string | undefined; onAssi
     onAssign(updatedSelection.join(', '));
   };
   const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); setCoords({ top: rect.bottom + 4, left: rect.left }); setIsOpen(true);
+    e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect();
+    const { top, left } = panelCoords(rect, 226, 192);
+    setCoords({ top, left });
+    setIsOpen(true);
   };
 
   return (
@@ -81,7 +85,7 @@ const EditableServiceCell: React.FC<{ value: string; historicalMap: Record<strin
 
   const openDropdown = (e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>) => {
     const rect = e.target.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 200) });
+    setCoords(panelCoords(rect, 192, 200));
     setIsOpen(true);
   };
 
@@ -118,7 +122,7 @@ const StatusDropdown: React.FC<{ value: string; onChange: (val: string) => void 
   const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 130) });
+    setCoords(panelCoords(rect, 3 * 38, 130));
     setIsOpen(true);
   };
 
@@ -184,15 +188,22 @@ export const HistoryPage: React.FC<{
           <table className='w-full text-left text-xs border-collapse'>
             <thead className='bg-amstar-raised border-b border-amstar-line'>
               <tr>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Entry Date</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Completion Date</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Customer</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Image</th><th className={`${PANEL_HEADING_STYLE} p-3`}>License Plate</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Details</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Service Details</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Technician(s)</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Total Price</th><th className={`${PANEL_HEADING_STYLE} p-3 text-center`}>Status</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 hidden lg:table-cell`}>Entry Date</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Completion Date</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Customer</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Image</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>License Plate</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 hidden md:table-cell`}>Vehicle Details</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Service Details</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Technician(s)</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Total Price</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 text-center`}>Status</th>
               </tr>
             </thead>
             <tbody className='divide-y divide-amstar-line-soft'>
               {completedRepairs.map(item => (
                 <tr key={item.id} onClick={() => onDeleteClick(item.id!)} className={`hover:bg-amstar-red/20 transition cursor-pointer group ${viewedRepairId === item.id ? 'bg-amstar-raised' : 'bg-amstar-surface'}`} title='Click to delete this ticket'>
-                  <td className='p-3 font-mono tabular-nums text-amstar-ink-dim'>{item.entryDate}</td>
+                  <td className='p-3 font-mono tabular-nums text-amstar-ink-dim hidden lg:table-cell'>{item.entryDate}</td>
                   <td className='p-3 font-bold font-mono tabular-nums text-amstar-ink'>{item.actualCompletionDate || item.expectedCompletionDate}</td>
                   <td className='p-3 font-semibold text-amstar-ink'>{item.customerName}</td>
                   <td className='p-3'>{item.vehicle?.carImageUrl ? <img src={item.vehicle.carImageUrl} alt='Vehicle Image' onClick={e => { e.stopPropagation(); onViewDeepDive(item); }} className='w-16 h-10 object-cover rounded shadow-sm hover:scale-110 transition duration-200' /> : <span className='text-amstar-ink-faint'>No Image</span>}</td>
@@ -204,7 +215,7 @@ export const HistoryPage: React.FC<{
                     </div>
                   </td>
 
-                  <td className='p-3 font-medium text-amstar-ink'>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
+                  <td className='p-3 font-medium text-amstar-ink hidden md:table-cell'>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
 
                   <td className='p-1' onClick={e => e.stopPropagation()}>
                     <EditableServiceCell value={item.serviceType} historicalMap={historicalServiceMap} onChange={(newService) => onServiceChange(item.id!, newService)} />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { VehicleRepair } from '../types/repair';
 import { SEARCH_INPUT_STYLE, NUMBER_INPUT_STYLE, PANEL_STYLE, LABEL_STYLE } from '../styles/controls';
+import { Truncated } from '../components/Truncated';
 
 const PricingCard: React.FC<{
   item: VehicleRepair;
@@ -65,7 +66,11 @@ const PricingCard: React.FC<{
         <div className="grid grid-cols-2 gap-3 text-xs pt-3 border-t border-amstar-line-soft mt-auto">
           <div>
             <span className={LABEL_STYLE}>VIN</span>
-            <span className="font-mono tabular-nums bg-amstar-field px-2 py-1 rounded-md text-amstar-ink shadow-inner border border-amstar-line block truncate">{item.vehicle?.vin || 'N/A'}</span>
+            <Truncated
+              value={item.vehicle?.vin}
+              fallback='N\A'
+              className='font-mono tabular-nums bg-amstar-field px-2 py-1 rounded-md text-amstar-ink shadow-inner border border-amstar-line'
+            />
           </div>
           <div>
             <span className={LABEL_STYLE}>License Plate</span>

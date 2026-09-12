@@ -12,6 +12,7 @@ import { Register } from './pages/Register';
 import { apiFetch, ApiError } from './api';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
+import { TicketNotes } from './components/TicketNotes';
 
 export const App: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
@@ -78,6 +79,15 @@ export const App: React.FC = () => {
     setLoading(true);
     fetchQueue();
     fetchReferenceData();
+  };
+
+  const handleSaveNotes = async (id: number, notes: string) => {
+    if (!isAdmin) return;
+    await apiFetch(`/api/repairs/${id}/notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    });
+    fetchQueue();
   };
 
   const fetchQueue = async () => {
@@ -343,6 +353,13 @@ export const App: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <TicketNotes
+              repairId={viewedRepair.id!}
+              initialNotes={viewedRepair.notes}
+              isAdmin={isAdmin}
+              onSave={handleSaveNotes}
+            />
 
             <div className="bg-amstar-surface p-4 rounded border border-amstar-line flex justify-between items-center">
               <div>

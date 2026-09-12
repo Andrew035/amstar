@@ -9,17 +9,19 @@ import {
   PANEL_HEADING_STYLE,
 } from '../styles/controls';
 import { API_BASE } from '../config';
+import { panelCoords } from '../lib/floating';
 
 // === NEW: CUSTOM DATE PICKER ===
 const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [coords, setCoords] = useState({ top: 0, left: 0, maxHeight: 0 });
   const [currentView, setCurrentView] = useState(new Date());
 
   const handleOpen = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left });
+    const { top, left, maxHeight } = panelCoords(rect, 320, 256);
+    setCoords({ top, left, maxHeight });
     if (value) {
       const [y, m] = value.split('-');
       setCurrentView(new Date(parseInt(y), parseInt(m) - 1, 1));
@@ -75,7 +77,7 @@ const CustomDatePicker: React.FC<{ value: string; onChange: (val: string) => voi
       {isOpen && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} onWheel={() => setIsOpen(false)} onTouchMove={() => setIsOpen(false)}></div>
-          <div className={`${FLOATING_PANEL_STYLE} p-4 w-64 select-none`} style={{ top: coords.top, left: coords.left }} onClick={e => e.stopPropagation()}>
+          <div className={`${FLOATING_PANEL_STYLE} p-4 w-64 select-none overflow-y-auto`} style={{ top: coords.top, left: coords.left, maxHeight: coords.maxHeight }} onClick={e => e.stopPropagation()}>
 
             <div className="flex justify-between items-center mb-4 px-1">
               <button type="button" onClick={handlePrevMonth} className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors">{"<"}</button>
@@ -221,7 +223,7 @@ const ServiceAutocomplete: React.FC<{
 
   const openDropdown = (e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>) => {
     const rect = e.target.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    setCoords(panelCoords(rect, 192, 200));
     setIsOpen(true);
   };
 
@@ -271,7 +273,7 @@ const StateSearch: React.FC<{ value: string; onChange: (val: string) => void }> 
   };
   const openDropdown = (e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>) => {
     const rect = e.target.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 192) });
+    setCoords(panelCoords(rect, 192, 200));
     setIsOpen(true);
   };
   return (

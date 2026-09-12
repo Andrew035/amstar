@@ -124,4 +124,14 @@ public class PriorityQueueService {
       return true;
     }).orElse(false);
   }
+
+  @Transactional
+  public boolean updateNotes(Long id, String notes) {
+    return repository.findById(id).map(repair -> {
+      // Blank and null both mean "no notes" - store one of them, not both.
+      repair.setNotes(notes == null || notes.isBlank() ? null : notes);
+      repository.save(repair);
+      return true;
+    }).orElse(false);
+  }
 }

@@ -45,6 +45,7 @@ export interface VehicleRepair {
   assignedWorker: string;
   actualCompletionDate: string;
   priorityScore?: number;
+  notes?: string;
   retailPrice?: number;
   leasePrice?: number;
   laborPrice?: number;

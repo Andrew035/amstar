@@ -14,6 +14,8 @@ import {
   getSeverityGlow,
   getStatusStyle,
 } from '../styles/controls';
+import { panelCoords } from "../lib/floating";
+import { Truncated } from "../components/Truncated";
 
 const MultiWorkerDropdown: React.FC<{
   currentWorkers: string | undefined;
@@ -36,7 +38,8 @@ const MultiWorkerDropdown: React.FC<{
   const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left });
+    const { top, left } = panelCoords(rect, 226, 192);
+    setCoords({ top, left });
     setIsOpen(true);
   };
 
@@ -105,7 +108,7 @@ const EditableServiceCell: React.FC<{
 
   const openDropdown = (e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>) => {
     const rect = e.target.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 200) });
+    setCoords(panelCoords(rect, 192, 200));
     setIsOpen(true);
   };
 
@@ -155,7 +158,7 @@ const StatusDropdown: React.FC<{ value: string; onChange: (val: string) => void 
   const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 130) });
+    setCoords(panelCoords(rect, 3 * 38, 130));
     setIsOpen(true);
   };
 
@@ -220,9 +223,17 @@ export const ActiveQueue: React.FC<{
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Customer</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Image</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>License Plate</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Details</th><th className={`${PANEL_HEADING_STYLE} p-3`}>VIN</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Service</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Severity</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Entry Date</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Due Date</th><th className={`${PANEL_HEADING_STYLE} p-3`}>Technician(s)</th><th className={`${PANEL_HEADING_STYLE} p-3 text-center`}>Status</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Customer</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Image</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>License Plate</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 hidden md:table-cell`}>Vehicle Details</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 hidden lg:table-cell`}>VIN</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Service</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Severity</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 hidden lg:table-cell`}>Entry Date</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Due Date</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3`}>Technician(s)</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 text-center`}>Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-amstar-line-soft">
@@ -238,8 +249,12 @@ export const ActiveQueue: React.FC<{
                     </div>
                   </td>
 
-                  <td className="p-3 font-medium text-amstar-ink">{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
-                  <td className="p-3 font-mono tabular-nums text-[11px] text-amstar-ink-dim">{item.vehicle?.vin || 'Unknown'}</td>
+                  <td className="p-3 font-medium text-amstar-ink hidden md:table-cell">{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
+                  <td className="p-3 font-mono max-w-[130px] hidden lg:table-cell">
+                    <Truncated value={item.vehicle?.vin} fallback="Unknown"
+                      className="font-mono tabular-nums text-[11px] text-amstar-ink-dim"
+                    />
+                  </td>
 
                   <td className="p-1">
                     {isAdmin ? (
@@ -255,7 +270,7 @@ export const ActiveQueue: React.FC<{
                     </span>
                   </td>
 
-                  <td className="p-3 font-mono tabular-nums text-amstar-ink-dim">{item.entryDate}</td>
+                  <td className="p-3 font-mono tabular-nums text-amstar-ink-dim hidden lg:table-cell">{item.entryDate}</td>
                   <td className="p-3 font-mono tabular-nums font-semibold text-amstar-ink">{item.expectedCompletionDate}</td>
 
                   <td className="p-1" onClick={e => e.stopPropagation()}>
