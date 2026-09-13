@@ -266,7 +266,7 @@ export const ActiveQueue: React.FC<{
                     />
                   </td>
 
-                  <td className="p-1 max-w-[220px]">
+                  <td className="p-1 max-w-[220px]" title="">
                     {isAdmin ? (
                       <EditableServiceCell value={item.serviceType} historicalMap={historicalServiceMap} onChange={(newService) => onServiceChange(item.id!, newService)} />
                     ) : (
@@ -283,7 +283,7 @@ export const ActiveQueue: React.FC<{
                   <td className="p-3 font-mono tabular-nums text-amstar-ink-dim hidden lg:table-cell">{item.entryDate}</td>
                   <td className="p-3 font-mono tabular-nums font-semibold text-amstar-ink">{item.expectedCompletionDate}</td>
 
-                  <td className="p-1" onClick={e => e.stopPropagation()}>
+                  <td className="p-1" title="" onClick={e => e.stopPropagation()}>
                     {isAdmin ? <MultiWorkerDropdown currentWorkers={item.assignedWorker} technicianNames={technicianNames} onAssign={(workers) => onAssignWorker(item.id!, workers)} /> : <span className="font-bold text-amstar-ink">{item.assignedWorker || 'Unassigned'}</span>}
                   </td>
 
@@ -291,7 +291,7 @@ export const ActiveQueue: React.FC<{
                     {isAdmin ? (
                       <StatusDropdown value={item.status || 'PENDING'} onChange={(val) => onStatusChange(item.id!, val)} />
                     ) : (
-                      <div className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-center border ${getStatusStyle(item.status)}`}>{item.status?.replace('_', ' ')}</div>
+                      <div className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-center border whitespace-nowrap ${getStatusStyle(item.status)}`}>{item.status?.replace('_', ' ')}</div>
                     )}
                   </td>
                 </tr>

@@ -243,11 +243,11 @@ export const HistoryPage: React.FC<{
 
                   <td className='p-3 font-medium text-amstar-ink hidden md:table-cell'>{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
 
-                  <td className='p-1' onClick={e => e.stopPropagation()}>
+                  <td className='p-1' title="" onClick={e => e.stopPropagation()}>
                     <EditableServiceCell value={item.serviceType} historicalMap={historicalServiceMap} onChange={(newService) => onServiceChange(item.id!, newService)} />
                   </td>
 
-                  <td className='p-1' onClick={e => e.stopPropagation()}>
+                  <td className='p-1' title="" onClick={e => e.stopPropagation()}>
                     <MultiWorkerDropdown currentWorkers={item.assignedWorker} technicianNames={technicianNames} onAssign={(workers) => onAssignWorker(item.id!, workers)} />
                   </td>
 
