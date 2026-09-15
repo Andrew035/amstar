@@ -260,7 +260,7 @@ export const ActiveQueue: React.FC<{
                   </td>
 
                   <td className="p-3 font-medium text-amstar-ink hidden md:table-cell">{item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}</td>
-                  <td className="p-3 font-mono max-w-[130px] hidden lg:table-cell">
+                  <td className="p-3 font-mono max-w-[130px] hidden lg:table-cell" title="">
                     <Truncated value={item.vehicle?.vin} fallback="Unknown"
                       className="font-mono tabular-nums text-[11px] text-amstar-ink-dim"
                     />
