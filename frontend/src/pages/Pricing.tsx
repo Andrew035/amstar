@@ -7,6 +7,7 @@ import {
   LABEL_STYLE,
 } from "../styles/controls";
 import { Truncated } from "../components/Truncated";
+import { CurrencyInput } from "../components/CurrencyInput";
 
 const PricingCard: React.FC<{
   item: VehicleRepair;
@@ -138,13 +139,11 @@ const PricingCard: React.FC<{
               >
                 $
               </span>
-              <input
-                type="number"
+              <CurrencyInput
+                value={retailPrice}
+                onChange={setRetailPrice}
                 disabled={!includeRetail}
-                value={retailPrice === 0 ? "" : retailPrice}
-                onChange={(e) => setRetailPrice(Number(e.target.value))}
-                placeholder="0.00"
-                className={NUMBER_INPUT_STYLE}
+                aria-label="Retail price"
               />
             </div>
           </label>
@@ -167,13 +166,11 @@ const PricingCard: React.FC<{
               >
                 $
               </span>
-              <input
-                type="number"
+              <CurrencyInput
+                value={leasePrice}
+                onChange={setLeasePrice}
                 disabled={!includeLease}
-                value={leasePrice === 0 ? "" : leasePrice}
-                onChange={(e) => setLeasePrice(Number(e.target.value))}
-                placeholder="0.00"
-                className={NUMBER_INPUT_STYLE}
+                aria-label="Lease price"
               />
             </div>
           </label>
@@ -196,13 +193,11 @@ const PricingCard: React.FC<{
               >
                 $
               </span>
-              <input
-                type="number"
+              <CurrencyInput
+                value={laborPrice}
+                onChange={setLaborPrice}
                 disabled={!includeLabor}
-                value={laborPrice === 0 ? "" : laborPrice}
-                onChange={(e) => setLaborPrice(Number(e.target.value))}
-                placeholder="0.00"
-                className={NUMBER_INPUT_STYLE}
+                aria-label="Labor price"
               />
             </div>
           </label>
