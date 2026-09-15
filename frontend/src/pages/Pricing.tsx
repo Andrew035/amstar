@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import type { VehicleRepair } from "../types/repair";
 import {
   SEARCH_INPUT_STYLE,
-  NUMBER_INPUT_STYLE,
   PANEL_STYLE,
   LABEL_STYLE,
 } from "../styles/controls";
