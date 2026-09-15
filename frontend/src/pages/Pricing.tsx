@@ -47,7 +47,7 @@ const PricingCard: React.FC<{
     <div className={`${PANEL_STYLE} overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col md:flex-row h-full`}>
 
       {/* Left Side: Vehicle Info */}
-      <div className="p-5 flex-1 border-b md:border-b-0 md:border-r border-amstar-line-soft flex flex-col gap-3">
+      <div className="p-5 flex-1 min-w-0 border-b md:border-b-0 md:border-r border-amstar-line-soft flex flex-col gap-3">
         {item.vehicle?.carImageUrl ? (
           <img src={item.vehicle.carImageUrl} alt="Vehicle" className="w-full h-36 object-cover rounded shadow-sm" />
         ) : (
@@ -57,23 +57,23 @@ const PricingCard: React.FC<{
         )}
 
         <div className="mt-1">
-          <h3 className="font-cond text-lg font-bold uppercase tracking-wider text-amstar-ink leading-tight">
+          <h3 className="font-cond text-lg font-bold uppercase tracking-wider text-amstar-ink leading-tight line-clamp-2">
             {item.vehicle?.year} {item.vehicle?.make} {item.vehicle?.model}
           </h3>
           <Truncated value={item.serviceType} className='text-xs text-amstar-ink-dim font-bold mt-1' />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 text-xs pt-3 border-t border-amstar-line-soft mt-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs pt-3 border-t border-amstar-line-soft mt-auto">
           <div>
             <span className={LABEL_STYLE}>VIN</span>
             <Truncated
               value={item.vehicle?.vin}
-              fallback='N\A'
-              className='font-mono tabular-nums bg-amstar-field px-2 py-1 rounded-md text-amstar-ink shadow-inner border border-amstar-line'
+              fallback='N/A'
+              className='font-mono tabular-nums tracking-tight bg-amstar-field px-2 py-1 rounded-md text-amstar-ink shadow-inner border border-amstar-line'
             />
           </div>
           <div>
-            <span className={LABEL_STYLE}>License Plate</span>
+            <span className={`${LABEL_STYLE} whitespace-nowrap`}>License Plate</span>
             <div className="inline-block border border-amstar-line bg-amstar-raised px-2 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm">
               {item.vehicle?.licensePlate} <span className="text-[9px] block text-amstar-ink-dim leading-none">{item.vehicle?.state}</span>
             </div>
@@ -87,7 +87,7 @@ const PricingCard: React.FC<{
       </div>
 
       {/* Right Side: Interactive Pricing Controls */}
-      <div className="p-5 flex-1 bg-amstar-ground/40 flex flex-col justify-between space-y-5">
+      <div className="p-4 min-w-0 md:basis-[264px] md:grow-0 md:shrink-0 bg-amstar-ground/40 flex flex-col justify-between space-y-4">
 
         <div className="space-y-3">
           <h4 className="font-cond text-xs font-black uppercase tracking-widest text-amstar-ink-dim mb-4">Invoice Breakdown</h4>
@@ -147,15 +147,15 @@ const PricingCard: React.FC<{
           </label>
         </div>
 
-        <div className="pt-4 border-t border-amstar-line-soft flex items-center justify-between gap-4 mt-auto">
-          <div className='flex-1 min-w-0'>
+        <div className="pt-4 border-t border-amstar-line-soft mt-auto space-y-3">
+          <div className='min-w-0'>
             <span className={LABEL_STYLE}>Total Billed</span>
-            <span className="block truncate font-mono tabular-nums text-3xl font-black text-emerald-400 tracking-tight">${currentTotal.toFixed(2)}</span>
+            <span className="block truncate font-mono tabular-nums text-2xl font-black text-emerald-400 tracking-tight">${currentTotal.toFixed(2)}</span>
           </div>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="shrink-0 min-w-[170px] px-6 py-2.5 bg-amstar-red hover:bg-red-700 text-white
+            className="w-full px-4 py-2.5 bg-amstar-red hover:bg-red-700 text-white
             rounded-sm text-sm font-cond uppercase tracking-widest shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)]
             transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >

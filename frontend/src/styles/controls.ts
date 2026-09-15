@@ -6,20 +6,15 @@
 const FOCUS =
   "focus:outline-none focus:border-amstar-red focus:ring-2 focus:ring-amstar-red/40";
 
-export const SHARED_INPUT_STYLE =
-  `w-full px-4 py-2.5 bg-amstar-field border border-amstar-line rounded text-sm font-medium text-amstar-ink shadow-inner transition-all placeholder:text-amstar-ink-faint ${FOCUS}`;
+export const SHARED_INPUT_STYLE = `w-full px-4 py-2.5 bg-amstar-field border border-amstar-line rounded text-sm font-medium text-amstar-ink shadow-inner transition-all placeholder:text-amstar-ink-faint ${FOCUS}`;
 
-export const SEARCH_INPUT_STYLE =
-  `w-full sm:w-80 px-4 py-2.5 bg-amstar-field border border-amstar-line rounded text-sm font-medium text-amstar-ink shadow-inner transition-all placeholder:text-amstar-ink-faint ${FOCUS}`;
+export const SEARCH_INPUT_STYLE = `w-full sm:w-80 px-4 py-2.5 bg-amstar-field border border-amstar-line rounded text-sm font-medium text-amstar-ink shadow-inner transition-all placeholder:text-amstar-ink-faint ${FOCUS}`;
 
-export const NUMBER_INPUT_STYLE =
-  `w-24 px-3 py-1.5 bg-amstar-field border border-amstar-line rounded font-mono text-sm font-bold text-amstar-ink tabular-nums shadow-inner transition-all text-right ${FOCUS} disabled:opacity-40 disabled:bg-amstar-surface disabled:cursor-not-allowed`;
+export const NUMBER_INPUT_STYLE = `w-20 px-2 py-1.5 bg-amstar-field border border-amstar-line rounded font-mono text-sm font-bold text-amstar-ink tabular-nums shadow-inner transition-all text-right ${FOCUS} disabled:opacity-40 disabled:bg-amstar-surface disabled:cursor-not-allowed`;
 
-export const TABLE_DROPDOWN_STYLE =
-  `px-3 py-1.5 bg-amstar-field border border-amstar-line rounded text-xs font-bold text-amstar-ink shadow-inner cursor-pointer transition-all hover:border-amstar-red ${FOCUS}`;
+export const TABLE_DROPDOWN_STYLE = `px-3 py-1.5 bg-amstar-field border border-amstar-line rounded text-xs font-bold text-amstar-ink shadow-inner cursor-pointer transition-all hover:border-amstar-red ${FOCUS}`;
 
-export const INLINE_INPUT_STYLE =
-  `px-3 py-1.5 bg-transparent border border-transparent hover:border-amstar-line focus:bg-amstar-field rounded text-xs font-bold text-amstar-ink transition-all cursor-pointer uppercase w-full ${FOCUS}`;
+export const INLINE_INPUT_STYLE = `px-3 py-1.5 bg-transparent border border-transparent hover:border-amstar-line focus:bg-amstar-field rounded text-xs font-bold text-amstar-ink transition-all cursor-pointer uppercase w-full ${FOCUS}`;
 
 // Static surfaces.
 export const PANEL_STYLE =
@@ -72,11 +67,11 @@ export const SEVERITY_TEXT = "text-black";
 // ramp moves onto the sev tokens. Bright chips take dark text.
 export const getStatusStyle = (status?: string): string => {
   switch (status) {
-    case 'PENDING':
-      return 'bg-sev-3 text-black border-sev-3 hover:brightness-110';
-    case 'IN_PROGRESS':
-      return 'bg-sev-2 text-black border-sev-2 hover:brightness-110';
+    case "PENDING":
+      return "bg-sev-3 text-black border-sev-3 hover:brightness-110";
+    case "IN_PROGRESS":
+      return "bg-sev-2 text-black border-sev-2 hover:brightness-110";
     default:
-      return 'bg-sev-1 text-black border-sev-1 hover:brightness-110';
+      return "bg-sev-1 text-black border-sev-1 hover:brightness-110";
   }
 };
