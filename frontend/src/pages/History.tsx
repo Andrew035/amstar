@@ -81,22 +81,28 @@ const MultiWorkerDropdown: React.FC<{
               Assign Technicians
             </div>
             <div className="max-h-48 overflow-y-auto p-1">
-              {workersList.map((worker) => (
-                <label
-                  key={worker}
-                  className="flex items-center gap-3 px-2 py-2 hover:bg-amstar-surface rounded cursor-pointer transition"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedArray.includes(worker)}
-                    onChange={() => handleToggle(worker)}
-                    className="w-4 h-4 rounded text-amstar-blue focus:ring-amstar-blue border-amstar-line cursor-pointer"
-                  />
-                  <span className="text-xs font-bold text-amstar-ink">
-                    {worker}
-                  </span>
-                </label>
-              ))}
+              {workersList.map((worker) => {
+                const isOn = selectedArray.includes(worker);
+                return (
+                  <button
+                    key={worker}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={isOn}
+                    onClick={() => handleToggle(worker)}
+                    className={`w-full min-h-10 flex items-center gap-3 px-2 py-2 rounded-sm text-left transition-colors ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
+                  >
+                    <span
+                      className={`shrink-0 w-4 h-4 rounded-sm border grid place-items-center text-[10px] font-black ${isOn ? "bg-amstar-red border-amstar-red text-white" : "border-amstar-line"}`}
+                    >
+                      {isOn ? "✓" : ""}
+                    </span>
+                    <span className="flex-1 text-xs font-bold text-amstar-ink">
+                      {worker}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </>
