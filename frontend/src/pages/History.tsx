@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type { VehicleRepair } from "../types/repair";
 import {
   SEARCH_INPUT_STYLE,
@@ -11,8 +11,7 @@ import {
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
 import { Truncated } from "../components/Truncated";
-import { useTruncationTooltip } from "../lib/useTruncationTooltip";
-import { isTouchDevice } from "../lib/device";
+import { ServicesCell } from "../components/ServicesCell";
 
 const MultiWorkerDropdown: React.FC<{
   currentWorkers: string | undefined;
@@ -102,128 +101,6 @@ const MultiWorkerDropdown: React.FC<{
           </div>
         </>
       )}
-    </>
-  );
-};
-
-const EditableServiceCell: React.FC<{
-  value: string;
-  historicalMap: Record<string, number>;
-  onChange: (val: string) => void;
-}> = ({ value, historicalMap, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState(value || "");
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    setSearch(value || "");
-  }, [value]);
-
-  const currentSegment = search.split(",").pop()?.trim() || "";
-
-  const filteredServices = Object.keys(historicalMap).filter((service) =>
-    service.toLowerCase().includes(currentSegment.toLowerCase()),
-  );
-
-  const handleSelect = (service: string) => {
-    const upper = service.toUpperCase();
-    const parts = search.split(",").map((s) => s.trim());
-    parts.pop();
-    parts.push(upper);
-
-    const newServiceString = parts.join(", ");
-    setSearch(newServiceString);
-    onChange(newServiceString);
-    setIsOpen(false);
-  };
-
-  const handleBlur = () => {
-    setTimeout(() => setIsOpen(false), 200);
-    const upper = search.toUpperCase();
-    if (upper !== value) onChange(upper);
-  };
-
-  const openDropdown = (
-    e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const rect = e.target.getBoundingClientRect();
-    setCoords(panelCoords(rect, 192, 200));
-    setIsOpen(true);
-  };
-
-  const { anchorRef, handlers, tooltip, hide } =
-    useTruncationTooltip<HTMLInputElement>(search, false);
-
-  return (
-    <>
-      <input
-        type="text"
-        ref={anchorRef}
-        value={search}
-        onChange={(e) => {
-          const upper = e.target.value.toUpperCase();
-          setSearch(upper);
-          openDropdown(e);
-        }}
-        onFocus={(e) => {
-          hide();
-          openDropdown(e);
-        }}
-        onBlur={handleBlur}
-        onMouseEnter={handlers.onMouseEnter}
-        onMouseLeave={handlers.onMouseLeave}
-        onClick={(e) => e.stopPropagation()}
-        className={INLINE_INPUT_STYLE}
-      />
-      {tooltip}
-      {isOpen &&
-        (filteredServices.length > 0 || (isTouchDevice && search.trim())) && (
-          <>
-            <div
-              className="fixed inset-0 z-[100]"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsOpen(false);
-              }}
-              onWheel={() => setIsOpen(false)}
-              onTouchMove={() => setIsOpen(false)}
-            ></div>
-            <div
-              className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`}
-              style={{
-                top: coords.top,
-                left: coords.left,
-                width: coords.width,
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {isTouchDevice && search.trim() && (
-                <div className="px-3 py-2 border-b border-amstar-line-soft bg-amstar-raised sticky top-0">
-                  <span
-                    className={`${PANEL_HEADING_STYLE} text-[10px] font-black block mb-1`}
-                  >
-                    On this ticket
-                  </span>
-                  <span className="block text-xs font-bold text-amstar-ink leading-relaxed break-words">
-                    {search}
-                  </span>
-                </div>
-              )}
-              {filteredServices.map((service) => (
-                <div
-                  key={service}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleSelect(service);
-                  }}
-                  className={`${PANEL_ROW_STYLE} uppercase`}
-                >
-                  {service}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
     </>
   );
 };
@@ -448,16 +325,17 @@ export const HistoryPage: React.FC<{
                   </td>
 
                   <td
-                    className="p-1"
+                    className="p-1 md:p-1 max-lg:py-2 max-w-[220px]"
                     title=""
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <EditableServiceCell
+                    <ServicesCell
                       value={item.serviceType}
                       historicalMap={historicalServiceMap}
                       onChange={(newService) =>
                         onServiceChange(item.id!, newService)
                       }
+                      subtitle={`${item.vehicle?.year ?? ""} ${item.vehicle?.make ?? ""} ${item.vehicle?.model ?? ""} - ${item.customerName}`.trim()}
                     />
                   </td>
 
