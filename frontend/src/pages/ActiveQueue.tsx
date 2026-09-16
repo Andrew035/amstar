@@ -17,6 +17,9 @@ import {
 import { panelCoords } from "../lib/floating";
 import { Truncated } from "../components/Truncated";
 import { ServicesCell } from "../components/ServicesCell";
+import { useSearchParams } from "react-router-dom";
+import { parseTicketFilter } from "../lib/ticketFilters";
+import { FilterBanner } from "../components/FilterBanner";
 
 const MultiWorkerDropdown: React.FC<{
   currentWorkers: string | undefined;
@@ -304,9 +307,13 @@ export const ActiveQueue: React.FC<{
   viewedRepairId,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  // Set by the dashboard cards, e.g. /queue?filter=overdue
+  const [searchParams, setSearchParams] = useSearchParams();
+  const ticketFilter = parseTicketFilter(searchParams.get("filter"));
 
   const activeRepairs = repairs
     .filter((r) => r.status !== "COMPLETED")
+    .filter((r) => !ticketFilter || ticketFilter.matches(r))
     .filter((item) => {
       if (!searchTerm) return true;
       const lower = searchTerm.toLowerCase();
@@ -324,7 +331,7 @@ export const ActiveQueue: React.FC<{
 
   return (
     <div className="space-y-6">
-      {isAdmin && (
+      {isAdmin && !ticketFilter && (
         <RepairForm
           onSuccess={onRefresh}
           currentUser={currentUser}
@@ -347,11 +354,19 @@ export const ActiveQueue: React.FC<{
         />
       </div>
 
+      {ticketFilter && (
+        <FilterBanner
+          label={ticketFilter.label}
+          count={activeRepairs.length}
+          onClear={() => setSearchParams({})}
+        />
+      )}
+
       {activeRepairs.length === 0 ? (
         <div
           className={`${PANEL_STYLE} border-dashed p-8 text-center text-amstar-ink-dim`}
         >
-          {searchTerm
+          {searchTerm || ticketFilter
             ? "No active repairs match your search."
             : "No active repairs in the shop queue."}
         </div>

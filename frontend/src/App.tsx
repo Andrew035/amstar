@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import type { ServiceType, Technician, VehicleRepair } from "./types/repair";
+import type {
+  ServiceType,
+  Technician,
+  TicketActivity,
+  VehicleRepair,
+} from "./types/repair";
 import { Navbar } from "./components/Navbar";
 import { Dashboard } from "./pages/Dashboard";
 import { ActiveQueue } from "./pages/ActiveQueue";
@@ -21,6 +26,7 @@ export const App: React.FC = () => {
   const [currentRole, setCurrentRole] = useState<string | null>(null);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceType[]>([]);
+  const [activity, setActivity] = useState<TicketActivity[]>([]);
 
   // Global Modal States
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
@@ -76,6 +82,19 @@ export const App: React.FC = () => {
     }
   }, [authenticateUser]);
 
+  useEffect(() => {
+    if (!currentUser) return;
+    const refresh = () => {
+      if (document.visibilityState === "visible") fetchQueue();
+    };
+    const timer = window.setInterval(refresh, 60000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [currentUser]);
+
   // Logic to run immediately after login
   const handleLoginSuccess = () => {
     authenticateUser();
@@ -97,6 +116,7 @@ export const App: React.FC = () => {
     if (!localStorage.getItem("amstar_token")) return;
     try {
       setRepairs(await apiFetch<VehicleRepair[]>("/api/repairs/queue"));
+      fetchActivity();
     } catch (error) {
       // apiFetch already logged the user out on 401; anything else is worth showing.
       if (!(error instanceof ApiError) || error.status !== 401) {
@@ -104,6 +124,14 @@ export const App: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchActivity = async () => {
+    try {
+      setActivity(await apiFetch<TicketActivity[]>("/api/activity"));
+    } catch {
+      // The feed is supplementary; a failure here must not interrupt the queue.
     }
   };
 
@@ -289,7 +317,12 @@ export const App: React.FC = () => {
             path="/"
             element={
               currentUser ? (
-                <Dashboard repairs={repairs} />
+                <Dashboard
+                  repairs={repairs}
+                  technicianNames={technicianNames}
+                  activity={activity}
+                  isAdmin={isAdmin}
+                />
               ) : (
                 <Navigate to="/login" replace />
               )

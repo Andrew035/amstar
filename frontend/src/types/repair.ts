@@ -59,3 +59,22 @@ export interface VehicleRepair {
   services?: ServiceType[];
   technicians?: Technician[];
 }
+
+/** One change to a ticket, from GET /api/activity. */
+export interface TicketActivity {
+  id: number;
+  ticketId: number | null;
+  ticketLabel: string;
+  actor: string;
+  action:
+    | "CREATED"
+    | "STATUS"
+    | "SEVERITY"
+    | "ASSIGNED"
+    | "SERVICES"
+    | "PRICING"
+    | "NOTES"
+    | "DELETED";
+  detail: string | null;
+  createdAt: string;
+}

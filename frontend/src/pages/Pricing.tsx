@@ -7,6 +7,9 @@ import {
 } from "../styles/controls";
 import { Truncated } from "../components/Truncated";
 import { CurrencyInput } from "../components/CurrencyInput";
+import { useSearchParams } from "react-router-dom";
+import { parseTicketFilter } from "../lib/ticketFilters";
+import { FilterBanner } from "../components/FilterBanner";
 
 const PricingCard: React.FC<{
   item: VehicleRepair;
@@ -229,9 +232,12 @@ export const PricingPage: React.FC<{
   onSavePricing: (id: number, payload: any) => void;
 }> = ({ repairs, onSavePricing }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const ticketFilter = parseTicketFilter(searchParams.get("filter"));
 
   // Filter repairs by search term
   const filteredRepairs = repairs
+    .filter((r) => !ticketFilter || ticketFilter.matches(r))
     .filter((item) => {
       if (!searchTerm) return true;
       const lower = searchTerm.toLowerCase();
@@ -268,11 +274,19 @@ export const PricingPage: React.FC<{
         />
       </div>
 
+      {ticketFilter && (
+        <FilterBanner
+          label={ticketFilter.label}
+          count={filteredRepairs.length}
+          onClear={() => setSearchParams({})}
+        />
+      )}
+
       {filteredRepairs.length === 0 ? (
         <div
           className={`${PANEL_STYLE} border-dashed p-12 text-center text-amstar-ink-dim font-medium`}
         >
-          {searchTerm
+          {searchTerm || ticketFilter
             ? "No vehicles match your search."
             : "No vehicles in the system to price."}
         </div>
