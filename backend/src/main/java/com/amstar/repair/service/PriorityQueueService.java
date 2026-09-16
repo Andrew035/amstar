@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,14 +15,17 @@ public class PriorityQueueService {
   private final VehicleRepairRepository repository;
   private final VehicleLookupService lookupService;
   private final TicketAssemblyService assembly;
+  private final ActivityService activity;
 
   public PriorityQueueService(
       VehicleRepairRepository repository,
       VehicleLookupService lookupService,
-      TicketAssemblyService assembly) {
+      TicketAssemblyService assembly,
+      ActivityService activity) {
     this.repository = repository;
     this.lookupService = lookupService;
     this.assembly = assembly;
+    this.activity = activity;
   }
 
   public double calculatePriorityScore(VehicleRepair repair) {
@@ -66,7 +70,9 @@ public class PriorityQueueService {
     // Resolve the inbound comma strings into customer / vehicle / join rows
     assembly.assemble(repair);
 
-    return repository.save(repair);
+    VehicleRepair saved = repository.save(repair);
+    activity.record(saved, "CREATED", saved.getServiceType());
+    return saved;
   }
 
   @Transactional
@@ -75,6 +81,7 @@ public class PriorityQueueService {
         .findById(id)
         .map(
             repair -> {
+              String oldStatus = repair.getStatus();
               repair.setStatus(newStatus);
 
               // Automatically stamp the date when completed
@@ -86,6 +93,10 @@ public class PriorityQueueService {
               }
 
               repository.save(repair);
+              if (!Objects.equals(oldStatus, newStatus)) {
+                activity.record(
+                    repair, "STATUS", readable(oldStatus) + " → " + readable(newStatus));
+              }
               return true;
             })
         .orElse(false);
@@ -97,8 +108,14 @@ public class PriorityQueueService {
         .findById(id)
         .map(
             repair -> {
+              String before = repair.getAssignedWorker();
               assembly.applyTechnicians(repair, workerNames);
               repository.save(repair);
+              String after = repair.getAssignedWorker();
+              if (!Objects.equals(before, after)) {
+                activity.record(
+                    repair, "ASSIGNED", after == null || after.isBlank() ? "Unassigned" : after);
+              }
               return true;
             })
         .orElse(false);
@@ -119,6 +136,8 @@ public class PriorityQueueService {
       repair.setIncludeLabor(pricingData.getIncludeLabor());
 
       repository.save(repair);
+      // No amount in the detail: shop-view users can read the feed.
+      activity.record(repair, "PRICING", null);
       return true;
     }
     return false;
@@ -130,8 +149,13 @@ public class PriorityQueueService {
         .findById(id)
         .map(
             repair -> {
+              String before = repair.getServiceType();
               assembly.applyServices(repair, newServiceType);
               repository.save(repair);
+              String after = repair.getServiceType();
+              if (!Objects.equals(before, after)) {
+                activity.record(repair, "SERVICES", after);
+              }
               return true;
             })
         .orElse(false);
@@ -143,9 +167,13 @@ public class PriorityQueueService {
         .findById(id)
         .map(
             repair -> {
+              String before = repair.getNotes();
               // Blank and null both mean "no notes" - store one of them, not both.
               repair.setNotes(notes == null || notes.isBlank() ? null : notes);
               repository.save(repair);
+              if (!Objects.equals(before, repair.getNotes())) {
+                activity.record(repair, "NOTES", null);
+              }
               return true;
             })
         .orElse(false);
@@ -157,10 +185,32 @@ public class PriorityQueueService {
         .findById(id)
         .map(
             repair -> {
+              int before = repair.getSeverity();
               repair.setSeverity(severity);
               repository.save(repair);
+              if (before != severity) {
+                activity.record(repair, "SEVERITY", "Level " + before + " → Level " + severity);
+              }
               return true;
             })
         .orElse(false);
+  }
+
+  /** Records the deletion before the row is gone, so the feed can still name the car. */
+  @Transactional
+  public boolean deleteRepair(Long id) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              activity.record(repair, "DELETED", null);
+              repository.delete(repair);
+              return true;
+            })
+        .orElse(false);
+  }
+
+  private static String readable(String status) {
+    return status == null ? "—" : status.replace('_', ' ');
   }
 }

@@ -2,7 +2,7 @@ package com.amstar.repair.controller;
 
 import com.amstar.repair.model.TicketStatus;
 import com.amstar.repair.model.VehicleRepair;
-import com.amstar.repair.repository.VehicleRepairRepository;
+// import com.amstar.repair.repository.VehicleRepairRepository;
 import com.amstar.repair.service.PriorityQueueService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/repairs")
 public class VehicleRepairController {
   private final PriorityQueueService priorityQueueService;
-  private final VehicleRepairRepository repairRepository;
 
-  public VehicleRepairController(
-      PriorityQueueService priorityQueueService, VehicleRepairRepository repairRepository) {
+  // private final VehicleRepairRepository repairRepository;
+
+  public VehicleRepairController(PriorityQueueService priorityQueueService) {
     this.priorityQueueService = priorityQueueService;
-    this.repairRepository = repairRepository;
+    // this.repairRepository = repairRepository;
   }
 
   @GetMapping("/queue")
@@ -124,14 +124,8 @@ public class VehicleRepairController {
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
-    // Find the repair ticket
-    if (!repairRepository.existsById(id)) {
-      return ResponseEntity.notFound().build();
-    }
-
-    // Delete it from PostgreSQL
-    repairRepository.deleteById(id);
-
-    return ResponseEntity.noContent().build();
+    // Through the service so the deletion is recorded in the activity feed.
+    boolean isDeleted = priorityQueueService.deleteRepair(id);
+    return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
   }
 }

@@ -1,17 +1,17 @@
 package com.amstar.repair;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.amstar.repair.model.Vehicle;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
+import com.amstar.repair.service.ActivityService;
 import com.amstar.repair.service.PriorityQueueService;
 import com.amstar.repair.service.TicketAssemblyService;
 import com.amstar.repair.service.VehicleLookupService;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import java.time.LocalDate;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PriorityQueueServiceTest {
 
@@ -20,7 +20,9 @@ public class PriorityQueueServiceTest {
     VehicleRepairRepository repository = Mockito.mock(VehicleRepairRepository.class);
     VehicleLookupService lookupService = Mockito.mock(VehicleLookupService.class);
     TicketAssemblyService assembly = Mockito.mock(TicketAssemblyService.class);
-    PriorityQueueService service = new PriorityQueueService(repository, lookupService, assembly);
+    PriorityQueueService service =
+        new PriorityQueueService(
+            repository, lookupService, assembly, Mockito.mock(ActivityService.class));
 
     LocalDate today = LocalDate.now();
     LocalDate dueDate = today.plusDays(3);
