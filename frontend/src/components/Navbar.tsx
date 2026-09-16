@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React from "react";
+import { NavLink } from "react-router-dom";
 
 interface NavbarProps {
   isAdmin: boolean;
@@ -7,37 +7,53 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ isAdmin, currentUser, onLogout }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  isAdmin,
+  currentUser,
+  onLogout,
+}) => {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     // select-none prevents highlighting, transition-all unifies hover effects
-    `px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm transition-all select-none ${isActive
-      ? 'bg-amstar-raised text-white shadow-[inset_0_-2px_0_theme(colors.amstar.red)]'
-      : 'text-amstar-ink-dim hover:bg-amstar-raised/50 hover:text-white'
+    `px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm transition-all select-none ${
+      isActive
+        ? "bg-amstar-raised text-white shadow-[inset_0_-2px_0_theme(colors.amstar.red)]"
+        : "text-amstar-ink-dim hover:bg-amstar-raised/50 hover:text-white"
     }`;
 
   return (
     <header className="bg-amstar-blue border-b border-amstar-line sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-
         {/* Brand: welded AM badge + wordmark */}
         <div className="flex items-center gap-3 select-none">
           <div className="w-9 h-9 bg-amstar-red rounded-sm grid place-items-center font-cond font-bold text-white text-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.28),0_1px_0_rgba(255,255,255,0.2)]">
             AM
           </div>
           <div>
-            <h1 className="font-cond text-lg font-bold text-white tracking-tight leading-none">AM STAR</h1>
-            <span className="font-cond text-[10px] font-bold text-amstar-ink-faint tracking-[0.22em] uppercase">Transmissions</span>
+            <h1 className="font-cond text-lg font-bold text-white tracking-tight leading-none">
+              AM STAR
+            </h1>
+            <span className="font-cond text-[10px] font-bold text-amstar-ink-faint tracking-[0.22em] uppercase">
+              Transmissions
+            </span>
           </div>
         </div>
 
         {/* Navigation Links - draggable={false} stops the ghost dragging! */}
         <nav className="flex items-center gap-2">
-          <NavLink to="/" className={linkClass} draggable={false}>Shop Overview</NavLink>
-          <NavLink to="/queue" className={linkClass} draggable={false}>Active Queue</NavLink>
+          <NavLink to="/" className={linkClass} draggable={false}>
+            Shop Overview
+          </NavLink>
+          <NavLink to="/queue" className={linkClass} draggable={false}>
+            Active Queue
+          </NavLink>
           {isAdmin && (
             <>
-              <NavLink to="/pricing" className={linkClass} draggable={false}>Pricing Calculator</NavLink>
-              <NavLink to="/history" className={linkClass} draggable={false}>Completed History</NavLink>
+              <NavLink to="/pricing" className={linkClass} draggable={false}>
+                Pricing Calculator
+              </NavLink>
+              <NavLink to="/history" className={linkClass} draggable={false}>
+                Completed History
+              </NavLink>
             </>
           )}
         </nav>
@@ -54,7 +70,6 @@ export const Navbar: React.FC<NavbarProps> = ({ isAdmin, currentUser, onLogout }
             Log Out
           </button>
         </div>
-
       </div>
     </header>
   );
