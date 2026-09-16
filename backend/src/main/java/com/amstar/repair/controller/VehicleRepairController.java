@@ -1,16 +1,14 @@
 package com.amstar.repair.controller;
 
+import com.amstar.repair.model.TicketStatus;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
 import com.amstar.repair.service.PriorityQueueService;
-import com.amstar.repair.model.TicketStatus;
 import jakarta.validation.Valid;
-
+import java.math.BigDecimal;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/repairs")
@@ -18,7 +16,8 @@ public class VehicleRepairController {
   private final PriorityQueueService priorityQueueService;
   private final VehicleRepairRepository repairRepository;
 
-  public VehicleRepairController(PriorityQueueService priorityQueueService, VehicleRepairRepository repairRepository) {
+  public VehicleRepairController(
+      PriorityQueueService priorityQueueService, VehicleRepairRepository repairRepository) {
     this.priorityQueueService = priorityQueueService;
     this.repairRepository = repairRepository;
   }
@@ -34,7 +33,8 @@ public class VehicleRepairController {
   }
 
   @PatchMapping("/{id}/status")
-  public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
+  public ResponseEntity<?> updateStatus(
+      @PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
     String status = request.get("status");
     if (!TicketStatus.isValid(status)) {
       return ResponseEntity.badRequest()
@@ -51,7 +51,8 @@ public class VehicleRepairController {
   }
 
   @PatchMapping("/{id}/assign")
-  public ResponseEntity<?> assignWorker(@PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
+  public ResponseEntity<?> assignWorker(
+      @PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
     boolean isAssigned = priorityQueueService.assignWorker(id, request.get("worker"));
 
     if (isAssigned) {
@@ -61,10 +62,14 @@ public class VehicleRepairController {
   }
 
   @PatchMapping("/{id}/pricing")
-  public ResponseEntity<?> updatePricing(@PathVariable Long id, @RequestBody VehicleRepair pricingData) {
+  public ResponseEntity<?> updatePricing(
+      @PathVariable Long id, @RequestBody VehicleRepair pricingData) {
     // tickets_price_non_negative rejects these at the database otherwise.
-    for (BigDecimal price : java.util.List.of(
-        pricingData.getRetailPrice(), pricingData.getLeasePrice(), pricingData.getLaborPrice())) {
+    for (BigDecimal price :
+        java.util.List.of(
+            pricingData.getRetailPrice(),
+            pricingData.getLeasePrice(),
+            pricingData.getLaborPrice())) {
       if (price != null && price.signum() < 0) {
         return ResponseEntity.badRequest()
             .body(java.util.Map.of("error", "Prices cannot be negative"));
@@ -80,8 +85,8 @@ public class VehicleRepairController {
   }
 
   @PatchMapping("/{id}/service")
-  public ResponseEntity<?> updateServiceType(@PathVariable Long id,
-      @RequestBody java.util.Map<String, String> request) {
+  public ResponseEntity<?> updateServiceType(
+      @PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
     boolean isUpdated = priorityQueueService.updateServiceType(id, request.get("serviceType"));
     if (isUpdated) {
       return ResponseEntity.ok().build();
@@ -90,8 +95,8 @@ public class VehicleRepairController {
   }
 
   @PatchMapping("/{id}/notes")
-  public ResponseEntity<?> updateNotes(@PathVariable Long id,
-      @RequestBody java.util.Map<String, String> request) {
+  public ResponseEntity<?> updateNotes(
+      @PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
     String notes = request.get("notes");
     // Mirrors tickets_notes_length; without it the DB returns a 409 instead.
     if (notes != null && notes.length() > 5000) {
@@ -100,6 +105,20 @@ public class VehicleRepairController {
     }
 
     boolean isUpdated = priorityQueueService.updateNotes(id, notes);
+    return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+  }
+
+  @PatchMapping("/{id}/severity")
+  public ResponseEntity<?> updateSeverity(
+      @PathVariable Long id, @RequestBody java.util.Map<String, Object> request) {
+    // Integer only: a JSON 3.7 or "3" is rejected rather than silently coerced.
+    // Mirrors tickets_severity_range in V1.
+    if (!(request.get("severity") instanceof Integer severity) || severity < 1 || severity > 5) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "Severity must be a whole number from 1 to 5"));
+    }
+
+    boolean isUpdated = priorityQueueService.updateSeverity(id, severity);
     return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
   }
 

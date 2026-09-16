@@ -12,6 +12,7 @@ import {
   getSeverityColor,
   getSeverityGlow,
   getStatusStyle,
+  SEVERITY_LABELS,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
 import { Truncated } from "../components/Truncated";
@@ -186,6 +187,93 @@ const StatusDropdown: React.FC<{
   );
 };
 
+// Admin-only severity picker. Changing it reorders the queue, because severity
+// is the heaviest term in priorityScore.
+const SeverityDropdown: React.FC<{
+  value: number;
+  onChange: (val: number) => void;
+}> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const openDropdown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    // Five 40px rows plus the panel's padding.
+    setCoords(panelCoords(rect, 5 * 40 + 8, 176));
+    setIsOpen(true);
+  };
+
+  const handleSelect = (level: number) => {
+    setIsOpen(false);
+    if (level !== value) onChange(level);
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={openDropdown}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm font-cond uppercase
+        tracking-wider whitespace-nowrap ${SEVERITY_TEXT} text-[11px] ${getSeverityColor(value)}
+        ${getSeverityGlow(value)} hover:brightness-110 transition`}
+      >
+        Level {value}
+        <span className="text-[8px] leading-none">▼</span>
+      </button>
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-[100]"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+            onWheel={() => setIsOpen(false)}
+            onTouchMove={() => setIsOpen(false)}
+          ></div>
+          <div
+            role="listbox"
+            aria-label="Severity"
+            className={`${FLOATING_PANEL_STYLE} p-1`}
+            style={{ top: coords.top, left: coords.left, width: coords.width }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {[1, 2, 3, 4, 5].map((level) => (
+              <button
+                key={level}
+                type="button"
+                role="option"
+                aria-selected={level === value}
+                onClick={() => handleSelect(level)}
+                className={`w-full min-h-10 flex items-center gap-3 px-2 py-2 rounded-sm text-left
+                transition-colors ${level === value ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
+              >
+                <span
+                  className={`shrink-0 w-16 text-center px-1.5 py-0.5 rounded-sm font-cond
+                  uppercase tracking-wider text-[11px] ${SEVERITY_TEXT} ${getSeverityColor(level)}`}
+                >
+                  Level {level}
+                </span>
+                <span className="flex-1 text-xs font-bold text-amstar-ink">
+                  {SEVERITY_LABELS[level]}
+                </span>
+                {level === value && (
+                  <span className="text-xs font-black text-amstar-red-ink">
+                    ✓
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+};
+
 export const ActiveQueue: React.FC<{
   repairs: VehicleRepair[];
   isAdmin: boolean;
@@ -196,6 +284,7 @@ export const ActiveQueue: React.FC<{
   onAssignWorker: (id: number, workers: string) => void;
   technicianNames: string[];
   onServiceChange: (id: number, service: string) => void;
+  onSeverityChange: (id: number, severity: number) => void;
   onDeleteClick: (id: number) => void;
   onViewDeepDive: (repair: VehicleRepair) => void;
   viewedRepairId?: number | null;
@@ -207,6 +296,7 @@ export const ActiveQueue: React.FC<{
   technicianNames,
   onRefresh,
   onStatusChange,
+  onSeverityChange,
   onAssignWorker,
   onServiceChange,
   onDeleteClick,
@@ -350,11 +440,20 @@ export const ActiveQueue: React.FC<{
                   </td>
 
                   <td className="p-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-sm font-cond uppercase tracking-wider ${SEVERITY_TEXT} text-[11px] ${getSeverityColor(item.severity)} ${getSeverityGlow(item.severity)}`}
-                    >
-                      Level {item.severity}
-                    </span>
+                    {isAdmin ? (
+                      <SeverityDropdown
+                        value={item.severity}
+                        onChange={(level) => onSeverityChange(item.id!, level)}
+                      />
+                    ) : (
+                      <span
+                        className={`px-2 py-0.5 rounded-sm font-cond uppercase tracking-wider
+                            whitespace-nowrap ${SEVERITY_TEXT} text-[11px] ${getSeverityColor(item.severity)}
+                            ${getSeverityGlow(item.severity)}`}
+                      >
+                        Level {item.severity}
+                      </span>
+                    )}
                   </td>
 
                   <td className="p-3 font-mono tabular-nums text-amstar-ink-dim lg:table-cell">

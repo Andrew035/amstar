@@ -2,13 +2,12 @@ package com.amstar.repair.service;
 
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PriorityQueueService {
@@ -16,7 +15,9 @@ public class PriorityQueueService {
   private final VehicleLookupService lookupService;
   private final TicketAssemblyService assembly;
 
-  public PriorityQueueService(VehicleRepairRepository repository, VehicleLookupService lookupService,
+  public PriorityQueueService(
+      VehicleRepairRepository repository,
+      VehicleLookupService lookupService,
       TicketAssemblyService assembly) {
     this.repository = repository;
     this.lookupService = lookupService;
@@ -70,30 +71,37 @@ public class PriorityQueueService {
 
   @Transactional
   public boolean updateRepairStatus(Long id, String newStatus) {
-    return repository.findById(id).map(repair -> {
-      repair.setStatus(newStatus);
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              repair.setStatus(newStatus);
 
-      // Automatically stamp the date when completed
-      if ("COMPLETED".equals(newStatus)) {
-        repair.setActualCompletionDate(LocalDate.now());
-      } else {
-        // Remove the date if accidently marked complete and reverted
-        repair.setActualCompletionDate(null);
-      }
+              // Automatically stamp the date when completed
+              if ("COMPLETED".equals(newStatus)) {
+                repair.setActualCompletionDate(LocalDate.now());
+              } else {
+                // Remove the date if accidently marked complete and reverted
+                repair.setActualCompletionDate(null);
+              }
 
-      repository.save(repair);
-      return true;
-    }).orElse(false);
+              repository.save(repair);
+              return true;
+            })
+        .orElse(false);
   }
 
   @Transactional
   public boolean assignWorker(Long id, String workerNames) {
-    return repository.findById(id).map(repair -> {
-      assembly.applyTechnicians(repair, workerNames);
-      repository.save(repair);
-      return true;
-    }).orElse(false);
-
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              assembly.applyTechnicians(repair, workerNames);
+              repository.save(repair);
+              return true;
+            })
+        .orElse(false);
   }
 
   @Transactional
@@ -118,20 +126,41 @@ public class PriorityQueueService {
 
   @Transactional
   public boolean updateServiceType(Long id, String newServiceType) {
-    return repository.findById(id).map(repair -> {
-      assembly.applyServices(repair, newServiceType);
-      repository.save(repair);
-      return true;
-    }).orElse(false);
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              assembly.applyServices(repair, newServiceType);
+              repository.save(repair);
+              return true;
+            })
+        .orElse(false);
   }
 
   @Transactional
   public boolean updateNotes(Long id, String notes) {
-    return repository.findById(id).map(repair -> {
-      // Blank and null both mean "no notes" - store one of them, not both.
-      repair.setNotes(notes == null || notes.isBlank() ? null : notes);
-      repository.save(repair);
-      return true;
-    }).orElse(false);
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              // Blank and null both mean "no notes" - store one of them, not both.
+              repair.setNotes(notes == null || notes.isBlank() ? null : notes);
+              repository.save(repair);
+              return true;
+            })
+        .orElse(false);
+  }
+
+  @Transactional
+  public boolean updateSeverity(Long id, int severity) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              repair.setSeverity(severity);
+              repository.save(repair);
+              return true;
+            })
+        .orElse(false);
   }
 }

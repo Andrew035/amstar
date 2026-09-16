@@ -7,6 +7,7 @@ import {
   LABEL_STYLE,
   PANEL_STYLE,
   PANEL_HEADING_STYLE,
+  SEVERITY_LABELS,
 } from "../styles/controls";
 import { API_BASE } from "../config";
 import { panelCoords } from "../lib/floating";
@@ -208,14 +209,6 @@ const CustomDatePicker: React.FC<{
       )}
     </div>
   );
-};
-
-const SEVERITY_LABELS: Record<number, string> = {
-  1: "Minor",
-  2: "Low",
-  3: "Moderate",
-  4: "Major",
-  5: "Critical",
 };
 
 const SeveritySegments: React.FC<{

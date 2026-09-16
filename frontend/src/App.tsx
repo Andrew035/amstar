@@ -134,6 +134,20 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleSeverityChange = async (id: number, severity: number) => {
+    if (!isAdmin) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/severity`, {
+        method: "PATCH",
+        body: JSON.stringify({ severity }),
+      });
+      // Refetch reorders the queue: severity feeds priorityScore.
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not update severity.");
+    }
+  };
+
   const handleAssignWorker = async (id: number, workerUsername: string) => {
     if (!isAdmin) return;
     try {
@@ -295,6 +309,7 @@ export const App: React.FC = () => {
                   technicianNames={technicianNames}
                   onRefresh={fetchQueue}
                   onStatusChange={handleStatusChange}
+                  onSeverityChange={handleSeverityChange}
                   onAssignWorker={handleAssignWorker}
                   onServiceChange={handleServiceChange}
                   onDeleteClick={handleDeleteClick}

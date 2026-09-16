@@ -55,6 +55,15 @@ const LAMP_GLOW =
 export const getSeverityGlow = (severity: number): string =>
   severity >= 5 ? LAMP_GLOW : "";
 
+// One name per level, shared by the intake form and the queue's severity dropdown.
+export const SEVERITY_LABELS: Record<number, string> = {
+  1: "Minor",
+  2: "Low",
+  3: "Moderate",
+  4: "Major",
+  5: "Critical",
+};
+
 // All five sev-* values are bright, so severity chips take dark text — matching
 // getStatusStyle's treatment of status chips. text-black (not amstar-ground) is
 // required: amstar-ground against sev-5 #ff3b41 is only 4.42:1, under WCAG AA.
