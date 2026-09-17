@@ -8,7 +8,8 @@ follow it.
 
 ## 1. Architecture
 
-One Linux VM running three containers behind Caddy.
+One Linux VM running three containers: Caddy in front, then the backend and
+Postgres.
 
 ```
                     Internet
@@ -71,7 +72,10 @@ Encrypt for an hour.
 
 ```bash
 # 1. Prerequisites on a fresh Ubuntu VM
-sudo apt update && sudo apt install -y docker.io docker-compose-v2 git nodejs npm rclone
+sudo apt update && sudo apt install -y docker.io docker-compose-v2 git rclone curl
+# Node 22 from NodeSource: Ubuntu's own nodejs package is too old for Vite 8 (needs 20.19+)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
 sudo usermod -aG docker $USER && newgrp docker
 
 # 2. Get the code
@@ -102,7 +106,7 @@ docker compose logs -f backend caddy
 
 You are looking for three things:
 
-- Flyway: `Migrating schema "public" to version "1"` through `"4"`
+- Flyway: `Migrating schema "public" to version "1"` through the latest (`"6"` today)
 - `Started RepairServiceApplication`
 - Caddy: `certificate obtained successfully`
 
@@ -134,6 +138,11 @@ docker compose restart caddy      # picks up the new dist
 `docker compose up -d --build` alone will not refresh the frontend.
 
 If a change did not appear, you skipped `npm run build`.
+
+Database migrations run automatically: Flyway applies any new `V*.sql` file when
+the backend starts. Take a manual backup first
+(`/opt/amstar/scripts/backup-db.sh`) so a bad migration can be rolled back, and
+check `docker compose logs backend | grep Migrating` afterwards.
 
 ---
 
@@ -208,15 +217,16 @@ EOF
 
 ## 6. Disaster recovery
 
-The schema is rebuilt by Flyway from `V1`–`V4`, so you only ever restore
-**data**, never structure.
+The schema is rebuilt by Flyway from the migrations in
+`backend/src/main/resources/db/migration/` (`V1`–`V6` today), so you only ever
+restore **data**, never structure.
 
 ### Volume corrupted, or `docker compose down -v` run by accident
 
 ```bash
 cd /opt/amstar
 docker compose up -d postgres-db backend
-docker compose logs backend | grep Migrating     # confirm V1..V4 applied
+docker compose logs backend | grep Migrating     # confirm every migration applied (V1..V6 today)
 
 gzip -dc /var/backups/amstar/amstar_<newest>.sql.gz \
   | docker exec -i amstar_postgres psql -U amstar_user -d amstar_db
@@ -268,7 +278,8 @@ docker exec amstar_postgres psql -U amstar_user -d drill \
 docker exec amstar_postgres psql -U amstar_user -d amstar_db -c "drop database drill;"
 ```
 
-Technician count should be 10. Put a calendar reminder on this.
+Technician count should match the active roster (10 at launch). Put a calendar
+reminder on this.
 
 ---
 
@@ -332,7 +343,8 @@ docker compose logs backend | grep "Failed to send password reset email"
 |---|---|
 | UI loads but all data blank | `frontend/dist` stale or missing — rebuild the frontend |
 | A UI change never appeared | `npm run build` skipped |
-| Login works, clicking does nothing | Token expired — hard refresh. If it persists, check `role` in the DB |
+| "You do not have permission to make that change" | Account is `SHOP_VIEW`, not `ADMIN` — see "Add a manager" in section 8 |
+| Kicked back to the login page | Token expired (10 hours) or the JWT secret was rotated — sign in again |
 | Backend won't start: `Could not resolve placeholder` | A variable missing from `.env` |
 | Backend won't start: `must be at least 32 bytes` | `AMSTAR_JWT_SECRET` too short |
 | Backend won't start: `missing table` | Flyway did not run — inspect `flyway_schema_history` |
@@ -354,9 +366,11 @@ docker exec amstar_postgres psql -U amstar_user -d amstar_db \
 
 Documented so they are decisions, not surprises.
 
-- **Invalid input returns HTTP 500 instead of 400.** Bad severity, unknown
-  status, over-length fields. Confusing, not dangerous — the database rejects
-  the write and the transaction rolls back cleanly with no orphan rows.
+- **A few bad inputs return 409 instead of 400.** Most invalid input gets a
+  400 with a readable message. Anything the backend does not check itself is
+  caught by a database constraint and returns a generic 409 ("That change
+  conflicts with existing data"). The write is rolled back cleanly; the real
+  cause is in `docker compose logs backend`.
 - **Rate limits are per-IP and in-memory.** `/api/auth/forgot-password` allows
   3/hour, other `/api/auth/*` routes 10/minute, enforced by Caddy. Limits reset
   when the Caddy container restarts. A distributed attacker with many IPs is not
