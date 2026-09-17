@@ -389,11 +389,13 @@ const ServicePicker: React.FC<{
         >
           {selected.length ? selected.join(", ") : "Select services..."}
         </span>
+        {/*
         {selected.length > 1 && (
           <span className="shrink-0 px-1.5 py-0.5 rounded-sm bg-amstar-field border border-amstar-line text-[10px] font-mono tabular-nums text-amstar-ink-dim">
             {selected.length}
           </span>
         )}
+        */}
         <span className="text-xs text-amstar-ink-faint shrink-0">▼</span>
       </div>
 

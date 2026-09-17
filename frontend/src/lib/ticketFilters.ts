@@ -101,6 +101,11 @@ export const parseTicketFilter = (
       };
     case "unbilled":
       return { label: "Completed but not billed", matches: isUnbilled };
+    case "critical":
+      return {
+        label: "Critical pending (level 4-5)",
+        matches: (r) => r.status === "PENDING" && r.severity >= 4,
+      };
     default:
       return null;
   }
