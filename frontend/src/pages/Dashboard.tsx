@@ -225,20 +225,6 @@ const severityBadge = (r: VehicleRepair) => (
 // Technician workload
 // ---------------------------------------------------------------------------
 
-// Column titles for the workload panel. Rendered by Panel outside the scroll
-// area. pl-4 / pr-8 line the titles up with the row cells: the body's 16px
-// padding plus the row button's -mx-2 shift and px-2 padding.
-const WORKLOAD_COLUMNS = (
-  <div className="shrink-0 flex items-center gap-1 pl-4 pr-8 py-1 border-b border-amstar-line-soft text-[10px] font-cond uppercase tracking-widest text-amstar-ink-faint">
-    <span className="flex-1">Technician</span>
-    <span className="w-10 text-center">Active</span>
-    <span className="w-10 text-center" title="Level 4-5 jobs">
-      L4-5
-    </span>
-    <span className="w-10 text-center">Late</span>
-  </div>
-);
-
 const TechnicianWorkload: React.FC<{
   repairs: VehicleRepair[];
   technicianNames: string[];
