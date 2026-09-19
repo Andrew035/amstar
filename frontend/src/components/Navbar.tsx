@@ -14,11 +14,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     // select-none prevents highlighting, transition-all unifies hover effects
-    `px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm transition-all select-none ${
+    `px-2 lg:px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm transition-all select-none ${
       isActive
         ? "bg-amstar-raised text-white shadow-[inset_0_-2px_0_theme(colors.amstar.red)]"
         : "text-amstar-ink-dim hover:bg-amstar-raised/50 hover:text-white"
     }`;
+
+  /** Full wording on a desktop, short below - five long labels do not fit an iPad. */
+  const Label: React.FC<{ full: string; short: string }> = ({
+    full,
+    short,
+  }) => (
+    <>
+      <span className="hidden lg:inline">{full}</span>
+      <span className="lg:hidden">{short}</span>
+    </>
+  );
 
   return (
     <header className="bg-amstar-blue border-b border-amstar-line sticky top-0 z-40">
@@ -39,20 +50,23 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Navigation Links - draggable={false} stops the ghost dragging! */}
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 lg:gap-2">
           <NavLink to="/" className={linkClass} draggable={false}>
-            Shop Overview
+            <Label full="Shop Overview" short="Overview" />
           </NavLink>
           <NavLink to="/queue" className={linkClass} draggable={false}>
-            Active Queue
+            <Label full="Active Queue" short="Queue" />
           </NavLink>
           {isAdmin && (
             <>
               <NavLink to="/pricing" className={linkClass} draggable={false}>
-                Pricing Calculator
+                <Label full="Pricing Calculator" short="Pricing" />
               </NavLink>
               <NavLink to="/history" className={linkClass} draggable={false}>
-                Completed History
+                <Label full="Completed History" short="History" />
+              </NavLink>
+              <NavLink to="/roster" className={linkClass} draggable={false}>
+                Roster
               </NavLink>
             </>
           )}

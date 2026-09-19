@@ -28,14 +28,21 @@ const MultiWorkerDropdown: React.FC<{
 }> = ({ currentWorkers, onAssign, technicianNames }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const workersList = technicianNames;
-
   const selectedArray = currentWorkers
     ? currentWorkers
         .split(",")
         .map((w) => w.trim())
         .filter((w) => w !== "")
     : [];
+
+  // Anyone already on the ticket stays in the list even after they leave the
+  // roster - otherwise there is no way to take their name back off it.
+  const isOnRoster = (name: string) =>
+    technicianNames.some((n) => n.toLowerCase() === name.toLowerCase());
+  const workersList = [
+    ...technicianNames,
+    ...selectedArray.filter((w) => !isOnRoster(w)),
+  ];
 
   const handleToggle = (workerName: string) => {
     let updatedSelection = selectedArray.includes(workerName)
@@ -93,6 +100,7 @@ const MultiWorkerDropdown: React.FC<{
             <div className="max-h-48 overflow-y-auto p-1">
               {workersList.map((worker) => {
                 const isOn = selectedArray.includes(worker);
+                const former = !isOnRoster(worker);
                 return (
                   <button
                     key={worker}
@@ -110,6 +118,11 @@ const MultiWorkerDropdown: React.FC<{
                     <span className="flex-1 text-xs font-bold text-amstar-ink">
                       {worker}
                     </span>
+                    {former && (
+                      <span className="shrink-0 font-cond uppercase tracking-wider text-[9px] text-amstar-ink-faint">
+                        Former
+                      </span>
+                    )}
                   </button>
                 );
               })}

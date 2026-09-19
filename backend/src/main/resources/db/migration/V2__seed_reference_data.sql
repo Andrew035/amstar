@@ -11,11 +11,6 @@
 --   WHERE username IN ('admin1', 'admin2', 'admin3');
 -- ===================================================================
 
-insert into technicians (full_name, is_active) values
-  ('Technician 1', true),
-  ('Technician 2', true),
-  ('Technician 3', true);
-
 insert into services (name, default_severity) values
   ('FULL TRANSMISSION REBUILD', 5),
   ('TRANSMISSION FLUID CHANGE', 2),

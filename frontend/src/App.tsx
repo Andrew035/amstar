@@ -18,6 +18,7 @@ import { apiFetch, ApiError } from "./api";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import { TicketNotes } from "./components/TicketNotes";
+import { Roster } from "./pages/Roster";
 
 export const App: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
@@ -139,7 +140,7 @@ export const App: React.FC = () => {
     if (!localStorage.getItem("amstar_token")) return;
     try {
       const [techs, services] = await Promise.all([
-        apiFetch<Technician[]>("/api/technicians"),
+        apiFetch<Technician[]>("/api/technicians?includeInactive=true"),
         apiFetch<ServiceType[]>("/api/services"),
       ]);
       setTechnicians(techs);
@@ -216,6 +217,59 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleAddTechnician = async (fullName: string): Promise<boolean> => {
+    if (!isAdmin) return false;
+    try {
+      await apiFetch("/api/technicians", {
+        method: "POST",
+        body: JSON.stringify({ fullName }),
+      });
+      showToast(`${fullName} added to the roster.`, "success");
+      await fetchReferenceData();
+      return true;
+    } catch (error) {
+      toastError(error, "Could not add that technician.");
+      return false;
+    }
+  };
+
+  const handleRenameTechnician = async (
+    id: number,
+    fullName: string,
+  ): Promise<boolean> => {
+    if (!isAdmin) return false;
+    try {
+      await apiFetch(`/api/technicians/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ fullName }),
+      });
+      showToast(`Renamed to ${fullName}.`, "success");
+      // Tickets carry the technician's name, so the queue is stale until refetched.
+      await Promise.all([fetchReferenceData(), fetchQueue()]);
+      return true;
+    } catch (error) {
+      toastError(error, "Could not rename that technician.");
+      return false;
+    }
+  };
+
+  const handleSetTechnicianActive = async (id: number, active: boolean) => {
+    if (!isAdmin) return;
+    try {
+      await apiFetch(`/api/technicians/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive: active }),
+      });
+      showToast(
+        active ? "Back on the roster." : "Removed from the roster.",
+        "success",
+      );
+      fetchReferenceData();
+    } catch (error) {
+      toastError(error, "Could not update the roster.");
+    }
+  };
+
   const handleDeleteClick = (id: number) => {
     if (!isAdmin) return;
     setRepairToDelete(id);
@@ -247,7 +301,7 @@ export const App: React.FC = () => {
   }, [serviceCatalog]);
 
   const technicianNames = React.useMemo(
-    () => technicians.map((t) => t.fullName),
+    () => technicians.filter((t) => t.isActive).map((t) => t.fullName),
     [technicians],
   );
 
@@ -385,6 +439,24 @@ export const App: React.FC = () => {
                   onViewDeepDive={setViewedRepair}
                   onDeleteClick={handleDeleteClick}
                   viewedRepairId={viewedRepair?.id}
+                />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          {/* Admin Protected: Roster */}
+          <Route
+            path="/roster"
+            element={
+              currentUser && isAdmin ? (
+                <Roster
+                  technicians={technicians}
+                  repairs={repairs}
+                  onAddTechnician={handleAddTechnician}
+                  onRenameTechnician={handleRenameTechnician}
+                  onSetTechnicianActive={handleSetTechnicianActive}
                 />
               ) : (
                 <Navigate to="/" replace />

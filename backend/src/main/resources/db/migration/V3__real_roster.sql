@@ -10,6 +10,5 @@ insert into technicians (full_name, is_active) values
   ('Caly', true),
   ('Nate', true),
   ('Alex', true),
-  ('Sandra', true),
   ('Alberto', true)
 on conflict do nothing;
