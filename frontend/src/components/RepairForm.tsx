@@ -8,6 +8,9 @@ import {
   PANEL_STYLE,
   PANEL_HEADING_STYLE,
   SEVERITY_LABELS,
+  PRIMARY_BUTTON_STYLE,
+  OPTION_ROW_STYLE,
+  SELECT_TRIGGER_STYLE,
 } from "../styles/controls";
 import { API_BASE } from "../config";
 import { panelCoords } from "../lib/floating";
@@ -184,7 +187,7 @@ const ServicePicker: React.FC<{
 
       <div
         onClick={handleOpen}
-        className={`${SHARED_INPUT_STYLE} flex items-center gap-2 cursor-pointer`}
+        className={`${SELECT_TRIGGER_STYLE} flex items-center gap-2`}
       >
         <span
           className={`truncate flex-1 ${selected.length ? "text-amstar-ink font-bold uppercase" : "text-amstar-ink-faint"}`}
@@ -272,7 +275,7 @@ const ServicePicker: React.FC<{
                     role="checkbox"
                     aria-checked={isOn}
                     onClick={() => toggle(service)}
-                    className={`w-full min-h-10 flex items-center gap-3 px-3 py-2 rounded-sm text-left transition-colors ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"} ${firstUnpicked ? "mt-1 border-t border-amstar-line-soft rounded-t-none" : ""}`}
+                    className={`${OPTION_ROW_STYLE} ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"} ${firstUnpicked ? "mt-1 border-t border-amstar-line-soft rounded-t-none" : ""}`}
                   >
                     <span
                       className={`shrink-0 w-4 h-4 rounded-sm border grid place-items-center text-[10px] font-black ${isOn ? "bg-amstar-red border-amstar-red text-white" : "border-amstar-line"}`}
@@ -299,7 +302,7 @@ const ServicePicker: React.FC<{
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="min-h-9 px-4 py-1.5 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest text-xs shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-colors"
+                className={`${PRIMARY_BUTTON_STYLE} min-h-9 px-4 py-1.5 text-xs`}
               >
                 Done
               </button>
@@ -493,7 +496,7 @@ const FormWorkerDropdown: React.FC<{
     <>
       <div
         onClick={openDropdown}
-        className={`${SHARED_INPUT_STYLE} flex justify-between items-center cursor-pointer`}
+        className={`${SELECT_TRIGGER_STYLE} flex justify-between items-center`}
       >
         <span
           className="truncate"
@@ -542,8 +545,7 @@ const FormWorkerDropdown: React.FC<{
                     role="checkbox"
                     aria-checked={isOn}
                     onClick={() => handleToggle(worker)}
-                    className={`w-full min-h-10 flex items-center gap-3 px-3 py-2 rounded-sm
-                    text-left transition-colors ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
+                    className={`${OPTION_ROW_STYLE} ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
                   >
                     <span
                       className={`shrink-0 w-4 h-4 rounded-sm border grid place-items-center
@@ -769,7 +771,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-all font-bold disabled:opacity-70 disabled:cursor-not-allowed"
+            className={`${PRIMARY_BUTTON_STYLE} px-6 py-2.5 font-bold`}
           >
             {isSubmitting
               ? "Decoding VIN & Submitting..."

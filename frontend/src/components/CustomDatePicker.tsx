@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { SHARED_INPUT_STYLE, FLOATING_PANEL_STYLE } from "../styles/controls";
+import { FLOATING_PANEL_STYLE, SELECT_TRIGGER_STYLE } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
 
 /**
@@ -25,7 +25,7 @@ export const CustomDatePicker: React.FC<{
 }> = ({
   value,
   onChange,
-  className = SHARED_INPUT_STYLE,
+  className = SELECT_TRIGGER_STYLE,
   placeholder = "Select Date...",
   required = false,
   disabled = false,
@@ -124,7 +124,7 @@ export const CustomDatePicker: React.FC<{
 
       <div
         onClick={handleOpen}
-        className={`${className} flex justify-between items-center ${disabled ? "cursor-default opacity-70" : "cursor-pointer"} ${!value ? "text-amstar-ink-faint" : "text-amstar-ink font-bold"}`}
+        className={`${className} flex justify-between items-center ${disabled ? "pointer-events-none opacity-70" : ""} ${!value ? "text-amstar-ink-faint" : "text-amstar-ink font-bold"}`}
       >
         <span className="truncate">{displayValue || placeholder}</span>
         <svg

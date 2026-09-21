@@ -14,6 +14,26 @@ export const NUMBER_INPUT_STYLE = `w-20 px-2 py-1.5 bg-amstar-field border borde
 
 export const TABLE_DROPDOWN_STYLE = `px-3 py-1.5 bg-amstar-field border border-amstar-line rounded text-xs font-bold text-amstar-ink shadow-inner cursor-pointer transition-all hover:border-amstar-red ${FOCUS}`;
 
+/**
+ * A control that opens a panel instead of accepting typing: the service,
+ * technician, state and date pickers. The same box as SHARED_INPUT_STYLE plus
+ * the hover the table dropdowns already had - anything clickable should react
+ * to the pointer, or it reads as a disabled field.
+ */
+export const SELECT_TRIGGER_STYLE = `${SHARED_INPUT_STYLE} cursor-pointer hover:border-amstar-red`;
+
+/** One row inside a dropdown panel. Sized for a fingertip on an iPad. */
+export const OPTION_ROW_STYLE =
+  "w-full min-h-10 flex items-center gap-3 px-3 py-2 rounded-sm text-left transition-colors";
+
+/**
+ * The red action button: submit, save, done. Call sites add their own padding
+ * and text size; everything else lives here so the ten copies of this button
+ * cannot drift apart again.
+ */
+export const PRIMARY_BUTTON_STYLE =
+  "bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amstar-red";
+
 export const INLINE_INPUT_STYLE = `px-3 py-1.5 bg-transparent border border-transparent hover:border-amstar-line focus:bg-amstar-field rounded text-xs font-bold text-amstar-ink transition-all cursor-pointer uppercase w-full ${FOCUS}`;
 
 // Static surfaces.

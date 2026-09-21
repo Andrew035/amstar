@@ -8,6 +8,7 @@ import {
   PANEL_STYLE,
   PANEL_HEADING_STYLE,
   getStatusStyle,
+  OPTION_ROW_STYLE,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
 import { Truncated } from "../components/Truncated";
@@ -99,7 +100,7 @@ const MultiWorkerDropdown: React.FC<{
                     role="checkbox"
                     aria-checked={isOn}
                     onClick={() => handleToggle(worker)}
-                    className={`w-full min-h-10 flex items-center gap-3 px-2 py-2 rounded-sm text-left transition-colors ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
+                    className={`${OPTION_ROW_STYLE} ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
                   >
                     <span
                       className={`shrink-0 w-4 h-4 rounded-sm border grid place-items-center text-[10px] font-black ${isOn ? "bg-amstar-red border-amstar-red text-white" : "border-amstar-line"}`}

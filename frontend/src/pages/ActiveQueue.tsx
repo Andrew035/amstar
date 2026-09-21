@@ -14,6 +14,7 @@ import {
   getSeverityGlow,
   getStatusStyle,
   SEVERITY_LABELS,
+  OPTION_ROW_STYLE,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
 import { Truncated } from "../components/Truncated";
@@ -42,38 +43,44 @@ const CustomerNameCell: React.FC<{
     onSave(name);
   };
 
-  if (!isEditing) {
-    return (
+  // The name always stays in the cell and keeps setting the column's width; the
+  // input is laid over it while editing. Swapping one for the other resized the
+  // column instead, which shifted every column after it sideways.
+  return (
+    <span className="relative block">
       <span
         onClick={() => {
           setDraft(value);
           setIsEditing(true);
         }}
         title="Click to correct the name"
-        className={`${INLINE_INPUT_STYLE} block normal-case whitespace-nowrap`}
+        className={`${INLINE_INPUT_STYLE} block normal-case whitespace-nowrap ${
+          isEditing ? "invisible" : ""
+        }`}
       >
         {value}
       </span>
-    );
-  }
 
-  return (
-    <input
-      type="text"
-      value={draft}
-      autoFocus
-      maxLength={120}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") commit();
-        if (e.key === "Escape") {
-          setDraft(value);
-          setIsEditing(false);
-        }
-      }}
-      className={`${INLINE_INPUT_STYLE} normal-case min-w-[12rem]`}
-    />
+      {isEditing && (
+        <input
+          type="text"
+          value={draft}
+          autoFocus
+          maxLength={120}
+          size={1}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") {
+              setDraft(value);
+              setIsEditing(false);
+            }
+          }}
+          className={`${INLINE_INPUT_STYLE} normal-case min-w-0 absolute inset-0`}
+        />
+      )}
+    </span>
   );
 };
 
@@ -164,7 +171,7 @@ const MultiWorkerDropdown: React.FC<{
                     role="checkbox"
                     aria-checked={isOn}
                     onClick={() => handleToggle(worker)}
-                    className={`w-full min-h-10 flex items-center gap-3 px-2 py-2 rounded-sm text-left transition-colors ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
+                    className={`${OPTION_ROW_STYLE} ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
                   >
                     <span
                       className={`shrink-0 w-4 h-4 rounded-sm border grid place-items-center text-[10px] font-black ${isOn ? "bg-amstar-red border-amstar-red text-white" : "border-amstar-line"}`}
@@ -320,8 +327,7 @@ const SeverityDropdown: React.FC<{
                 role="option"
                 aria-selected={level === value}
                 onClick={() => handleSelect(level)}
-                className={`w-full min-h-10 flex items-center gap-3 px-2 py-2 rounded-sm text-left
-                transition-colors ${level === value ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
+                className={`${OPTION_ROW_STYLE} ${level === value ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
               >
                 <span
                   className={`shrink-0 w-16 text-center px-1.5 py-0.5 rounded-sm font-cond
