@@ -54,7 +54,7 @@ const CustomerNameCell: React.FC<{
           setIsEditing(true);
         }}
         title="Click to correct the name"
-        className={`${INLINE_INPUT_STYLE} block normal-case whitespace-nowrap ${
+        className={`${INLINE_INPUT_STYLE} block normal-case truncate ${
           isEditing ? "invisible" : ""
         }`}
       >
@@ -126,7 +126,7 @@ const MultiWorkerDropdown: React.FC<{
     <>
       <div
         onClick={openDropdown}
-        className={`${TABLE_DROPDOWN_STYLE} flex justify-between items-center min-w-[130px] max-w-[180px]`}
+        className={`${TABLE_DROPDOWN_STYLE} w-full flex justify-between items-center`}
       >
         <Truncated
           value={
@@ -227,10 +227,10 @@ const StatusDropdown: React.FC<{
   };
 
   return (
-    <div className="relative w-full min-w-[120px]">
+    <div className="relative w-full">
       <div
         onClick={openDropdown}
-        className={`px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)}`}
+        className={`w-full px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)}`}
       >
         <span className="truncate flex-1 text-center">{currentLabel}</span>
       </div>
@@ -451,29 +451,49 @@ export const ActiveQueue: React.FC<{
         </div>
       ) : (
         <div className={`${PANEL_STYLE} overflow-x-auto`}>
-          <table className="w-full text-left text-xs border-collapse">
+          {/* table-fixed: the header sets every column width, so editing a cell -
+              picking technicians, changing status - can never resize the table. */}
+          <table className="w-full min-w-[980px] table-fixed text-left text-xs border-collapse">
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
-                <th className={`${PANEL_HEADING_STYLE} p-3 whitespace-nowrap`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] whitespace-nowrap`}
+                >
                   Customer
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Image</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>License Plate</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                  Vehicle Image
+                </th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                  License Plate
+                </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 hidden md:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[9%] hidden md:table-cell`}
                 >
                   Vehicle Details
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Service</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Severity</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 whitespace-nowrap`}>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[12%]`}>
+                  Service
+                </th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[9%]`}>
+                  Severity
+                </th>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[8%] whitespace-nowrap`}
+                >
                   Entry Date
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 whitespace-nowrap`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] whitespace-nowrap`}
+                >
                   Due Date
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Technician(s)</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 text-center`}>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[13%]`}>
+                  Technician(s)
+                </th>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] text-center`}
+                >
                   Status
                 </th>
               </tr>

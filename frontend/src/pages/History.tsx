@@ -55,7 +55,7 @@ const MultiWorkerDropdown: React.FC<{
     <>
       <div
         onClick={openDropdown}
-        className={`${INLINE_INPUT_STYLE} group flex justify-between items-center min-w-[130px] max-w-[180px]`}
+        className={`${INLINE_INPUT_STYLE} group flex justify-between items-center`}
       >
         <Truncated
           value={
@@ -156,12 +156,14 @@ const StatusDropdown: React.FC<{
   };
 
   return (
-    <div className="relative w-full min-w-[120px]">
+    <div className="relative w-full">
       <div
         onClick={openDropdown}
-        className={`px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)}`}
+        className={`w-full px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)}`}
       >
-        <span className="truncate flex-1 text-center">{currentLabel}</span>
+        <span className="flex-1 text-center whitespace-nowrap">
+          {currentLabel}
+        </span>
       </div>
       {isOpen && (
         <>
@@ -269,31 +271,44 @@ export const HistoryPage: React.FC<{
         </div>
       ) : (
         <div className={`${PANEL_STYLE} overflow-x-auto`}>
-          <table className="w-full text-left text-xs border-collapse">
+          {/* table-fixed: see ActiveQueue - a cell's contents never resize a column. */}
+          <table className="w-full table-fixed text-left text-xs border-collapse">
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 hidden lg:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[8%] hidden lg:table-cell`}
                 >
                   Entry Date
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[11%]`}>
                   Completion Date
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Customer</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Image</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>License Plate</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[11%]`}>
+                  Customer
+                </th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                  Vehicle Image
+                </th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                  License Plate
+                </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 hidden md:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[10%] hidden md:table-cell`}
                 >
                   Vehicle Details
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[13%]`}>
                   Service Details
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Technician(s)</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Total Price</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 text-center`}>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[10%]`}>
+                  Technician(s)
+                </th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 w-[11%] text-right`}>
+                  Total Price
+                </th>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] text-center`}
+                >
                   Status
                 </th>
               </tr>
@@ -306,13 +321,13 @@ export const HistoryPage: React.FC<{
                   className={`hover:bg-amstar-red/20 transition cursor-pointer group ${viewedRepairId === item.id ? "bg-amstar-raised" : "bg-amstar-surface"}`}
                   title="Click to delete this ticket"
                 >
-                  <td className="p-3 font-mono tabular-nums text-amstar-ink-dim hidden lg:table-cell">
+                  <td className="p-3 font-mono tabular-nums text-amstar-ink-dim truncate hidden lg:table-cell">
                     {item.entryDate}
                   </td>
-                  <td className="p-3 font-bold font-mono tabular-nums text-amstar-ink">
+                  <td className="p-3 font-bold font-mono tabular-nums text-amstar-ink truncate">
                     {item.actualCompletionDate || item.expectedCompletionDate}
                   </td>
-                  <td className="p-3 font-semibold text-amstar-ink">
+                  <td className="p-3 font-semibold text-amstar-ink truncate">
                     {item.customerName}
                   </td>
                   <td className="p-3">
@@ -332,7 +347,7 @@ export const HistoryPage: React.FC<{
                   </td>
 
                   <td className="p-3">
-                    <div className="inline-block border border-amstar-line bg-amstar-raised px-2 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm min-w-[70px]">
+                    <div className="inline-block border border-amstar-line bg-amstar-raised px-2 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm">
                       {item.vehicle?.licensePlate}
                       <span className="text-[9px] block text-amstar-ink-dim leading-none mt-0.5">
                         {item.vehicle?.state}
@@ -340,13 +355,13 @@ export const HistoryPage: React.FC<{
                     </div>
                   </td>
 
-                  <td className="p-3 font-medium text-amstar-ink hidden md:table-cell">
+                  <td className="p-3 font-medium text-amstar-ink truncate hidden md:table-cell">
                     {item.vehicle?.year} {item.vehicle?.make}{" "}
                     {item.vehicle?.model}
                   </td>
 
                   <td
-                    className="p-1 md:p-1 max-lg:py-2 max-w-[220px]"
+                    className="p-1 md:p-1 max-lg:py-2"
                     title=""
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -372,7 +387,7 @@ export const HistoryPage: React.FC<{
                     />
                   </td>
 
-                  <td className="p-3 font-black text-emerald-400 text-sm">
+                  <td className="px-2 py-3 font-black text-emerald-400 text-xs lg:text-sm text-right truncate">
                     ${calculateTotal(item).toFixed(2)}
                   </td>
 
