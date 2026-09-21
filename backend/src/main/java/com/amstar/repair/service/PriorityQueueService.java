@@ -180,6 +180,25 @@ public class PriorityQueueService {
   }
 
   @Transactional
+  public boolean updateParts(Long id, String parts) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              String before = repair.getParts();
+              // Blank and null both mean "no parts" - store one of them, not both.
+              repair.setParts(parts == null || parts.isBlank() ? null : parts);
+              repository.save(repair);
+              if (!Objects.equals(before, repair.getParts())) {
+                // No detail: the pad can hold quoted prices, and shop-view reads the feed.
+                activity.record(repair, "PARTS", null);
+              }
+              return true;
+            })
+        .orElse(false);
+  }
+
+  @Transactional
   public boolean updateSeverity(Long id, int severity) {
     return repository
         .findById(id)

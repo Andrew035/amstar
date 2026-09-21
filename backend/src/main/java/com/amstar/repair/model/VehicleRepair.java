@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
@@ -69,33 +68,39 @@ public class VehicleRepair {
   @Column(columnDefinition = "TEXT")
   private String notes;
 
+  /** Free-text parts pad. Names, part numbers and quoted prices as typed. */
+  @Column(columnDefinition = "TEXT")
+  private String parts;
+
   @ManyToMany(fetch = FetchType.EAGER)
   @OrderBy("name")
-  @JoinTable(name = "ticket_services", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
+  @JoinTable(
+      name = "ticket_services",
+      joinColumns = @JoinColumn(name = "ticket_id"),
+      inverseJoinColumns = @JoinColumn(name = "service_id"))
   private Set<ServiceType> services = new LinkedHashSet<>();
 
   @ManyToMany(fetch = FetchType.EAGER)
   @OrderBy("fullName")
-  @JoinTable(name = "ticket_technicians", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "technician_id"))
+  @JoinTable(
+      name = "ticket_technicians",
+      joinColumns = @JoinColumn(name = "ticket_id"),
+      inverseJoinColumns = @JoinColumn(name = "technician_id"))
   private Set<Technician> technicians = new LinkedHashSet<>();
 
-  @Transient
-  private double priorityScore;
+  @Transient private double priorityScore;
 
   // Inbound comma strings, parked here until the service layer resolves
   // them into rows. Never persisted; see PriorityQueueService.
-  @Transient
-  private String serviceTypeInput;
+  @Transient private String serviceTypeInput;
 
-  @Transient
-  private String assignedWorkerInput;
+  @Transient private String assignedWorkerInput;
 
   @Transient
   @Size(max = 120, message = "Customer name must be 120 characters or fewer")
   private String customerNameInput;
 
-  public VehicleRepair() {
-  }
+  public VehicleRepair() {}
 
   // Legacy JSON compatibility
   // The frontend still reads serviceType/assignedWorker/customerName as
@@ -105,9 +110,7 @@ public class VehicleRepair {
 
   @JsonProperty("serviceType")
   public String getServiceType() {
-    return services.stream()
-        .map(ServiceType::getName)
-        .collect(Collectors.joining(", "));
+    return services.stream().map(ServiceType::getName).collect(Collectors.joining(", "));
   }
 
   @JsonProperty("serviceType")
@@ -117,9 +120,7 @@ public class VehicleRepair {
 
   @JsonProperty("assignedWorker")
   public String getAssignedWorker() {
-    return technicians.stream()
-        .map(Technician::getFullName)
-        .collect(Collectors.joining(", "));
+    return technicians.stream().map(Technician::getFullName).collect(Collectors.joining(", "));
   }
 
   @JsonProperty("assignedWorker")
@@ -296,5 +297,13 @@ public class VehicleRepair {
 
   public void setNotes(String notes) {
     this.notes = notes;
+  }
+
+  public String getParts() {
+    return parts;
+  }
+
+  public void setParts(String parts) {
+    this.parts = parts;
   }
 }

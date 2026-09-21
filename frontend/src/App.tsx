@@ -113,6 +113,15 @@ export const App: React.FC = () => {
     fetchQueue();
   };
 
+  const handleSaveParts = async (id: number, parts: string) => {
+    if (!isAdmin) return;
+    await apiFetch(`/api/repairs/${id}/parts`, {
+      method: "PATCH",
+      body: JSON.stringify({ parts }),
+    });
+    fetchQueue();
+  };
+
   const fetchQueue = async () => {
     if (!localStorage.getItem("amstar_token")) return;
     try {
@@ -477,7 +486,7 @@ export const App: React.FC = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-xl shadow-2xl"
+            className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl"
           >
             <div className="flex justify-between items-center border-b border-amstar-line pb-3 mb-4">
               <h3 className="font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink">
@@ -542,12 +551,27 @@ export const App: React.FC = () => {
               </div>
             </div>
 
-            <TicketNotes
-              repairId={viewedRepair.id!}
-              initialNotes={viewedRepair.notes}
-              isAdmin={isAdmin}
-              onSave={handleSaveNotes}
-            />
+            {/* Notes and parts: the same pad twice, side by side on a wide screen. */}
+            <div className="mt-4 border-t border-amstar-line pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TicketNotes
+                repairId={viewedRepair.id!}
+                initialNotes={viewedRepair.notes}
+                isAdmin={isAdmin}
+                onSave={handleSaveNotes}
+                className=""
+              />
+              <TicketNotes
+                repairId={viewedRepair.id!}
+                initialNotes={viewedRepair.parts}
+                isAdmin={isAdmin}
+                onSave={handleSaveParts}
+                label="Parts"
+                saveLabel="Save Parts"
+                placeholder="Part names, numbers and what they were quoted at..."
+                emptyText="No parts written down for this repair yet."
+                className=""
+              />
+            </div>
 
             <div className="bg-amstar-surface p-4 rounded border border-amstar-line flex justify-between items-center">
               <div>

@@ -46,6 +46,7 @@ export interface VehicleRepair {
   actualCompletionDate: string;
   priorityScore?: number;
   notes?: string;
+  parts?: string;
   retailPrice?: number;
   leasePrice?: number;
   laborPrice?: number;
@@ -74,6 +75,7 @@ export interface TicketActivity {
     | "SERVICES"
     | "PRICING"
     | "NOTES"
+    | "PARTS"
     | "DELETED";
   detail: string | null;
   createdAt: string;

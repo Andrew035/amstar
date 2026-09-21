@@ -313,6 +313,7 @@ const ACTION_TEXT: Record<TicketActivity["action"], string> = {
   SERVICES: "updated services on",
   PRICING: "updated pricing on",
   NOTES: "updated notes on",
+  PARTS: "updated parts on",
   DELETED: "deleted",
 };
 
@@ -324,6 +325,7 @@ const ACTION_DOT: Record<TicketActivity["action"], string> = {
   SERVICES: "bg-amstar-ink-faint",
   PRICING: "bg-amstar-ink-faint",
   NOTES: "bg-amstar-ink-faint",
+  PARTS: "bg-amstar-ink-faint",
   DELETED: "bg-sev-5",
 };
 
