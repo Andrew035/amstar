@@ -108,6 +108,39 @@ public class VehicleRepairController {
     return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
   }
 
+  @PatchMapping("/{id}/customer")
+  public ResponseEntity<?> updateCustomerName(
+      @PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
+    String name = request.get("customerName");
+    name = name == null ? null : name.trim();
+    // Mirrors customers.full_name: not null, varchar(120).
+    if (name == null || name.isEmpty() || name.length() > 120) {
+      return ResponseEntity.badRequest()
+          .body(
+              java.util.Map.of("error", "A customer name of 120 characters or fewer is required"));
+    }
+
+    boolean isUpdated = priorityQueueService.updateCustomerName(id, name);
+    return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+  }
+
+  @PatchMapping("/{id}/due-date")
+  public ResponseEntity<?> updateDueDate(
+      @PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
+    String raw = request.get("dueDate");
+    java.time.LocalDate dueDate;
+    try {
+      // expected_completion_date is NOT NULL, so a blank date is a 400, not a clear.
+      dueDate = java.time.LocalDate.parse(raw);
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "A due date of the form YYYY-MM-DD is required"));
+    }
+
+    boolean isUpdated = priorityQueueService.updateDueDate(id, dueDate);
+    return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+  }
+
   @PatchMapping("/{id}/parts")
   public ResponseEntity<?> updateParts(
       @PathVariable Long id, @RequestBody java.util.Map<String, String> request) {

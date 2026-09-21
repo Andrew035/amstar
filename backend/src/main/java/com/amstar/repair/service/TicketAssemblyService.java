@@ -2,18 +2,17 @@ package com.amstar.repair.service;
 
 import com.amstar.repair.model.*;
 import com.amstar.repair.repository.*;
-import org.springframework.stereotype.Service;
-
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.stereotype.Service;
 
 /**
- * Turns the inbound comma-delimited strings the frontend still sends
- * ("OIL CHANGE, TIRE ROTATION") into real customer / vehicle / service /
- * technician rows. Everything that writes a ticket goes through here.
+ * Turns the inbound comma-delimited strings the frontend still sends ("OIL CHANGE, TIRE ROTATION")
+ * into real customer / vehicle / service / technician rows. Everything that writes a ticket goes
+ * through here.
  */
 @Service
 public class TicketAssemblyService {
@@ -23,7 +22,8 @@ public class TicketAssemblyService {
   private final ServiceTypeRepository serviceTypes;
   private final TechnicianRepository technicians;
 
-  public TicketAssemblyService(VehicleRepository vehicles,
+  public TicketAssemblyService(
+      VehicleRepository vehicles,
       CustomerRepository customers,
       ServiceTypeRepository serviceTypes,
       TechnicianRepository technicians) {
@@ -71,7 +71,8 @@ public class TicketAssemblyService {
     String plate = trimToNull(incoming.getLicensePlate());
     String state = trimToNull(incoming.getState());
     if (plate != null && state != null) {
-      Optional<Vehicle> match = vehicles.findFirstByLicensePlateIgnoreCaseAndStateIgnoreCase(plate, state);
+      Optional<Vehicle> match =
+          vehicles.findFirstByLicensePlateIgnoreCaseAndStateIgnoreCase(plate, state);
       if (match.isPresent()) {
         return refresh(match.get(), incoming);
       }
@@ -80,9 +81,7 @@ public class TicketAssemblyService {
     return vehicles.save(incoming);
   }
 
-  /**
-   * Let a later NHTSA/Wikipedia lookup fill in blanks on a car we already know.
-   */
+  /** Let a later NHTSA/Wikipedia lookup fill in blanks on a car we already know. */
   private Vehicle refresh(Vehicle existing, Vehicle incoming) {
     if (isBlank(existing.getMake())) {
       existing.setMake(incoming.getMake());
@@ -104,12 +103,22 @@ public class TicketAssemblyService {
 
   // Customers
 
+  /**
+   * Points the ticket at the customer of this name, reusing the existing row or creating one.
+   * Correcting a typo on one ticket therefore never rewrites the name on anybody else's.
+   */
+  public void applyCustomer(VehicleRepair repair, String fullName) {
+    repair.setCustomer(resolveCustomer(fullName));
+  }
+
   private Customer resolveCustomer(String fullName) {
     String name = trimToNull(fullName);
     if (name == null) {
       return null;
     }
-    return customers.findFirstByFullNameIgnoreCase(name).orElseGet(() -> customers.save(new Customer(name)));
+    return customers
+        .findFirstByFullNameIgnoreCase(name)
+        .orElseGet(() -> customers.save(new Customer(name)));
   }
 
   // Services
@@ -127,10 +136,13 @@ public class TicketAssemblyService {
         throw new IllegalArgumentException(
             "Service name must be 80 characters or fewer: " + normalized.substring(0, 40) + "...");
       }
-      resolved.add(serviceTypes.findByName(normalized)
-          // A service typed into the form for the first time joines the catalog,
-          // seeded with this ticket's severity - what historicalServiceMap did.
-          .orElseGet(() -> serviceTypes.save(new ServiceType(normalized, repair.getSeverity()))));
+      resolved.add(
+          serviceTypes
+              .findByName(normalized)
+              // A service typed into the form for the first time joines the catalog,
+              // seeded with this ticket's severity - what historicalServiceMap did.
+              .orElseGet(
+                  () -> serviceTypes.save(new ServiceType(normalized, repair.getSeverity()))));
     }
     repair.getServices().clear();
     repair.getServices().addAll(resolved);
@@ -159,10 +171,7 @@ public class TicketAssemblyService {
     if (raw == null || raw.isBlank()) {
       return List.of();
     }
-    return Arrays.stream(raw.split(","))
-        .map(String::trim)
-        .filter(s -> !s.isEmpty())
-        .toList();
+    return Arrays.stream(raw.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
   }
 
   private static String trimToNull(String value) {

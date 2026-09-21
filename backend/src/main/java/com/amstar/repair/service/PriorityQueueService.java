@@ -180,6 +180,42 @@ public class PriorityQueueService {
   }
 
   @Transactional
+  public boolean updateCustomerName(Long id, String fullName) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              String before = repair.getCustomerName();
+              assembly.applyCustomer(repair, fullName);
+              repository.save(repair);
+              String after = repair.getCustomerName();
+              if (!Objects.equals(before, after)) {
+                activity.record(repair, "CUSTOMER", before + " → " + after);
+              }
+              return true;
+            })
+        .orElse(false);
+  }
+
+  /** Moving the due date changes the ticket's priority, so the queue reorders after this. */
+  @Transactional
+  public boolean updateDueDate(Long id, LocalDate dueDate) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              LocalDate before = repair.getExpectedCompletionDate();
+              repair.setExpectedCompletionDate(dueDate);
+              repository.save(repair);
+              if (!Objects.equals(before, dueDate)) {
+                activity.record(repair, "DUE_DATE", before + " → " + dueDate);
+              }
+              return true;
+            })
+        .orElse(false);
+  }
+
+  @Transactional
   public boolean updateParts(Long id, String parts) {
     return repository
         .findById(id)

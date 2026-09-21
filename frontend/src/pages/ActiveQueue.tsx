@@ -4,6 +4,7 @@ import { RepairForm } from "../components/RepairForm";
 import {
   SEARCH_INPUT_STYLE,
   TABLE_DROPDOWN_STYLE,
+  INLINE_INPUT_STYLE,
   FLOATING_PANEL_STYLE,
   PANEL_ROW_STYLE,
   PANEL_STYLE,
@@ -20,6 +21,61 @@ import { ServicesCell } from "../components/ServicesCell";
 import { useSearchParams } from "react-router-dom";
 import { parseTicketFilter } from "../lib/ticketFilters";
 import { FilterBanner } from "../components/FilterBanner";
+import { CustomDatePicker } from "../components/CustomDatePicker";
+
+/**
+ * The customer name, editable in place for the usual reason: it was typed wrong
+ * at intake. Saving points this ticket at the corrected name - other tickets
+ * keep theirs, so one fix never rewrites another job's paperwork.
+ */
+const CustomerNameCell: React.FC<{
+  value: string;
+  onSave: (name: string) => void;
+}> = ({ value, onSave }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  const commit = () => {
+    const name = draft.trim();
+    setIsEditing(false);
+    if (!name || name === value) return setDraft(value);
+    onSave(name);
+  };
+
+  if (!isEditing) {
+    return (
+      <span
+        onClick={() => {
+          setDraft(value);
+          setIsEditing(true);
+        }}
+        title="Click to correct the name"
+        className={`${INLINE_INPUT_STYLE} block normal-case whitespace-nowrap`}
+      >
+        {value}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      type="text"
+      value={draft}
+      autoFocus
+      maxLength={120}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") {
+          setDraft(value);
+          setIsEditing(false);
+        }
+      }}
+      className={`${INLINE_INPUT_STYLE} normal-case min-w-[12rem]`}
+    />
+  );
+};
 
 const MultiWorkerDropdown: React.FC<{
   currentWorkers: string | undefined;
@@ -301,6 +357,8 @@ export const ActiveQueue: React.FC<{
   technicianNames: string[];
   onServiceChange: (id: number, service: string) => void;
   onSeverityChange: (id: number, severity: number) => void;
+  onDueDateChange: (id: number, dueDate: string) => void;
+  onCustomerNameChange: (id: number, name: string) => void;
   onDeleteClick: (id: number) => void;
   onViewDeepDive: (repair: VehicleRepair) => void;
   viewedRepairId?: number | null;
@@ -312,6 +370,8 @@ export const ActiveQueue: React.FC<{
   technicianNames,
   onRefresh,
   onStatusChange,
+  onDueDateChange,
+  onCustomerNameChange,
   onSeverityChange,
   onAssignWorker,
   onServiceChange,
@@ -388,7 +448,9 @@ export const ActiveQueue: React.FC<{
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Customer</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 whitespace-nowrap`}>
+                  Customer
+                </th>
                 <th className={`${PANEL_HEADING_STYLE} p-3`}>Vehicle Image</th>
                 <th className={`${PANEL_HEADING_STYLE} p-3`}>License Plate</th>
                 <th
@@ -398,8 +460,12 @@ export const ActiveQueue: React.FC<{
                 </th>
                 <th className={`${PANEL_HEADING_STYLE} p-3`}>Service</th>
                 <th className={`${PANEL_HEADING_STYLE} p-3`}>Severity</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Entry Date</th>
-                <th className={`${PANEL_HEADING_STYLE} p-3`}>Due Date</th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 whitespace-nowrap`}>
+                  Entry Date
+                </th>
+                <th className={`${PANEL_HEADING_STYLE} p-3 whitespace-nowrap`}>
+                  Due Date
+                </th>
                 <th className={`${PANEL_HEADING_STYLE} p-3`}>Technician(s)</th>
                 <th className={`${PANEL_HEADING_STYLE} p-3 text-center`}>
                   Status
@@ -422,8 +488,20 @@ export const ActiveQueue: React.FC<{
                   }`}
                   title={isAdmin ? "Click to delete this repair" : ""}
                 >
-                  <td className="p-3 font-semibold text-amstar-ink">
-                    {item.customerName}
+                  <td
+                    className="p-1 font-semibold text-amstar-ink"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {isAdmin ? (
+                      <CustomerNameCell
+                        value={item.customerName}
+                        onSave={(name) => onCustomerNameChange(item.id!, name)}
+                      />
+                    ) : (
+                      <span className="px-2 whitespace-nowrap">
+                        {item.customerName}
+                      </span>
+                    )}
                   </td>
                   <td className="p-3">
                     {item.vehicle?.carImageUrl ? (
@@ -484,11 +562,25 @@ export const ActiveQueue: React.FC<{
                     )}
                   </td>
 
-                  <td className="p-3 font-mono tabular-nums text-amstar-ink-dim lg:table-cell">
+                  <td className="p-3 font-mono tabular-nums whitespace-nowrap text-amstar-ink-dim lg:table-cell">
                     {item.entryDate}
                   </td>
-                  <td className="p-3 font-mono tabular-nums font-semibold text-amstar-ink">
-                    {item.expectedCompletionDate}
+                  <td
+                    className="p-1 font-mono tabular-nums font-semibold text-amstar-ink"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {isAdmin ? (
+                      <CustomDatePicker
+                        value={item.expectedCompletionDate}
+                        onChange={(date) => onDueDateChange(item.id!, date)}
+                        className={`${TABLE_DROPDOWN_STYLE} font-mono tabular-nums whitespace-nowrap min-w-[8rem]`}
+                        dateFormat="iso"
+                      />
+                    ) : (
+                      <span className="px-2">
+                        {item.expectedCompletionDate}
+                      </span>
+                    )}
                   </td>
 
                   <td

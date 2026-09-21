@@ -186,6 +186,33 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleCustomerNameChange = async (id: number, name: string) => {
+    if (!isAdmin) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/customer`, {
+        method: "PATCH",
+        body: JSON.stringify({ customerName: name }),
+      });
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not update the customer name.");
+    }
+  };
+
+  const handleDueDateChange = async (id: number, dueDate: string) => {
+    if (!isAdmin) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/due-date`, {
+        method: "PATCH",
+        body: JSON.stringify({ dueDate }),
+      });
+      // Refetch reorders the queue: the due date feeds priorityScore.
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not update the due date.");
+    }
+  };
+
   const handleAssignWorker = async (id: number, workerUsername: string) => {
     if (!isAdmin) return;
     try {
@@ -406,6 +433,8 @@ export const App: React.FC = () => {
                   onRefresh={fetchQueue}
                   onStatusChange={handleStatusChange}
                   onSeverityChange={handleSeverityChange}
+                  onDueDateChange={handleDueDateChange}
+                  onCustomerNameChange={handleCustomerNameChange}
                   onAssignWorker={handleAssignWorker}
                   onServiceChange={handleServiceChange}
                   onDeleteClick={handleDeleteClick}

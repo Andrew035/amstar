@@ -76,6 +76,8 @@ export interface TicketActivity {
     | "PRICING"
     | "NOTES"
     | "PARTS"
+    | "DUE_DATE"
+    | "CUSTOMER"
     | "DELETED";
   detail: string | null;
   createdAt: string;
