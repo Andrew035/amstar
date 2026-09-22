@@ -17,8 +17,9 @@ import { Register } from "./pages/Register";
 import { apiFetch, ApiError } from "./api";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
-import { TicketNotes } from "./components/TicketNotes";
 import { Roster } from "./pages/Roster";
+import { VehicleModal } from "./components/VehicleModal";
+import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
 
 export const App: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
@@ -507,156 +508,21 @@ export const App: React.FC = () => {
         </Routes>
       </main>
 
-      {/* Tailwind Deep Dive Modal */}
       {viewedRepair && (
-        <div
-          onClick={() => setViewedRepair(null)}
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl"
-          >
-            <div className="flex justify-between items-center border-b border-amstar-line pb-3 mb-4">
-              <h3 className="font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink">
-                Vehicle Snapshot
-              </h3>
-              <button
-                onClick={() => setViewedRepair(null)}
-                className="text-amstar-ink-faint hover:text-amstar-ink text-2xl leading-none"
-              >
-                &times;
-              </button>
-            </div>
-
-            {viewedRepair.vehicle?.carImageUrl ? (
-              <img
-                src={viewedRepair.vehicle.carImageUrl}
-                alt="Vehicle"
-                className="w-full h-64 object-cover rounded mb-4 border border-amstar-line"
-              />
-            ) : (
-              <div className="w-full h-48 bg-amstar-field rounded flex items-center justify-center text-amstar-ink-faint font-cond uppercase tracking-widest text-sm mb-4">
-                No Photo Available
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-              <div>
-                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-                  Customer
-                </span>
-                <span className="font-bold text-amstar-ink">
-                  {viewedRepair.customerName}
-                </span>
-              </div>
-              <div>
-                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-                  Vehicle
-                </span>
-                <span className="font-bold text-amstar-ink">
-                  {viewedRepair.vehicle?.year} {viewedRepair.vehicle?.make}{" "}
-                  {viewedRepair.vehicle?.model}
-                </span>
-              </div>
-              <div>
-                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-                  VIN
-                </span>
-                <span className="font-mono tabular-nums text-xs bg-amstar-field px-2 py-1 rounded text-amstar-ink">
-                  {viewedRepair.vehicle?.vin || "N/A"}
-                </span>
-              </div>
-              <div>
-                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-                  Plate
-                </span>
-                <div className="inline-block border border-amstar-line bg-amstar-field px-3 py-1 rounded font-mono tabular-nums text-center font-bold">
-                  {viewedRepair.vehicle?.licensePlate}{" "}
-                  <span className="text-[10px] block text-amstar-ink-dim">
-                    {viewedRepair.vehicle?.state}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes and parts: the same pad twice, side by side on a wide screen. */}
-            <div className="mt-4 border-t border-amstar-line pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <TicketNotes
-                repairId={viewedRepair.id!}
-                initialNotes={viewedRepair.notes}
-                isAdmin={isAdmin}
-                onSave={handleSaveNotes}
-                className=""
-              />
-              <TicketNotes
-                repairId={viewedRepair.id!}
-                initialNotes={viewedRepair.parts}
-                isAdmin={isAdmin}
-                onSave={handleSaveParts}
-                label="Parts"
-                saveLabel="Save Parts"
-                placeholder="Part names, numbers and what they were quoted at..."
-                emptyText="No parts written down for this repair yet."
-                className=""
-              />
-            </div>
-
-            <div className="bg-amstar-surface p-4 rounded border border-amstar-line flex justify-between items-center">
-              <div>
-                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-                  Job & Severity
-                </span>
-                <span className="font-bold text-amstar-red-ink text-base">
-                  {viewedRepair.serviceType}
-                </span>
-                <span className="block mt-1 text-xs font-bold text-amstar-ink-dim">
-                  Level {viewedRepair.severity} Priority
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-                  Assigned Tech(s)
-                </span>
-                <span className="font-bold text-amstar-ink text-sm block">
-                  {viewedRepair.assignedWorker || "Unassigned"}
-                </span>
-                <span className="inline-block mt-1 text-xs font-bold bg-amstar-blue text-white px-2 py-0.5 rounded-sm font-cond uppercase tracking-wider border border-amstar-line">
-                  {viewedRepair.status}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <VehicleModal
+          repair={viewedRepair}
+          isAdmin={isAdmin}
+          onClose={() => setViewedRepair(null)}
+          onSaveNotes={handleSaveNotes}
+          onSaveParts={handleSaveParts}
+        />
       )}
 
-      {/* Tailwind Delete Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-sm shadow-2xl space-y-4">
-            <h3 className="font-cond text-lg font-bold uppercase tracking-wider text-amstar-red-ink flex items-center gap-2">
-              ⚠️ Permanent Deletion
-            </h3>
-            <p className="text-sm text-amstar-ink-dim leading-relaxed">
-              Are you sure you want to delete this ticket? This action removes
-              it permanently from the PostgreSQL database.
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 bg-transparent border border-amstar-line hover:bg-amstar-surface text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest text-xs shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition"
-              >
-                Delete Ticket
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDeleteModal
+          onCancel={() => setIsDeleteModalOpen(false)}
+          onConfirm={confirmDelete}
+        />
       )}
 
       {/* Modern Floating Toast Notification */}

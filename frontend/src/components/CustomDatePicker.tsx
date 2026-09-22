@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 import { FLOATING_PANEL_STYLE, SELECT_TRIGGER_STYLE } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
+import { usDate } from "../lib/ticketFilters";
 
 /**
  * Hand-rolled date picker. Native <input type="date"> was deliberately dropped:
@@ -100,11 +101,7 @@ export const CustomDatePicker: React.FC<{
     "December",
   ];
 
-  let displayValue = "";
-  if (value) {
-    const [y, m, d] = value.split("-");
-    displayValue = dateFormat === "iso" ? value : `${m}/${d}${y}`;
-  }
+  const displayValue = dateFormat === "iso" ? value : usDate(value);
 
   return (
     <div className="relative w-full">

@@ -2,7 +2,6 @@ package com.amstar.repair.controller;
 
 import com.amstar.repair.model.TicketStatus;
 import com.amstar.repair.model.VehicleRepair;
-// import com.amstar.repair.repository.VehicleRepairRepository;
 import com.amstar.repair.service.PriorityQueueService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -15,11 +14,8 @@ import org.springframework.web.bind.annotation.*;
 public class VehicleRepairController {
   private final PriorityQueueService priorityQueueService;
 
-  // private final VehicleRepairRepository repairRepository;
-
   public VehicleRepairController(PriorityQueueService priorityQueueService) {
     this.priorityQueueService = priorityQueueService;
-    // this.repairRepository = repairRepository;
   }
 
   @GetMapping("/queue")

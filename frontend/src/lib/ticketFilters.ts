@@ -12,6 +12,14 @@ export const localISODate = (offsetDays = 0): string => {
     "0",
   )}-${String(d.getDate()).padStart(2, "0")}`;
 };
+
+/** 2026-10-05 -> 10/05/2026. Anything that is not a plain ISO date is left alone. */
+export const usDate = (iso?: string | null): string => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${m}/${d}/${y}` : iso;
+};
+
 export const technicianList = (r: VehicleRepair): string[] =>
   (r.assignedWorker ?? "")
     .split(",")

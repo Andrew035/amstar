@@ -2,200 +2,13 @@ import React, { useState } from "react";
 import type { VehicleRepair } from "../types/repair";
 import {
   SEARCH_INPUT_STYLE,
-  INLINE_INPUT_STYLE,
-  FLOATING_PANEL_STYLE,
-  PANEL_ROW_STYLE,
   PANEL_STYLE,
   PANEL_HEADING_STYLE,
-  getStatusStyle,
-  OPTION_ROW_STYLE,
 } from "../styles/controls";
-import { panelCoords } from "../lib/floating";
-import { Truncated } from "../components/Truncated";
 import { ServicesCell } from "../components/ServicesCell";
-
-const MultiWorkerDropdown: React.FC<{
-  currentWorkers: string | undefined;
-  onAssign: (workers: string) => void;
-  technicianNames: string[];
-}> = ({ currentWorkers, onAssign, technicianNames }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const selectedArray = currentWorkers
-    ? currentWorkers
-        .split(",")
-        .map((w) => w.trim())
-        .filter((w) => w !== "")
-    : [];
-
-  // Anyone already on the ticket stays in the list even after they leave the
-  // roster - otherwise there is no way to take their name back off it.
-  const isOnRoster = (name: string) =>
-    technicianNames.some((n) => n.toLowerCase() === name.toLowerCase());
-  const workersList = [
-    ...technicianNames,
-    ...selectedArray.filter((w) => !isOnRoster(w)),
-  ];
-
-  const handleToggle = (workerName: string) => {
-    let updatedSelection = selectedArray.includes(workerName)
-      ? selectedArray.filter((w) => w !== workerName)
-      : [...selectedArray, workerName];
-    onAssign(updatedSelection.join(", "));
-  };
-  const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const { top, left } = panelCoords(rect, 226, 192);
-    setCoords({ top, left });
-    setIsOpen(true);
-  };
-
-  return (
-    <>
-      <div
-        onClick={openDropdown}
-        className={`${INLINE_INPUT_STYLE} group flex justify-between items-center`}
-      >
-        <Truncated
-          value={
-            selectedArray.length === 0 ? "Unassigned" : selectedArray.join(", ")
-          }
-          className="flex-1"
-          tapToReveal={false}
-        />
-        <span className="text-[10px] ml-2 text-amstar-ink-faint shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          ▼
-        </span>
-      </div>
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-[100]"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsOpen(false);
-            }}
-            onWheel={() => setIsOpen(false)}
-            onTouchMove={() => setIsOpen(false)}
-          ></div>
-          <div
-            className={`${FLOATING_PANEL_STYLE} w-48`}
-            style={{ top: coords.top, left: coords.left }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className={`${PANEL_HEADING_STYLE} bg-amstar-raised px-3 py-2 border-b border-amstar-line-soft text-[10px] font-black`}
-            >
-              Assign Technicians
-            </div>
-            <div className="max-h-48 overflow-y-auto p-1">
-              {workersList.map((worker) => {
-                const isOn = selectedArray.includes(worker);
-                const former = !isOnRoster(worker);
-                return (
-                  <button
-                    key={worker}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={isOn}
-                    onClick={() => handleToggle(worker)}
-                    className={`${OPTION_ROW_STYLE} ${isOn ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
-                  >
-                    <span
-                      className={`shrink-0 w-4 h-4 rounded-sm border grid place-items-center text-[10px] font-black ${isOn ? "bg-amstar-red border-amstar-red text-white" : "border-amstar-line"}`}
-                    >
-                      {isOn ? "✓" : ""}
-                    </span>
-                    <span className="flex-1 text-xs font-bold text-amstar-ink">
-                      {worker}
-                    </span>
-                    {former && (
-                      <span className="shrink-0 font-cond uppercase tracking-wider text-[9px] text-amstar-ink-faint">
-                        Former
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  );
-};
-
-// === NEW: UNIFIED STATUS DROPDOWN ===
-const StatusDropdown: React.FC<{
-  value: string;
-  onChange: (val: string) => void;
-}> = ({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-
-  const options = [
-    { val: "PENDING", label: "PENDING" },
-    { val: "IN_PROGRESS", label: "IN PROGRESS" },
-    { val: "COMPLETED", label: "COMPLETED" },
-  ];
-
-  const currentLabel =
-    options.find((o) => o.val === value)?.label || value?.replace("_", " ");
-
-  const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setCoords(panelCoords(rect, 3 * 38, 130));
-    setIsOpen(true);
-  };
-
-  const handleSelect = (val: string) => {
-    onChange(val);
-    setIsOpen(false);
-  };
-
-  return (
-    <div className="relative w-full">
-      <div
-        onClick={openDropdown}
-        className={`w-full px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)}`}
-      >
-        <span className="flex-1 text-center whitespace-nowrap">
-          {currentLabel}
-        </span>
-      </div>
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-[100]"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsOpen(false);
-            }}
-            onWheel={() => setIsOpen(false)}
-            onTouchMove={() => setIsOpen(false)}
-          ></div>
-          <div
-            className={FLOATING_PANEL_STYLE}
-            style={{ top: coords.top, left: coords.left, width: coords.width }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {options.map((opt) => (
-              <div
-                key={opt.val}
-                onClick={() => handleSelect(opt.val)}
-                className={`${PANEL_ROW_STYLE} text-center`}
-              >
-                {opt.label}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
+import { MultiWorkerDropdown } from "../components/WorkerDropdown";
+import { StatusDropdown } from "../components/StatusDropdown";
+import { invoiceTotal } from "../lib/ticketFilters";
 
 export const HistoryPage: React.FC<{
   repairs: VehicleRepair[];
@@ -240,11 +53,6 @@ export const HistoryPage: React.FC<{
         new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() -
         new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime(),
     );
-
-  const calculateTotal = (item: VehicleRepair) =>
-    (item.includeRetail ? item.retailPrice || 0 : 0) +
-    (item.includeLease ? item.leasePrice || 0 : 0) +
-    (item.includeLabor ? item.laborPrice || 0 : 0);
 
   return (
     <div className="space-y-6">
@@ -381,6 +189,7 @@ export const HistoryPage: React.FC<{
                     onClick={(e) => e.stopPropagation()}
                   >
                     <MultiWorkerDropdown
+                      variant="inline"
                       currentWorkers={item.assignedWorker}
                       technicianNames={technicianNames}
                       onAssign={(workers) => onAssignWorker(item.id!, workers)}
@@ -388,7 +197,7 @@ export const HistoryPage: React.FC<{
                   </td>
 
                   <td className="px-2 py-3 font-black text-emerald-400 text-xs lg:text-sm text-right truncate">
-                    ${calculateTotal(item).toFixed(2)}
+                    ${invoiceTotal(item).toFixed(2)}
                   </td>
 
                   <td className="p-3" onClick={(e) => e.stopPropagation()}>
