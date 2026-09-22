@@ -84,38 +84,47 @@ export const HistoryPage: React.FC<{
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[8%] hidden lg:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[8%] hidden xl:table-cell`}
                 >
                   Entry Date
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[11%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[12%] xl:w-[11%]`}
+                >
                   Completion Date
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[11%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[13%] xl:w-[12%]`}
+                >
                   Customer
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[9%] xl:w-[8%]`}
+                >
                   Vehicle Image
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[10%] xl:w-[9%]`}
+                >
                   License Plate
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[10%] hidden md:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[17%] xl:w-[16%]`}
                 >
-                  Vehicle Details
-                </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[13%]`}>
                   Service Details
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[10%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[14%] xl:w-[12%]`}
+                >
                   Technician(s)
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[11%] text-right`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[13%] xl:w-[12%] text-right`}
+                >
                   Total Price
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] text-center`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[12%] text-center`}
                 >
                   Status
                 </th>
@@ -129,16 +138,16 @@ export const HistoryPage: React.FC<{
                   className={`hover:bg-amstar-red/20 transition cursor-pointer group ${viewedRepairId === item.id ? "bg-amstar-raised" : "bg-amstar-surface"}`}
                   title="Click to delete this ticket"
                 >
-                  <td className="p-3 font-mono tabular-nums text-amstar-ink-dim truncate hidden lg:table-cell">
+                  <td className="p-2 xl:p-3 font-mono tabular-nums text-amstar-ink-dim truncate hidden xl:table-cell">
                     {item.entryDate}
                   </td>
-                  <td className="p-3 font-bold font-mono tabular-nums text-amstar-ink truncate">
+                  <td className="p-2 xl:p-3 font-bold font-mono tabular-nums text-amstar-ink truncate">
                     {item.actualCompletionDate || item.expectedCompletionDate}
                   </td>
-                  <td className="p-3 font-semibold text-amstar-ink truncate">
+                  <td className="p-2 xl:p-3 font-semibold text-amstar-ink truncate">
                     {item.customerName}
                   </td>
-                  <td className="p-3">
+                  <td className="p-2 xl:p-3">
                     {item.vehicle?.carImageUrl ? (
                       <img
                         src={item.vehicle.carImageUrl}
@@ -154,18 +163,13 @@ export const HistoryPage: React.FC<{
                     )}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-2 xl:p-3">
                     <div className="inline-block border border-amstar-line bg-amstar-raised px-2 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm">
                       {item.vehicle?.licensePlate}
                       <span className="text-[9px] block text-amstar-ink-dim leading-none mt-0.5">
                         {item.vehicle?.state}
                       </span>
                     </div>
-                  </td>
-
-                  <td className="p-3 font-medium text-amstar-ink truncate hidden md:table-cell">
-                    {item.vehicle?.year} {item.vehicle?.make}{" "}
-                    {item.vehicle?.model}
                   </td>
 
                   <td
@@ -196,11 +200,14 @@ export const HistoryPage: React.FC<{
                     />
                   </td>
 
-                  <td className="px-2 py-3 font-black text-emerald-400 text-xs lg:text-sm text-right truncate">
+                  <td className="px-2 py-2 xl:py-3 font-black text-emerald-400 text-xs xl:text-sm text-right truncate">
                     ${invoiceTotal(item).toFixed(2)}
                   </td>
 
-                  <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="p-2 xl:p-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <StatusDropdown
                       value={item.status || "PENDING"}
                       onChange={(val) => onStatusChange(item.id!, val)}

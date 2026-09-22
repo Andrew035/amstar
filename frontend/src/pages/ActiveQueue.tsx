@@ -117,7 +117,7 @@ const SeverityDropdown: React.FC<{
         tracking-wider whitespace-nowrap ${SEVERITY_TEXT} text-[11px] ${getSeverityColor(value)}
         ${getSeverityGlow(value)} hover:brightness-110 transition`}
       >
-        Level {value}
+        {SEVERITY_LABELS[value]}
         <span className="text-[8px] leading-none">▼</span>
       </button>
       {isOpen && (
@@ -148,13 +148,15 @@ const SeverityDropdown: React.FC<{
                 className={`${OPTION_ROW_STYLE} ${level === value ? "bg-amstar-surface" : "hover:bg-amstar-surface"}`}
               >
                 <span
-                  className={`shrink-0 w-16 text-center px-1.5 py-0.5 rounded-sm font-cond
+                  className={`shrink-0 w-20 text-center px-1.5 py-0.5 rounded-sm font-cond
                   uppercase tracking-wider text-[11px] ${SEVERITY_TEXT} ${getSeverityColor(level)}`}
                 >
-                  Level {level}
-                </span>
-                <span className="flex-1 text-xs font-bold text-amstar-ink">
                   {SEVERITY_LABELS[level]}
+                </span>
+                <span
+                  className={"flex-1 text-xs font-bold text-amstar-ink-dim"}
+                >
+                  Level {level}
                 </span>
                 {level === value && (
                   <span className="text-xs font-black text-amstar-red-ink">
@@ -275,42 +277,47 @@ export const ActiveQueue: React.FC<{
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] whitespace-nowrap`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[11%] whitespace-nowrap`}
                 >
                   Customer
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[9%] xl:w-[8%]`}
+                >
                   Vehicle Image
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[8%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[10%] xl:w-[9%]`}
+                >
                   License Plate
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[9%] hidden md:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[17%] xl:w-[15%]`}
                 >
-                  Vehicle Details
-                </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[12%]`}>
                   Service
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[9%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[12%] xl:w-[11%] text-center`}
+                >
                   Severity
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-2 lg:p-3 w-[8%] whitespace-nowrap hidden lg:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[8%] whitespace-nowrap hidden xl:table-cell`}
                 >
                   Entry Date
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] whitespace-nowrap`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[13%] xl:w-[12%] whitespace-nowrap`}
                 >
                   Due Date
                 </th>
-                <th className={`${PANEL_HEADING_STYLE} p-3 w-[13%]`}>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[16%] xl:w-[14%]`}
+                >
                   Technician(s)
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[11%] text-center`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[12%] text-center`}
                 >
                   Status
                 </th>
@@ -347,7 +354,7 @@ export const ActiveQueue: React.FC<{
                       </span>
                     )}
                   </td>
-                  <td className="p-3">
+                  <td className="p-2 xl:p-3">
                     {item.vehicle?.carImageUrl ? (
                       <img
                         src={item.vehicle.carImageUrl}
@@ -363,18 +370,13 @@ export const ActiveQueue: React.FC<{
                     )}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-2 xl:p-3">
                     <div className="block border border-amstar-line bg-amstar-raised px-1 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm truncate">
                       {item.vehicle?.licensePlate}
                       <span className="text-[9px] block text-amstar-ink-dim leading-none mt-0.5">
                         {item.vehicle?.state}
                       </span>
                     </div>
-                  </td>
-
-                  <td className="p-3 font-medium text-amstar-ink truncate hidden md:table-cell">
-                    {item.vehicle?.year} {item.vehicle?.make}{" "}
-                    {item.vehicle?.model}
                   </td>
 
                   <td className="p-1 md:p-1 max-lg:py-2 max-w-[220px]" title="">
@@ -389,7 +391,7 @@ export const ActiveQueue: React.FC<{
                     />
                   </td>
 
-                  <td className="p-2 lg:p-3 overflow-hidden">
+                  <td className="p-2 xl:p-3 text-center">
                     {isAdmin ? (
                       <SeverityDropdown
                         value={item.severity}
@@ -401,12 +403,12 @@ export const ActiveQueue: React.FC<{
                             whitespace-nowrap ${SEVERITY_TEXT} text-[11px] ${getSeverityColor(item.severity)}
                             ${getSeverityGlow(item.severity)}`}
                       >
-                        Level {item.severity}
+                        {SEVERITY_LABELS[item.severity]}
                       </span>
                     )}
                   </td>
 
-                  <td className="p-2 lg:p-3 font-mono tabular-nums truncate text-amstar-ink-dim hidden lg:table-cell">
+                  <td className="p-2 xl:p-3 font-mono tabular-nums truncate text-amstar-ink-dim hidden xl:table-cell">
                     {usDate(item.entryDate)}
                   </td>
                   <td
@@ -446,7 +448,10 @@ export const ActiveQueue: React.FC<{
                     )}
                   </td>
 
-                  <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="p-2 xl:p-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {isAdmin ? (
                       <StatusDropdown
                         value={item.status || "PENDING"}

@@ -5,6 +5,7 @@ import {
   getSeverityColor,
   getSeverityGlow,
   PANEL_STYLE,
+  SEVERITY_LABELS,
   SEVERITY_TEXT,
 } from "../styles/controls";
 import {
@@ -217,7 +218,7 @@ const severityBadge = (r: VehicleRepair) => (
   <Badge
     className={`${getSeverityColor(r.severity)} ${getSeverityGlow(r.severity)}`}
   >
-    Level {r.severity}
+    {SEVERITY_LABELS[r.severity]}
   </Badge>
 );
 

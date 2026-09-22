@@ -52,18 +52,18 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Navigation Links - draggable={false} stops the ghost dragging! */}
         <nav className="flex items-center gap-1 lg:gap-2">
           <NavLink to="/" className={linkClass} draggable={false}>
-            <Label full="Shop Overview" short="Overview" />
+            <Label full="Overview" short="Overview" />
           </NavLink>
           <NavLink to="/queue" className={linkClass} draggable={false}>
-            <Label full="Active Queue" short="Queue" />
+            <Label full="Queue" short="Queue" />
           </NavLink>
           {isAdmin && (
             <>
               <NavLink to="/pricing" className={linkClass} draggable={false}>
-                <Label full="Pricing Calculator" short="Pricing" />
+                <Label full="Pricing" short="Pricing" />
               </NavLink>
               <NavLink to="/history" className={linkClass} draggable={false}>
-                <Label full="Completed History" short="History" />
+                <Label full="History" short="History" />
               </NavLink>
               <NavLink to="/roster" className={linkClass} draggable={false}>
                 Roster
