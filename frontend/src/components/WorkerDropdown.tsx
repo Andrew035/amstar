@@ -21,10 +21,18 @@ export const MultiWorkerDropdown: React.FC<{
   /** "table" is the boxed control in the queue; "inline" is History's quieter
    *  cell, where the arrow only appears on hover. */
   variant?: "table" | "inline";
-}> = ({ currentWorkers, onAssign, technicianNames, variant = "table" }) => {
+  /** Sizing from the call site, the same escape hatch CustomDatePicker takes. */
+  className?: string;
+}> = ({
+  currentWorkers,
+  onAssign,
+  technicianNames,
+  variant = "table",
+  className = "",
+}) => {
   const inline = variant === "inline";
   const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const selectedArray = currentWorkers
     ? currentWorkers
         .split(",")
@@ -51,8 +59,9 @@ export const MultiWorkerDropdown: React.FC<{
   const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    const { top, left } = panelCoords(rect, 226, 192);
-    setCoords({ top, left });
+    // 192 stays the floor so History's narrow inline trigger still opens a
+    // usable panel; a full-width trigger now gets a panel to match.
+    setCoords(panelCoords(rect, 226, 192));
     setIsOpen(true);
   };
 
@@ -62,7 +71,7 @@ export const MultiWorkerDropdown: React.FC<{
         onClick={openDropdown}
         className={`${
           inline ? `${INLINE_INPUT_STYLE} group` : `${TABLE_DROPDOWN_STYLE} w-full`
-        } flex justify-between items-center`}
+        } flex justify-between items-center ${className}`}
       >
         <Truncated
           value={
@@ -91,8 +100,8 @@ export const MultiWorkerDropdown: React.FC<{
             onTouchMove={() => setIsOpen(false)}
           ></div>
           <div
-            className={`${FLOATING_PANEL_STYLE} w-48`}
-            style={{ top: coords.top, left: coords.left }}
+            className={FLOATING_PANEL_STYLE}
+            style={{ top: coords.top, left: coords.left, width: coords.width }}
             onClick={(e) => e.stopPropagation()}
           >
             <div

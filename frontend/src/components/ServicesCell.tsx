@@ -20,9 +20,23 @@ export const ServicesCell: React.FC<{
   historicalMap: Record<string, number>;
   onChange: (csv: string) => void;
   readOnly?: boolean;
+  /**
+   * Height of the closed control. A floor rather than a fixed height, and a
+   * prop rather than a class on the button, so the count badge - which is
+   * taller than the label's line box - can never resize the control when a
+   * second service is added.
+   */
+  className?: string;
   /** Shown under the modal title, e.g. "2010 FORD E-250 — Kane". */
   subtitle?: string;
-}> = ({ value, historicalMap, onChange, readOnly = false, subtitle }) => {
+}> = ({
+  value,
+  historicalMap,
+  onChange,
+  readOnly = false,
+  subtitle,
+  className = "min-h-9",
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -75,7 +89,7 @@ export const ServicesCell: React.FC<{
         type="button"
         onClick={open}
         title=""
-        className="w-full flex items-center gap-2 px-3 py-1.5 rounded border border-transparent hover:border-amstar-line text-left text-xs font-bold text-amstar-ink uppercase transition-colors"
+        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded border border-transparent hover:border-amstar-line text-left text-xs font-bold text-amstar-ink uppercase transition-colors ${className}`}
       >
         <span className="truncate flex-1 min-w-0">
           {current.length ? current.join(", ") : "No services"}

@@ -439,8 +439,8 @@ export const App: React.FC = () => {
                   onAssignWorker={handleAssignWorker}
                   onServiceChange={handleServiceChange}
                   onDeleteClick={handleDeleteClick}
-                  onViewDeepDive={setViewedRepair}
-                  viewedRepairId={viewedRepair?.id}
+                  onSaveNotes={handleSaveNotes}
+                  onSaveParts={handleSaveParts}
                 />
               ) : (
                 <Navigate to="/login" replace />

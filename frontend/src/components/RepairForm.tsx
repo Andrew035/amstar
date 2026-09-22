@@ -5,7 +5,6 @@ import {
   FLOATING_PANEL_STYLE,
   PANEL_ROW_STYLE,
   LABEL_STYLE,
-  PANEL_STYLE,
   PANEL_HEADING_STYLE,
   SEVERITY_LABELS,
   PRIMARY_BUTTON_STYLE,
@@ -471,7 +470,7 @@ const FormWorkerDropdown: React.FC<{
   technicianNames: string[];
 }> = ({ currentWorkers, onAssign, technicianNames }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const workersList = technicianNames;
   const selectedArray = currentWorkers
     ? currentWorkers
@@ -488,8 +487,8 @@ const FormWorkerDropdown: React.FC<{
   const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    const { top, left } = panelCoords(rect, 226, 256);
-    setCoords({ top, left });
+    // 256 stays the floor; a wider trigger now gets a panel to match.
+    setCoords(panelCoords(rect, 226, 256));
     setIsOpen(true);
   };
   return (
@@ -526,8 +525,8 @@ const FormWorkerDropdown: React.FC<{
             onTouchMove={() => setIsOpen(false)}
           ></div>
           <div
-            className={`${FLOATING_PANEL_STYLE} w-64`}
-            style={{ top: coords.top, left: coords.left }}
+            className={FLOATING_PANEL_STYLE}
+            style={{ top: coords.top, left: coords.left, width: coords.width }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -569,6 +568,7 @@ const FormWorkerDropdown: React.FC<{
 
 interface RepairFormProps {
   onSuccess: () => void;
+  onClose: () => void;
   currentUser: string;
   isAdmin: boolean;
   historicalServiceMap: Record<string, number>;
@@ -577,6 +577,7 @@ interface RepairFormProps {
 
 export const RepairForm: React.FC<RepairFormProps> = ({
   onSuccess,
+  onClose,
   isAdmin,
   historicalServiceMap,
   technicianNames,
@@ -677,10 +678,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
   };
 
   return (
-    <div className={`${PANEL_STYLE} p-6 mb-8 overflow-visible`}>
-      <h3 className="mt-0 border-b border-amstar-line-soft pb-3 mb-4 font-cond text-lg font-bold uppercase tracking-wider text-amstar-ink">
-        New Vehicle Intake
-      </h3>
+    <div className="overflow-visible">
       {error && (
         <div className="text-white bg-amstar-red/20 border border-amstar-red p-3 rounded-lg mb-4 text-sm font-bold">
           {error}
@@ -688,7 +686,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
       )}
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5"
+        className="grid grid-cols-1 md:grid-cols-2 gap-5"
       >
         <div>
           <label className={LABEL_STYLE}>Customer Name</label>
@@ -735,23 +733,8 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           />
         </div>
 
-        <div>
-          <label className={LABEL_STYLE}>Severity Level</label>
-          <SeveritySegments value={severity} onChange={setSeverity} />
-        </div>
-
-        {/* === REPLACED NATIVE DATE WITH CUSTOM COMPONENT === */}
-        <div>
-          <label className={LABEL_STYLE}>Target Completion</label>
-          <CustomDatePicker
-            value={expectedCompletionDate}
-            onChange={setExpectedCompletionDate}
-            required
-          />
-        </div>
-
         {isAdmin && (
-          <div className="md:col-span-2">
+          <div>
             <label className={LABEL_STYLE}>
               Assign Technician(s){" "}
               <span className="font-normal text-xs text-amstar-ink-faint ml-2 normal-case tracking-normal">
@@ -767,7 +750,29 @@ export const RepairForm: React.FC<RepairFormProps> = ({
             </div>
           </div>
         )}
-        <div className="md:col-span-2 lg:col-span-4 flex justify-end mt-2 pt-5 border-t border-amstar-line-soft">
+
+        {/* === REPLACED NATIVE DATE WITH CUSTOM COMPONENT === */}
+        <div>
+          <label className={LABEL_STYLE}>Target Completion</label>
+          <CustomDatePicker
+            value={expectedCompletionDate}
+            onChange={setExpectedCompletionDate}
+            required
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className={LABEL_STYLE}>Severity Level</label>
+          <SeveritySegments value={severity} onChange={setSeverity} />
+        </div>
+        <div className="md:col-span-2 flex justify-end gap-3 mt-2 pt-5 border-t border-amstar-line-soft">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors"
+          >
+            Cancel
+          </button>
           <button
             type="submit"
             disabled={isSubmitting}

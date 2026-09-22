@@ -20,6 +20,8 @@ export const TicketNotes: React.FC<{
   placeholder?: string;
   emptyText?: string;
   className?: string;
+  /** Height of the pad itself. The detail pane grows it to fill the pane. */
+  textareaClass?: string;
 }> = ({
   repairId,
   initialNotes,
@@ -30,6 +32,7 @@ export const TicketNotes: React.FC<{
   placeholder = "Parts on order, customer conversations, anything the board used to hold...",
   emptyText = "No notes recorded for this repair yet.",
   className = "mt-4 border-t border-amstar-line pt-4",
+  textareaClass = "h-32",
 }) => {
   const [text, setText] = useState(initialNotes ?? "");
   const [savedText, setSavedText] = useState(initialNotes ?? "");
@@ -77,9 +80,9 @@ export const TicketNotes: React.FC<{
         disabled={!isAdmin}
         title={text || emptyText}
         placeholder={isAdmin ? placeholder : emptyText}
-        className="w-full h-32 resize-none overflow-y-auto px-3 py-2 bg-amstar-field border border-amstar-line
+        className={`w-full ${textareaClass} resize-none overflow-y-auto px-3 py-2 bg-amstar-field border border-amstar-line
         rounded font-mono text-xs leading-relaxed text-amstar-ink shadow-inner transition focus:outline-none
-        focus:border-amstar-red focus:ring-2 focus:ring-amstar-red/40 disabled:opacity-60 disabled:cursor-not-allowed"
+        focus:border-amstar-red focus:ring-2 focus:ring-amstar-red/40 disabled:opacity-60 disabled:cursor-not-allowed`}
       />
 
       {error && (
