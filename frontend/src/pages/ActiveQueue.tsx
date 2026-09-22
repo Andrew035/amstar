@@ -271,7 +271,7 @@ export const ActiveQueue: React.FC<{
         <div className={`${PANEL_STYLE} overflow-x-auto`}>
           {/* table-fixed: the header sets every column width, so editing a cell -
               picking technicians, changing status - can never resize the table. */}
-          <table className="w-full min-w-[980px] table-fixed text-left text-xs border-collapse">
+          <table className="w-full table-fixed text-left text-xs border-collapse">
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
                 <th
@@ -297,7 +297,7 @@ export const ActiveQueue: React.FC<{
                   Severity
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-3 w-[8%] whitespace-nowrap`}
+                  className={`${PANEL_HEADING_STYLE} p-2 lg:p-3 w-[8%] whitespace-nowrap hidden lg:table-cell`}
                 >
                   Entry Date
                 </th>
@@ -364,7 +364,7 @@ export const ActiveQueue: React.FC<{
                   </td>
 
                   <td className="p-3">
-                    <div className="inline-block border border-amstar-line bg-amstar-raised px-2 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm min-w-[70px]">
+                    <div className="block border border-amstar-line bg-amstar-raised px-1 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm truncate">
                       {item.vehicle?.licensePlate}
                       <span className="text-[9px] block text-amstar-ink-dim leading-none mt-0.5">
                         {item.vehicle?.state}
@@ -372,7 +372,7 @@ export const ActiveQueue: React.FC<{
                     </div>
                   </td>
 
-                  <td className="p-3 font-medium text-amstar-ink hidden md:table-cell">
+                  <td className="p-3 font-medium text-amstar-ink truncate hidden md:table-cell">
                     {item.vehicle?.year} {item.vehicle?.make}{" "}
                     {item.vehicle?.model}
                   </td>
@@ -389,7 +389,7 @@ export const ActiveQueue: React.FC<{
                     />
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-2 lg:p-3 overflow-hidden">
                     {isAdmin ? (
                       <SeverityDropdown
                         value={item.severity}
@@ -406,7 +406,7 @@ export const ActiveQueue: React.FC<{
                     )}
                   </td>
 
-                  <td className="p-3 font-mono tabular-nums whitespace-nowrap text-amstar-ink-dim lg:table-cell">
+                  <td className="p-2 lg:p-3 font-mono tabular-nums truncate text-amstar-ink-dim hidden lg:table-cell">
                     {usDate(item.entryDate)}
                   </td>
                   <td
@@ -417,7 +417,7 @@ export const ActiveQueue: React.FC<{
                       <CustomDatePicker
                         value={item.expectedCompletionDate}
                         onChange={(date) => onDueDateChange(item.id!, date)}
-                        className={`${TABLE_DROPDOWN_STYLE} font-mono tabular-nums whitespace-nowrap min-w-[8rem]`}
+                        className={`${TABLE_DROPDOWN_STYLE} w-full font-mono tabular-nums whitespace-nowrap`}
                       />
                     ) : (
                       <span className="px-2">

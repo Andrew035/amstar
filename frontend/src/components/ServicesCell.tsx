@@ -77,7 +77,7 @@ export const ServicesCell: React.FC<{
         title=""
         className="w-full flex items-center gap-2 px-3 py-1.5 rounded border border-transparent hover:border-amstar-line text-left text-xs font-bold text-amstar-ink uppercase transition-colors"
       >
-        <span className="truncate flex-1">
+        <span className="truncate flex-1 min-w-0">
           {current.length ? current.join(", ") : "No services"}
         </span>
         {current.length > 1 && (

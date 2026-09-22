@@ -44,7 +44,9 @@ export const StatusDropdown: React.FC<{
         onClick={openDropdown}
         className={`w-full px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)}`}
       >
-        <span className="truncate flex-1 text-center">{currentLabel}</span>
+        <span className="truncate flex-1 min-w-0 text-center">
+          {currentLabel}
+        </span>
       </div>
       {isOpen && (
         <>
