@@ -3,7 +3,7 @@ import type { VehicleRepair } from "../types/repair";
 import { RepairForm } from "../components/RepairForm";
 import { PANEL_STYLE, PRIMARY_BUTTON_STYLE } from "../styles/controls";
 import { useSearchParams } from "react-router-dom";
-import { parseTicketFilter } from "../lib/ticketFilters";
+import { matchesSearch, parseTicketFilter } from "../lib/ticketFilters";
 import { FilterBanner } from "../components/FilterBanner";
 import { NewTicketModal } from "../components/NewTicketModal";
 import { QueueList } from "../components/QueueList";
@@ -63,19 +63,7 @@ export const ActiveQueue: React.FC<{
   const activeRepairs = repairs
     .filter((r) => r.status !== "COMPLETED")
     .filter((r) => !ticketFilter || ticketFilter.matches(r))
-    .filter((item) => {
-      if (!searchTerm) return true;
-      const lower = searchTerm.toLowerCase();
-      return (
-        item.customerName?.toLowerCase().includes(lower) ||
-        item.vehicle?.licensePlate?.toLowerCase().includes(lower) ||
-        item.vehicle?.vin?.toLowerCase().includes(lower) ||
-        item.vehicle?.make?.toLowerCase().includes(lower) ||
-        item.vehicle?.model?.toLowerCase().includes(lower) ||
-        item.assignedWorker?.toLowerCase().includes(lower) ||
-        item.serviceType?.toLowerCase().includes(lower)
-      );
-    })
+    .filter((item) => matchesSearch(item, searchTerm))
     .sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
   // Derived rather than stored: a ticket can leave the list under you - someone

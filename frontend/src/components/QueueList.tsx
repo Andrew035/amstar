@@ -43,7 +43,7 @@ export const QueueList: React.FC<{
       <input
         id="queue-search"
         type="search"
-        placeholder="Customer, plate or service"
+        placeholder="Customer, plate, service, month or year"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
         className={`${SEARCH_INPUT_STYLE} sm:w-full`}

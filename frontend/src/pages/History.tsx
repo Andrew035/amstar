@@ -8,7 +8,45 @@ import {
 import { ServicesCell } from "../components/ServicesCell";
 import { MultiWorkerDropdown } from "../components/WorkerDropdown";
 import { StatusDropdown } from "../components/StatusDropdown";
-import { invoiceTotal } from "../lib/ticketFilters";
+import {
+  invoiceTotal,
+  matchesSearch,
+  monthLabel,
+  usDate,
+  vehicleLabel,
+} from "../lib/ticketFilters";
+
+/** The date a repair closed on - the real one when we have it. */
+const closedOn = (r: VehicleRepair): string =>
+  r.actualCompletionDate || r.expectedCompletionDate;
+
+/** How long the car was with us. Both ends are UTC midnight, so this is exact. */
+const daysInShop = (r: VehicleRepair): string => {
+  const end = closedOn(r);
+  if (!r.entryDate || !end) return "—";
+  const days = Math.round(
+    (new Date(end).getTime() - new Date(r.entryDate).getTime()) / 86400000,
+  );
+  if (days < 0) return "—";
+  return days === 1 ? "1 day" : `${days} days`;
+};
+
+const money = (n?: number) => (n ? `$${n.toFixed(2)}` : "—");
+
+/** One labelled fact inside an opened row. */
+const Fact: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <div className="min-w-0">
+    <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
+      {label}
+    </span>
+    <span className="block text-xs text-amstar-ink-dim truncate">
+      {children}
+    </span>
+  </div>
+);
 
 export const HistoryPage: React.FC<{
   repairs: VehicleRepair[];
@@ -32,27 +70,25 @@ export const HistoryPage: React.FC<{
   viewedRepairId,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [openId, setOpenId] = useState<number | null>(null);
 
   const completedRepairs = repairs
     .filter((r) => r.status === "COMPLETED")
-    .filter((item) => {
-      if (!searchTerm) return true;
-      const lower = searchTerm.toLowerCase();
-      return (
-        item.customerName?.toLowerCase().includes(lower) ||
-        item.vehicle?.licensePlate?.toLowerCase().includes(lower) ||
-        item.vehicle?.vin?.toLowerCase().includes(lower) ||
-        item.vehicle?.make?.toLowerCase().includes(lower) ||
-        item.vehicle?.model?.toLowerCase().includes(lower) ||
-        item.assignedWorker?.toLowerCase().includes(lower) ||
-        item.serviceType?.toLowerCase().includes(lower)
-      );
-    })
+    .filter((item) => matchesSearch(item, searchTerm))
     .sort(
-      (a, b) =>
-        new Date(b.actualCompletionDate || b.expectedCompletionDate).getTime() -
-        new Date(a.actualCompletionDate || a.expectedCompletionDate).getTime(),
+      (a, b) => new Date(closedOn(b)).getTime() - new Date(closedOn(a)).getTime(),
     );
+
+  // How many closed in each month, for the divider rows. Counts only - nothing
+  // on this page adds repairs together into a figure.
+  const perMonth = completedRepairs.reduce<Record<string, number>>(
+    (acc, item) => {
+      const key = monthLabel(closedOn(item));
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
 
   return (
     <div className="space-y-6">
@@ -62,7 +98,7 @@ export const HistoryPage: React.FC<{
         </h2>
         <input
           type="text"
-          placeholder="Search history by name, VIN, plate..."
+          placeholder="Search by name, plate, service, month or year..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={SEARCH_INPUT_STYLE}
@@ -84,137 +120,241 @@ export const HistoryPage: React.FC<{
             <thead className="bg-amstar-raised border-b border-amstar-line">
               <tr>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[8%] hidden xl:table-cell`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[9%] hidden xl:table-cell`}
                 >
-                  Entry Date
-                </th>
-                <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[12%] xl:w-[11%]`}
-                >
-                  Completion Date
-                </th>
-                <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[13%] xl:w-[12%]`}
-                >
-                  Customer
-                </th>
-                <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[9%] xl:w-[8%]`}
-                >
-                  Vehicle Image
-                </th>
-                <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[10%] xl:w-[9%]`}
-                >
-                  License Plate
-                </th>
-                <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[17%] xl:w-[16%]`}
-                >
-                  Service Details
+                  Entry
                 </th>
                 <th
                   className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[14%] xl:w-[12%]`}
                 >
+                  Completed
+                </th>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[17%] xl:w-[15%]`}
+                >
+                  Customer
+                </th>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[15%] xl:w-[13%]`}
+                >
+                  Plate
+                </th>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[22%] xl:w-[19%]`}
+                >
+                  Service
+                </th>
+                <th
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[18%] xl:w-[16%]`}
+                >
                   Technician(s)
                 </th>
                 <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[13%] xl:w-[12%] text-right`}
+                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[14%] xl:w-[16%] text-right`}
                 >
-                  Total Price
-                </th>
-                <th
-                  className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[12%] text-center`}
-                >
-                  Status
+                  Total
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-amstar-line-soft">
-              {completedRepairs.map((item) => (
-                <tr
-                  key={item.id}
-                  onClick={() => onDeleteClick(item.id!)}
-                  className={`hover:bg-amstar-red/20 transition cursor-pointer group ${viewedRepairId === item.id ? "bg-amstar-raised" : "bg-amstar-surface"}`}
-                  title="Click to delete this ticket"
-                >
-                  <td className="p-2 xl:p-3 font-mono tabular-nums text-amstar-ink-dim truncate hidden xl:table-cell">
-                    {item.entryDate}
-                  </td>
-                  <td className="p-2 xl:p-3 font-bold font-mono tabular-nums text-amstar-ink truncate">
-                    {item.actualCompletionDate || item.expectedCompletionDate}
-                  </td>
-                  <td className="p-2 xl:p-3 font-semibold text-amstar-ink truncate">
-                    {item.customerName}
-                  </td>
-                  <td className="p-2 xl:p-3">
-                    {item.vehicle?.carImageUrl ? (
-                      <img
-                        src={item.vehicle.carImageUrl}
-                        alt="Vehicle Image"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewDeepDive(item);
-                        }}
-                        className="w-16 h-10 object-cover rounded shadow-sm hover:scale-110 transition duration-200"
-                      />
-                    ) : (
-                      <span className="text-amstar-ink-faint">No Image</span>
+              {completedRepairs.map((item, index) => {
+                const month = monthLabel(closedOn(item));
+                const startsMonth =
+                  index === 0 ||
+                  monthLabel(closedOn(completedRepairs[index - 1])) !== month;
+                const isOpen = openId === item.id;
+                const toggle = () =>
+                  setOpenId((current) =>
+                    current === item.id ? null : item.id!,
+                  );
+
+                return (
+                  <React.Fragment key={item.id}>
+                    {startsMonth && (
+                      <tr className="bg-amstar-field">
+                        <th
+                          colSpan={7}
+                          scope="colgroup"
+                          className="p-2 xl:p-3 text-left border-y border-amstar-line"
+                        >
+                          <span className="font-cond text-xs font-bold uppercase tracking-widest text-amstar-ink">
+                            {month}
+                          </span>
+                          <span className="ml-3 font-mono tabular-nums text-[11px] font-normal text-amstar-ink-faint">
+                            {perMonth[month]}{" "}
+                            {perMonth[month] === 1 ? "repair" : "repairs"}
+                          </span>
+                        </th>
+                      </tr>
                     )}
-                  </td>
 
-                  <td className="p-2 xl:p-3">
-                    <div className="inline-block border border-amstar-line bg-amstar-raised px-2 py-1 rounded-md text-center font-bold font-mono tabular-nums shadow-sm">
-                      {item.vehicle?.licensePlate}
-                      <span className="text-[9px] block text-amstar-ink-dim leading-none mt-0.5">
-                        {item.vehicle?.state}
-                      </span>
-                    </div>
-                  </td>
+                    <tr
+                      onClick={toggle}
+                      className={`transition-colors cursor-pointer ${
+                        isOpen || viewedRepairId === item.id
+                          ? "bg-amstar-raised"
+                          : "bg-amstar-surface hover:bg-amstar-raised/60"
+                      }`}
+                    >
+                      <td className="p-2 xl:p-3 font-mono tabular-nums text-amstar-ink-faint truncate hidden xl:table-cell">
+                        {usDate(item.entryDate)}
+                      </td>
+                      <td className="p-2 xl:p-3">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggle();
+                          }}
+                          aria-expanded={isOpen}
+                          aria-label={`Details for ${vehicleLabel(item)}`}
+                          className="flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink"
+                        >
+                          <span className="shrink-0 text-[9px] text-amstar-ink-faint">
+                            {isOpen ? "▼" : "▶"}
+                          </span>
+                          <span className="truncate">
+                            {usDate(closedOn(item))}
+                          </span>
+                        </button>
+                      </td>
+                      <td className="p-2 xl:p-3 font-semibold text-amstar-ink truncate">
+                        {item.customerName}
+                      </td>
+                      <td className="p-2 xl:p-3">
+                        <span className="inline-block px-2 py-0.5 rounded-sm border border-amstar-line bg-amstar-raised font-mono tabular-nums text-xs font-bold text-amstar-ink">
+                          {item.vehicle?.licensePlate || "No plate"}
+                          {item.vehicle?.state ? ` \u00b7 ${item.vehicle.state}` : ""}
+                        </span>
+                      </td>
+                      <td
+                        className="p-1 max-lg:py-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ServicesCell
+                          value={item.serviceType}
+                          historicalMap={historicalServiceMap}
+                          onChange={(newService) =>
+                            onServiceChange(item.id!, newService)
+                          }
+                          subtitle={`${vehicleLabel(item)} - ${item.customerName}`}
+                        />
+                      </td>
+                      <td
+                        className="p-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MultiWorkerDropdown
+                          variant="inline"
+                          currentWorkers={item.assignedWorker}
+                          technicianNames={technicianNames}
+                          onAssign={(workers) =>
+                            onAssignWorker(item.id!, workers)
+                          }
+                        />
+                      </td>
+                      <td className="px-2 py-2 xl:py-3 font-black text-sev-1 text-xs xl:text-sm text-right truncate">
+                        ${invoiceTotal(item).toFixed(2)}
+                      </td>
+                    </tr>
 
-                  <td
-                    className="p-1 md:p-1 max-lg:py-2"
-                    title=""
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ServicesCell
-                      value={item.serviceType}
-                      historicalMap={historicalServiceMap}
-                      onChange={(newService) =>
-                        onServiceChange(item.id!, newService)
-                      }
-                      subtitle={`${item.vehicle?.year ?? ""} ${item.vehicle?.make ?? ""} ${item.vehicle?.model ?? ""} - ${item.customerName}`.trim()}
-                    />
-                  </td>
+                    {isOpen && (
+                      <tr className="bg-amstar-field">
+                        <td
+                          colSpan={7}
+                          className="p-4 border-t border-amstar-red"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex flex-col lg:flex-row gap-5">
+                            {item.vehicle?.carImageUrl ? (
+                              <img
+                                src={item.vehicle.carImageUrl}
+                                alt=""
+                                className="shrink-0 w-40 h-28 object-cover rounded-sm border border-amstar-line"
+                              />
+                            ) : (
+                              <div className="shrink-0 w-40 h-28 grid place-items-center rounded-sm border border-dashed border-amstar-line bg-amstar-ground font-cond uppercase tracking-widest text-[10px] text-amstar-ink-faint">
+                                No Image
+                              </div>
+                            )}
 
-                  <td
-                    className="p-1"
-                    title=""
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MultiWorkerDropdown
-                      variant="inline"
-                      currentWorkers={item.assignedWorker}
-                      technicianNames={technicianNames}
-                      onAssign={(workers) => onAssignWorker(item.id!, workers)}
-                    />
-                  </td>
+                            <div className="flex-1 min-w-0 flex flex-col gap-4">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <Fact label="Vehicle">
+                                  {vehicleLabel(item)}
+                                </Fact>
+                                <Fact label="VIN">
+                                  <span className="font-mono">
+                                    {item.vehicle?.vin || "N/A"}
+                                  </span>
+                                </Fact>
+                                <Fact label="In the shop">
+                                  <span className="font-mono">
+                                    {daysInShop(item)}
+                                  </span>
+                                </Fact>
+                                <Fact label="Retail / Lease / Labor">
+                                  <span className="font-mono">
+                                    {money(item.retailPrice)} ·{" "}
+                                    {money(item.leasePrice)} ·{" "}
+                                    {money(item.laborPrice)}
+                                  </span>
+                                </Fact>
+                              </div>
 
-                  <td className="px-2 py-2 xl:py-3 font-black text-emerald-400 text-xs xl:text-sm text-right truncate">
-                    ${invoiceTotal(item).toFixed(2)}
-                  </td>
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div>
+                                  <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
+                                    Notes
+                                  </span>
+                                  <p className="bg-amstar-ground border border-amstar-line rounded-sm p-3 text-xs leading-relaxed text-amstar-ink-dim whitespace-pre-line min-h-[3.5rem]">
+                                    {item.notes || "No notes recorded."}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
+                                    Parts
+                                  </span>
+                                  <p className="bg-amstar-ground border border-amstar-line rounded-sm p-3 font-mono text-[11px] leading-relaxed text-amstar-ink-dim whitespace-pre-line min-h-[3.5rem]">
+                                    {item.parts || "No parts recorded."}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
 
-                  <td
-                    className="p-2 xl:p-3"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <StatusDropdown
-                      value={item.status || "PENDING"}
-                      onChange={(val) => onStatusChange(item.id!, val)}
-                    />
-                  </td>
-                </tr>
-              ))}
+                            <div className="lg:w-44 shrink-0 flex flex-col gap-2">
+                              <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint">
+                                Status
+                              </span>
+                              <StatusDropdown
+                                value={item.status || "COMPLETED"}
+                                onChange={(val) =>
+                                  onStatusChange(item.id!, val)
+                                }
+                                className="min-h-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => onViewDeepDive(item)}
+                                className="w-full min-h-10 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors"
+                              >
+                                Vehicle Record
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onDeleteClick(item.id!)}
+                                className="w-full min-h-10 bg-transparent border border-amstar-red text-amstar-red-ink hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs transition-colors"
+                              >
+                                Delete Ticket
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

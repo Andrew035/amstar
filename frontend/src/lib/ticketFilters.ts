@@ -20,6 +20,74 @@ export const usDate = (iso?: string | null): string => {
   return y && m && d ? `${m}/${d}/${y}` : iso;
 };
 
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/**
+ * "2026-09-19" -> "September 2026".
+ *
+ * Splits the string rather than parsing it: a bare ISO date is UTC midnight, so
+ * `new Date()` renders it as the previous day anywhere west of Greenwich - and
+ * on the 1st of a month that files a ticket under the wrong heading.
+ */
+export const monthLabel = (iso?: string | null): string => {
+  if (!iso) return "Undated";
+  const [year, month] = iso.split("-");
+  const name = MONTHS[Number(month) - 1];
+  return name ? `${name} ${year}` : "Undated";
+};
+
+/**
+ * Every way someone might type a ticket's dates: the ISO form, the US form with
+ * and without leading zeros, and the month by name. Covers all three dates a
+ * ticket carries, so one box answers "september", "2026" and "9/19/2026".
+ */
+const dateTerms = (r: VehicleRepair): string => {
+  const forms: string[] = [];
+  for (const iso of [
+    r.entryDate,
+    r.expectedCompletionDate,
+    r.actualCompletionDate,
+  ]) {
+    if (!iso) continue;
+    const us = usDate(iso);
+    forms.push(iso, us, us.replace(/\b0/g, ""), monthLabel(iso));
+  }
+  return forms.join(" ").toLowerCase();
+};
+
+/**
+ * The search behind every ticket list. Lived inline and identically in the
+ * queue, pricing and history pages until the date terms were added and the
+ * three copies started to drift.
+ */
+export const matchesSearch = (r: VehicleRepair, term: string): boolean => {
+  const q = term.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    !!r.customerName?.toLowerCase().includes(q) ||
+    !!r.vehicle?.licensePlate?.toLowerCase().includes(q) ||
+    !!r.vehicle?.vin?.toLowerCase().includes(q) ||
+    !!r.vehicle?.make?.toLowerCase().includes(q) ||
+    !!r.vehicle?.model?.toLowerCase().includes(q) ||
+    !!r.assignedWorker?.toLowerCase().includes(q) ||
+    !!r.serviceType?.toLowerCase().includes(q) ||
+    dateTerms(r).includes(q)
+  );
+};
+
 export const technicianList = (r: VehicleRepair): string[] =>
   (r.assignedWorker ?? "")
     .split(",")

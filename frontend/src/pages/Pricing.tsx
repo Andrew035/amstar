@@ -8,7 +8,7 @@ import {
 import { Truncated } from "../components/Truncated";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { useSearchParams } from "react-router-dom";
-import { parseTicketFilter } from "../lib/ticketFilters";
+import { matchesSearch, parseTicketFilter } from "../lib/ticketFilters";
 import { FilterBanner } from "../components/FilterBanner";
 
 /**
@@ -239,19 +239,7 @@ export const PricingPage: React.FC<{
   // Filter repairs by search term
   const filteredRepairs = repairs
     .filter((r) => !ticketFilter || ticketFilter.matches(r))
-    .filter((item) => {
-      if (!searchTerm) return true;
-      const lower = searchTerm.toLowerCase();
-      return (
-        item.customerName?.toLowerCase().includes(lower) ||
-        item.vehicle?.licensePlate?.toLowerCase().includes(lower) ||
-        item.vehicle?.vin?.toLowerCase().includes(lower) ||
-        item.vehicle?.make?.toLowerCase().includes(lower) ||
-        item.vehicle?.model?.toLowerCase().includes(lower) ||
-        item.assignedWorker?.toLowerCase().includes(lower) ||
-        item.serviceType?.toLowerCase().includes(lower)
-      );
-    })
+    .filter((item) => matchesSearch(item, searchTerm))
     // Optional: Sort by active first, then completed
     .sort((a, b) => {
       if (a.status !== "COMPLETED" && b.status === "COMPLETED") return -1;
@@ -268,7 +256,7 @@ export const PricingPage: React.FC<{
         </h2>
         <input
           type="text"
-          placeholder="Search by name, VIN, plate, vehicle..."
+          placeholder="Search by name, plate, service, month or year..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={SEARCH_INPUT_STYLE}
