@@ -1,4 +1,4 @@
-shop.example.com {
+amstartransmissions.org, www.amstartransmissions.org {
   encode gzip
 
     handle /api/auth/forgot-password {
