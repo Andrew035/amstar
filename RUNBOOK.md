@@ -9,9 +9,9 @@ to forget.
 
 Two machines are involved throughout. Know which one you are on:
 
-| | Prompt looks like | Holds |
-|---|---|---|
-| **Your Mac** | `~/D/C/C/P/amstar ❱` | the working copy you edit |
+|                | Prompt looks like                     | Holds                                    |
+| -------------- | ------------------------------------- | ---------------------------------------- |
+| **Your Mac**   | `~/D/C/C/P/amstar ❱`                  | the working copy you edit                |
 | **The server** | `ubuntu@ip-172-31-2-139:/opt/amstar$` | production, at `amstartransmissions.org` |
 
 They never talk to each other directly. GitHub sits in between.
@@ -81,21 +81,25 @@ real rows, not code that crashes on an empty table.
 ```bash
 cd ~/Documents/Code_and_school/Code/Projects/amstar
 
-# newest production dump, straight out of Backblaze
-LATEST=$(rclone lsf amstar-remote:amstar-backups/ | sort | tail -1)
-rclone copy "amstar-remote:amstar-backups/$LATEST" /tmp/
-
-open -a Docker                                    # Docker Desktop must be up
+open -a Docker                             # Docker Desktop must be up
 docker compose up -d postgres-db backend
+./scripts/refresh-local-db.sh              # newest production dump, restored
 
-gzip -dc "/tmp/$LATEST" | docker exec -i amstar_postgres psql -U amstar_user -d amstar_db
-
-cd frontend && npm run dev                        # http://localhost:5173
+cd frontend && npm run dev                 # http://localhost:5173
 ```
 
-The dump carries `--clean --if-exists`, so it drops and rebuilds as it loads.
-Re-pull it before any deploy that touches the schema; it gets more useful as the
-shop accumulates tickets.
+`refresh-local-db.sh` finds the newest dump in Backblaze, caches it under
+`~/.cache/amstar-dumps`, restores it over the local database, and prints ticket,
+technician and user counts plus the live schema version so you can see it landed.
+
+Run it again whenever you want to re-sync — especially before testing a
+migration, which is the case where real rows behave differently from an empty
+table. It is not scheduled on purpose: a timer would wipe your local data in the
+middle of whatever you were reproducing.
+
+**It refuses to run if `/opt/amstar` exists.** The Postgres container has the
+same name on both machines, so without that guard the script would overwrite
+production with a stale dump when pasted into the wrong tab.
 
 **Your local `.env` must point at localhost**, not the live domain:
 
@@ -253,6 +257,7 @@ docker exec amstar_postgres psql -U amstar_user -d amstar_db \
 
 # --- mac ---
 cd backend && ./mvnw test
+./scripts/refresh-local-db.sh                    # reload local DB from production
 cd frontend && npm run build && npm run lint
 docker compose up -d --force-recreate backend
 ```
