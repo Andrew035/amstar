@@ -184,19 +184,25 @@ public abstract class IntegrationTest {
             "/api/repairs",
             token,
             Map.of(
-                "customerName", customer,
+                "customerName",
+                customer,
                 "vehicle",
-                    Map.of(
-                        "licensePlate", "T" + (System.nanoTime() % 100000),
-                        "state", "NY",
-                        "make", "FORD",
-                        "model", "E-250",
-                        "year", 2010),
-                "serviceType", "OIL CHANGE",
-                "severity", severity,
-                "expectedCompletionDate", dueDate,
-                "assignedWorker", "Max",
-                "status", "PENDING"));
+                Map.of(
+                    "licensePlate", "T" + (System.nanoTime() % 100000),
+                    "state", "NY",
+                    "make", "FORD",
+                    "model", "E-250",
+                    "year", 2010),
+                "serviceType",
+                "OIL CHANGE",
+                "severity",
+                severity,
+                "expectedCompletionDate",
+                dueDate,
+                "assignedWorker",
+                "Max",
+                "status",
+                "PENDING"));
 
     if (!created.isOk()) {
       throw new AssertionError("could not create a test ticket: " + created.body());
