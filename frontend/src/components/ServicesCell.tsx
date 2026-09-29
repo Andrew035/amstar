@@ -70,10 +70,22 @@ export const ServicesCell: React.FC<{
 
   const remove = (name: string) => setDraft(draft.filter((s) => s !== name));
 
+  const typed = query.trim().toUpperCase();
+
   const suggestions = Object.keys(historicalMap)
-    .filter((s) => !draft.includes(s) && s.includes(query.trim().toUpperCase()))
+    .filter((s) => !draft.includes(s) && s.includes(typed))
     .sort()
     .slice(0, 8);
+
+  // Offer the typed name when it is not already in the catalog or on the ticket.
+  // Without this the panel goes blank the moment you type something new, which
+  // reads as "this cannot be added" - Enter was the only way in, and on an iPad
+  // there is nothing to tap. Mirrors ServicePicker in RepairForm.
+  const canAddTyped =
+    typed.length > 0 &&
+    typed.length <= 80 &&
+    !(typed in historicalMap) &&
+    !draft.includes(typed);
 
   const isDirty = draft.join(", ") !== current.join(", ");
 
@@ -192,6 +204,24 @@ export const ServicesCell: React.FC<{
                     placeholder="Type a service, then Enter"
                     className={SHARED_INPUT_STYLE}
                   />
+                  {canAddTyped && (
+                    <button
+                      type="button"
+                      onClick={() => add(typed)}
+                      className="mt-2 w-full min-h-10 px-3 py-2 rounded-sm border border-amstar-line bg-amstar-surface hover:border-amstar-red text-left text-xs font-bold text-amstar-red-ink uppercase transition-colors"
+                    >
+                      + Add &quot;{typed}&quot;
+                    </button>
+                  )}
+                  {typed.length > 0 &&
+                    !canAddTyped &&
+                    suggestions.length === 0 && (
+                      <p className="mt-2 text-xs text-amstar-ink-faint">
+                        {draft.includes(typed)
+                          ? "Already on this ticket."
+                          : "No matching services."}
+                      </p>
+                    )}
                   {suggestions.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {suggestions.map((s) => (
