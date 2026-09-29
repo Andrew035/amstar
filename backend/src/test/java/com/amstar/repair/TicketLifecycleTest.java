@@ -27,10 +27,12 @@ public class TicketLifecycleTest extends IntegrationTest {
     assertOk(patch("/api/repairs/" + id + "/severity", admin, Map.of("severity", 5)));
     assertOk(patch("/api/repairs/" + id + "/assign", admin, Map.of("worker", "Max, Melvin")));
     assertOk(
-        patch("/api/repairs/" + id + "/service", admin, Map.of("serviceType", "CLUTCH REPLACEMENT")));
+        patch(
+            "/api/repairs/" + id + "/service", admin, Map.of("serviceType", "CLUTCH REPLACEMENT")));
     assertOk(patch("/api/repairs/" + id + "/due-date", admin, Map.of("dueDate", "2026-12-24")));
     assertOk(patch("/api/repairs/" + id + "/customer", admin, Map.of("customerName", "Kane Ruiz")));
-    assertOk(patch("/api/repairs/" + id + "/notes", admin, Map.of("notes", "Waiting on the owner")));
+    assertOk(
+        patch("/api/repairs/" + id + "/notes", admin, Map.of("notes", "Waiting on the owner")));
     assertOk(patch("/api/repairs/" + id + "/parts", admin, Map.of("parts", "Valve body VB-9912")));
     assertOk(
         patch(
@@ -182,7 +184,126 @@ public class TicketLifecycleTest extends IntegrationTest {
     assertFalse(assigned.contains("Ghost"), "an unknown name must not be invented on the roster");
   }
 
+  @Test
+  void aCorrectedVinReplacesTheMistypedOne() {
+    String admin = adminToken();
+    Map<String, Object> wrong =
+        Map.of(
+            "licensePlate",
+            "FIX123",
+            "state",
+            "MD",
+            "vin",
+            "1AAAAAAAAAAAAAAAA",
+            "make",
+            "FORD",
+            "model",
+            "E-250");
+    post(
+        "/api/repairs",
+        admin,
+        Map.of(
+            "customerName",
+            "Typo",
+            "vehicle",
+            wrong,
+            "serviceType",
+            "OIL CHANGE",
+            "severity",
+            2,
+            "expectedCompletionDate",
+            "2026-12-01",
+            "status",
+            "PENDING"));
+
+    Map<String, Object> right =
+        Map.of(
+            "licensePlate",
+            "FIX123",
+            "state",
+            "MD",
+            "vin",
+            "2BBBBBBBBBBBBBBBB",
+            "make",
+            "HONDA",
+            "model",
+            "CIVIC");
+    post(
+        "/api/repairs",
+        admin,
+        Map.of(
+            "customerName",
+            "Typo",
+            "vehicle",
+            right,
+            "serviceType",
+            "OIL CHANGE",
+            "severity",
+            2,
+            "expectedCompletionDate",
+            "2026-12-01",
+            "status",
+            "PENDING"));
+
+    String storedVin =
+        jdbc.queryForObject(
+            "select vin from vehicles where upper(license_plate) = 'FIX123'", String.class);
+    assertEquals("2BBBBBBBBBBBBBBBB", storedVin, "the corrected VIN should win");
+  }
+
+  @Test
+  void deletingTheLastTicketForACarRemovesTheCar() {
+    String admin = adminToken();
+    long id = createTicket(admin, "Mistake", 3, "2026-12-01");
+    String plate =
+        jdbc.queryForObject(
+            "select v.license_plate from vehicles v"
+                + " join service_tickets t on t.vehicle_id = v.id where t.id = ?",
+            String.class,
+            id);
+
+    assertEquals(204, delete("/api/repairs/" + id, admin).status());
+
+    Integer left =
+        jdbc.queryForObject(
+            "select count(*) from vehicles where license_plate = ?", Integer.class, plate);
+    assertEquals(0, left, "a car with no tickets left should not stay on file");
+  }
+
+  @Test
+  void deletingOneOfTwoTicketsKeepsTheCar() {
+    String admin = adminToken();
+    Map<String, Object> vehicle =
+        Map.of("licensePlate", "KEEP99", "state", "NY", "make", "FORD", "model", "E-250");
+    long first = ticketFor(admin, vehicle);
+    ticketFor(admin, vehicle);
+
+    assertEquals(204, delete("/api/repairs/" + first, admin).status());
+
+    Integer left =
+        jdbc.queryForObject(
+            "select count(*) from vehicles where upper(license_plate) = 'KEEP99'", Integer.class);
+    assertEquals(1, left, "a car with a ticket still open must not be deleted");
+  }
+
   // --- helpers ------------------------------------------------------------
+
+  /** Creates a ticket against a specific vehicle payload and returns its id. */
+  private long ticketFor(String token, Map<String, Object> vehicle) {
+    ApiResponse created =
+        post(
+            "/api/repairs",
+            token,
+            Map.of(
+                "customerName", "Repeat Customer",
+                "vehicle", vehicle,
+                "serviceType", "OIL CHANGE",
+                "severity", 2,
+                "expectedCompletionDate", "2026-12-01",
+                "status", "PENDING"));
+    assertOk(created);
+    return ((Number) created.asMap().get("id")).longValue();
+  }
 
   private void assertOk(ApiResponse response) {
     assertTrue(

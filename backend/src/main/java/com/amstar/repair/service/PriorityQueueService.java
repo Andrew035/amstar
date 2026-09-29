@@ -1,7 +1,9 @@
 package com.amstar.repair.service;
 
+import com.amstar.repair.model.Vehicle;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
+import com.amstar.repair.repository.VehicleRepository;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -16,16 +18,19 @@ public class PriorityQueueService {
   private final VehicleLookupService lookupService;
   private final TicketAssemblyService assembly;
   private final ActivityService activity;
+  private final VehicleRepository vehicles;
 
   public PriorityQueueService(
       VehicleRepairRepository repository,
       VehicleLookupService lookupService,
       TicketAssemblyService assembly,
-      ActivityService activity) {
+      ActivityService activity,
+      VehicleRepository vehicles) {
     this.repository = repository;
     this.lookupService = lookupService;
     this.assembly = assembly;
     this.activity = activity;
+    this.vehicles = vehicles;
   }
 
   public double calculatePriorityScore(VehicleRepair repair) {
@@ -258,8 +263,21 @@ public class PriorityQueueService {
         .findById(id)
         .map(
             repair -> {
+              Vehicle vehicle = repair.getVehicle();
               activity.record(repair, "DELETED", null);
               repository.delete(repair);
+
+              // A car with no tickets left has no history worth keeping. Without
+              // this, a vehicle created from a mistyped VIN stays on file and the
+              // next ticket for that plate silently reuses it. The flush matters:
+              // the FK is "on delete restrict", so the ticket must really be gone
+              // before the count is taken and the vehicle removed.
+              if (vehicle != null && vehicle.getId() != null) {
+                repository.flush();
+                if (repository.countByVehicleId(vehicle.getId()) == 0) {
+                  vehicles.delete(vehicle);
+                }
+              }
               return true;
             })
         .orElse(false);

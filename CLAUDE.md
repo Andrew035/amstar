@@ -127,6 +127,6 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 
 ## Tests and CI
 
-Backend tests (`PriorityQueueServiceTest`, `AssignWorkerTest`) are plain JUnit + Mockito with no Spring context or database. `PriorityQueueService` takes four constructor arguments (repository, `VehicleLookupService`, `TicketAssemblyService`, `ActivityService`) — mock all four when constructing it.
+Backend tests (`PriorityQueueServiceTest`, `AssignWorkerTest`) are plain JUnit + Mockito with no Spring context or database. `PriorityQueueService` takes five constructor arguments (`VehicleRepairRepository`, `VehicleLookupService`, `TicketAssemblyService`, `ActivityService`, `VehicleRepository`) — mock all five when constructing it.
 
 `.github/workflows/ci.yml` runs `mvn clean test` in `backend/` and `npm install && npm run build` in `frontend/` on pushes and PRs to `main`. Type errors fail the frontend job (`build` runs `tsc -b` first). CI does not run `npm run lint` — run it locally.

@@ -83,6 +83,21 @@ public class TicketAssemblyService {
 
   /** Let a later NHTSA/Wikipedia lookup fill in blanks on a car we already know. */
   private Vehicle refresh(Vehicle existing, Vehicle incoming) {
+    // A full 17-char VIN that disagrees with what is on file is a correction: the
+    // plate matched, but the VIN is the stronger identity. Take the new one and
+    // re-derive everything the old, wrong VIN decoded into.
+    String incomingVin = trimToNull(incoming.getVin());
+    if (incomingVin != null
+        && incomingVin.length() == 17
+        && !incomingVin.equalsIgnoreCase(trimToNull(existing.getVin()))) {
+      existing.setVin(incomingVin);
+      existing.setMake(incoming.getMake());
+      existing.setModel(incoming.getModel());
+      existing.setYear(incoming.getYear());
+      existing.setCarImageUrl(incoming.getCarImageUrl());
+      return vehicles.save(existing);
+    }
+
     if (isBlank(existing.getMake())) {
       existing.setMake(incoming.getMake());
     }

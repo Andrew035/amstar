@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
+import com.amstar.repair.repository.VehicleRepository;
 import com.amstar.repair.service.ActivityService;
 import com.amstar.repair.service.PriorityQueueService;
 import com.amstar.repair.service.TicketAssemblyService;
@@ -27,7 +28,11 @@ public class AssignWorkerTest {
     TicketAssemblyService assembly = Mockito.mock(TicketAssemblyService.class);
     PriorityQueueService service =
         new PriorityQueueService(
-            repository, lookupService, assembly, Mockito.mock(ActivityService.class));
+            repository,
+            lookupService,
+            assembly,
+            Mockito.mock(ActivityService.class),
+            Mockito.mock(VehicleRepository.class));
 
     VehicleRepair repair = new VehicleRepair();
     repair.setId(1L);
@@ -47,7 +52,8 @@ public class AssignWorkerTest {
             repository,
             Mockito.mock(VehicleLookupService.class),
             Mockito.mock(TicketAssemblyService.class),
-            Mockito.mock(ActivityService.class));
+            Mockito.mock(ActivityService.class),
+            Mockito.mock(VehicleRepository.class));
 
     Mockito.when(repository.findById(99L)).thenReturn(Optional.empty());
 
