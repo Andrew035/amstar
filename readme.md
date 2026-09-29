@@ -7,6 +7,10 @@
 [amstartransmissions.org](https://amstartransmissions.org) &nbsp;·&nbsp;
 React 19 &nbsp;·&nbsp; Spring Boot 4.1 &nbsp;·&nbsp; PostgreSQL 15
 
+<br>
+
+<img src="login.png" alt="Technician portal login screen" width="640">
+
 </div>
 
 ---
@@ -112,6 +116,10 @@ are the fastest way to a confusing CORS error.
 | [`RUNBOOK.md`](RUNBOOK.md) | Day to day: shipping changes, staging with real data, testing backups, and the traps |
 | [`DEPLOY.md`](DEPLOY.md) | First deploy, disaster recovery, user administration, troubleshooting |
 | [`CLAUDE.md`](CLAUDE.md) | Architecture and code conventions |
+
+## License
+
+[MIT](LICENSE).
 
 ---
 
