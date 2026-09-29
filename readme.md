@@ -119,7 +119,11 @@ are the fastest way to a confusing CORS error.
 
 ## License
 
-[MIT](LICENSE).
+Copyright © 2026 Andrew Velasquez. All rights reserved.
+
+Written for and licensed exclusively to AM Star Transmissions. Published here
+for reference only — see [`LICENSE`](LICENSE). Reading the source grants no
+right to use it.
 
 ---
 
