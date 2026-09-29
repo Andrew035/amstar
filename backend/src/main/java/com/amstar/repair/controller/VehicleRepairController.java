@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,8 +20,27 @@ public class VehicleRepairController {
   }
 
   @GetMapping("/queue")
-  public List<VehicleRepair> getPriorityQueue() {
-    return priorityQueueService.getPrioritizedQueue();
+  public List<VehicleRepair> getPriorityQueue(Authentication authentication) {
+    List<VehicleRepair> queue = priorityQueueService.getPrioritizedQueue();
+
+    // Notes and parts are manager-only. Hiding the panels in React is not
+    // privacy - a shop-floor account can read them straight off this JSON.
+    // Safe to null them here: spring.jpa.open-in-view is false and this path is
+    // not transactional, so these entities are detached and nothing can flush
+    // the nulls back to the table.
+    if (!isAdmin(authentication)) {
+      for (VehicleRepair repair : queue) {
+        repair.setNotes(null);
+        repair.setParts(null);
+      }
+    }
+    return queue;
+  }
+
+  private static boolean isAdmin(Authentication authentication) {
+    return authentication != null
+        && authentication.getAuthorities().stream()
+            .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
   }
 
   @PostMapping

@@ -233,28 +233,32 @@ export const TicketDetail: React.FC<{
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
-          <TicketNotes
-            repairId={id}
-            initialNotes={repair.notes}
-            isAdmin={isAdmin}
-            onSave={onSaveNotes}
-            className="flex flex-col min-h-0"
-            textareaClass="flex-1 min-h-32"
-          />
-          <TicketNotes
-            repairId={id}
-            initialNotes={repair.parts}
-            isAdmin={isAdmin}
-            onSave={onSaveParts}
-            label="Parts"
-            saveLabel="Save Parts"
-            placeholder="Part name, part number, price - written down, not stored as figures..."
-            emptyText="No parts recorded for this repair yet."
-            className="flex flex-col min-h-0"
-            textareaClass="flex-1 min-h-32"
-          />
-        </div>
+        {/* Manager-only. The API also withholds these fields from a shop-floor
+            account, so this hides a panel rather than being the boundary. */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+            <TicketNotes
+              repairId={id}
+              initialNotes={repair.notes}
+              isAdmin={isAdmin}
+              onSave={onSaveNotes}
+              className="flex flex-col min-h-0"
+              textareaClass="flex-1 min-h-32"
+            />
+            <TicketNotes
+              repairId={id}
+              initialNotes={repair.parts}
+              isAdmin={isAdmin}
+              onSave={onSaveParts}
+              label="Parts"
+              saveLabel="Save Parts"
+              placeholder="Part name, part number, price - written down, not stored as figures..."
+              emptyText="No parts recorded for this repair yet."
+              className="flex flex-col min-h-0"
+              textareaClass="flex-1 min-h-32"
+            />
+          </div>
+        )}
       </div>
 
       <div className="shrink-0 flex items-center gap-3 p-4 border-t border-amstar-line">

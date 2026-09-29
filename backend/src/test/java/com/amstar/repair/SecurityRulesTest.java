@@ -2,6 +2,7 @@ package com.amstar.repair;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amstar.repair.support.IntegrationTest;
@@ -154,6 +155,20 @@ public class SecurityRulesTest extends IntegrationTest {
 
     assertFalse(hash.contains("Password123"), "the password must not be recoverable from the row");
     assertTrue(hash.startsWith("$2"), "expected a BCrypt hash, got: " + hash);
+  }
+
+  @Test
+  void shopViewCannotReadNotesOrParts() {
+    String admin = adminToken();
+    long id = createTicket(admin, "Kane", 3, "2026-12-01");
+    patch("/api/repairs/" + id + "/notes", admin, Map.of("notes", "manager only"));
+    patch("/api/repairs/" + id + "/parts", admin, Map.of("parts", "valve body VB-9912"));
+
+    assertEquals("manager only", ticketById(admin, id).get("notes"), "a manager still sees them");
+
+    Map<String, Object> asShopFloor = ticketById(shopViewToken(), id);
+    assertNull(asShopFloor.get("notes"), "notes must not reach a shop-floor account");
+    assertNull(asShopFloor.get("parts"), "parts must not reach a shop-floor account");
   }
 
   // --- helpers ------------------------------------------------------------
