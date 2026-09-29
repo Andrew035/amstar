@@ -76,7 +76,8 @@ export const HistoryPage: React.FC<{
     .filter((r) => r.status === "COMPLETED")
     .filter((item) => matchesSearch(item, searchTerm))
     .sort(
-      (a, b) => new Date(closedOn(b)).getTime() - new Date(closedOn(a)).getTime(),
+      (a, b) =>
+        new Date(closedOn(b)).getTime() - new Date(closedOn(a)).getTime(),
     );
 
   // How many closed in each month, for the divider rows. Counts only - nothing
@@ -224,7 +225,9 @@ export const HistoryPage: React.FC<{
                       <td className="p-2 xl:p-3">
                         <span className="inline-block px-2 py-0.5 rounded-sm border border-amstar-line bg-amstar-raised font-mono tabular-nums text-xs font-bold text-amstar-ink">
                           {item.vehicle?.licensePlate || "No plate"}
-                          {item.vehicle?.state ? ` \u00b7 ${item.vehicle.state}` : ""}
+                          {item.vehicle?.state
+                            ? ` \u00b7 ${item.vehicle.state}`
+                            : ""}
                         </span>
                       </td>
                       <td
@@ -240,10 +243,7 @@ export const HistoryPage: React.FC<{
                           subtitle={`${vehicleLabel(item)} - ${item.customerName}`}
                         />
                       </td>
-                      <td
-                        className="p-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <td className="p-1" onClick={(e) => e.stopPropagation()}>
                         <MultiWorkerDropdown
                           variant="inline"
                           currentWorkers={item.assignedWorker}
@@ -293,7 +293,7 @@ export const HistoryPage: React.FC<{
                                     {daysInShop(item)}
                                   </span>
                                 </Fact>
-                                <Fact label="Retail / Lease / Labor">
+                                <Fact label="Retail / Wholesale / Labor">
                                   <span className="font-mono">
                                     {money(item.retailPrice)} ·{" "}
                                     {money(item.leasePrice)} ·{" "}
