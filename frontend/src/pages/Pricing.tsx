@@ -189,7 +189,7 @@ const PricingCard: React.FC<{
             setRetailPrice,
           )}
           {priceRow(
-            "Lease",
+            "Wholesale",
             includeLease,
             setIncludeLease,
             leasePrice,
