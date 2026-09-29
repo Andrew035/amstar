@@ -11,7 +11,7 @@ import {
   OPTION_ROW_STYLE,
   SELECT_TRIGGER_STYLE,
 } from "../styles/controls";
-import { API_BASE } from "../config";
+import { apiFetch, ApiError } from "../api";
 import { panelCoords } from "../lib/floating";
 import { CustomDatePicker } from "./CustomDatePicker";
 
@@ -102,7 +102,9 @@ const ServicePicker: React.FC<{
   onChange: (val: string) => void;
   historicalMap: Record<string, number>;
   onAutoSetSeverity: (severity: number) => void;
-}> = ({ value, onChange, historicalMap, onAutoSetSeverity }) => {
+  /** Appended to the trigger, so the form can ring it red when it is blank. */
+  className?: string;
+}> = ({ value, onChange, historicalMap, onAutoSetSeverity, className = "" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [coords, setCoords] = useState({
@@ -172,21 +174,9 @@ const ServicePicker: React.FC<{
 
   return (
     <div className="relative w-full">
-      {/* Hidden input for HTML5 'required' validation. Must NOT be readOnly:
-          readonly inputs are skipped by validation entirely. */}
-      <input
-        type="text"
-        required
-        value={value}
-        onChange={() => {}}
-        tabIndex={-1}
-        aria-hidden="true"
-        className="absolute opacity-0 w-0 h-0 -z-10"
-      />
-
       <div
         onClick={handleOpen}
-        className={`${SELECT_TRIGGER_STYLE} flex items-center gap-2`}
+        className={`${SELECT_TRIGGER_STYLE} flex items-center gap-2 ${className}`}
       >
         <span
           className={`truncate flex-1 ${selected.length ? "text-amstar-ink font-bold uppercase" : "text-amstar-ink-faint"}`}
@@ -370,7 +360,9 @@ const US_STATES: Record<string, string> = {
 const StateSearch: React.FC<{
   value: string;
   onChange: (val: string) => void;
-}> = ({ value, onChange }) => {
+  /** Appended to the trigger, so the form can ring it red when it is blank. */
+  className?: string;
+}> = ({ value, onChange, className = "" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(value);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
@@ -424,7 +416,7 @@ const StateSearch: React.FC<{
         onFocus={openDropdown}
         onBlur={handleBlur}
         placeholder="MD"
-        className={`${SHARED_INPUT_STYLE} text-center font-bold uppercase tabular-nums`}
+        className={`${SHARED_INPUT_STYLE} text-center font-bold uppercase tabular-nums ${className}`}
       />
       {isOpen && filteredStates.length > 0 && (
         <>
@@ -592,11 +584,45 @@ export const RepairForm: React.FC<RepairFormProps> = ({
   const [vin, setVin] = useState("");
 
   const [error, setError] = useState("");
+  const [missing, setMissing] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /**
+   * A red ring on whichever controls were left blank. Takes the live value so
+   * the ring clears the moment it is filled, rather than sitting there red
+   * until the next submit.
+   */
+  const ringIfMissing = (field: string, value: string) =>
+    missing.includes(field) && !value.trim() ? "ring-2 ring-amstar-red" : "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // The form is noValidate on purpose. Service, state and the due date are
+    // hand-rolled controls whose real <input> sits at 0x0 and transparent, and
+    // a browser cannot show a validation bubble on something invisible - it
+    // silently refuses to submit and the shop sees nothing happen. Checking
+    // here means the missing field gets named on screen instead.
+    const required: Array<[string, string, string]> = [
+      ["customerName", customerName, "Customer Name"],
+      ["licensePlate", licensePlate, "Plate"],
+      ["state", vehicleState, "State"],
+      ["serviceType", serviceType, "Service Required"],
+      ["expectedCompletionDate", expectedCompletionDate, "Target Completion"],
+    ];
+    const blank = required.filter(([, value]) => !value.trim());
+    if (blank.length > 0) {
+      const labels = blank.map(([, , label]) => label);
+      setMissing(blank.map(([field]) => field));
+      setError(
+        labels.length === 1
+          ? `${labels[0]} is required.`
+          : `Still needed: ${labels.join(", ")}.`,
+      );
+      return;
+    }
+    setMissing([]);
     setIsSubmitting(true);
     let finalMake = "Unknown",
       finalModel = "Vehicle",
@@ -651,26 +677,27 @@ export const RepairForm: React.FC<RepairFormProps> = ({
     };
 
     try {
-      const response = await fetch(`${API_BASE}/api/repairs`, {
+      await apiFetch("/api/repairs", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("amstar_token")}`,
-        },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error("Failed to submit repair ticket");
       setCustomerName("");
       setVin("");
       setLicensePlate("");
       setServiceType("");
       setSeverity(3);
       setExpectedCompletionDate("");
+      setMissing([]);
       if (isAdmin) setAssignedWorkers("");
       onSuccess();
-    } catch {
+    } catch (err) {
+      // apiFetch has already turned the backend's {"error": "..."} into the
+      // message, so a rejected ticket says which field is wrong instead of
+      // guessing that the server is down.
       setError(
-        "Failed to submit. Ensure you are logged in and the server is running.",
+        err instanceof ApiError
+          ? err.message
+          : "Could not submit the ticket. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -686,6 +713,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
       )}
       <form
         onSubmit={handleSubmit}
+        noValidate
         className="grid grid-cols-1 md:grid-cols-2 gap-5"
       >
         <div>
@@ -694,8 +722,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
             type="text"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            required
-            className={SHARED_INPUT_STYLE}
+            className={`${SHARED_INPUT_STYLE} ${ringIfMissing("customerName", customerName)}`}
           />
         </div>
         <div>
@@ -716,11 +743,14 @@ export const RepairForm: React.FC<RepairFormProps> = ({
               type="text"
               value={licensePlate}
               onChange={(e) => setLicensePlate(e.target.value)}
-              required
-              className={`${SHARED_INPUT_STYLE} tabular-nums`}
+              className={`${SHARED_INPUT_STYLE} tabular-nums ${ringIfMissing("licensePlate", licensePlate)}`}
             />
           </div>
-          <StateSearch value={vehicleState} onChange={setVehicleState} />
+          <StateSearch
+            value={vehicleState}
+            onChange={setVehicleState}
+            className={ringIfMissing("state", vehicleState)}
+          />
         </div>
 
         <div>
@@ -730,6 +760,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
             onChange={setServiceType}
             historicalMap={historicalServiceMap}
             onAutoSetSeverity={setSeverity}
+            className={ringIfMissing("serviceType", serviceType)}
           />
         </div>
 
@@ -757,7 +788,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           <CustomDatePicker
             value={expectedCompletionDate}
             onChange={setExpectedCompletionDate}
-            required
+            className={`${SELECT_TRIGGER_STYLE} ${ringIfMissing("expectedCompletionDate", expectedCompletionDate)}`}
           />
         </div>
 

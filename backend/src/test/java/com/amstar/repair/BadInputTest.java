@@ -141,6 +141,31 @@ public class BadInputTest extends IntegrationTest {
   // --- helpers ------------------------------------------------------------
 
   /** A 4xx with a message is a refusal; a 5xx is the app falling over. */
+  /**
+   * The UI shows whatever is in "error", so a refusal has to name the field the shop got wrong.
+   * A generic string here means the form can only say "something went wrong".
+   */
+  @Test
+  void aRefusalNamesWhatIsActuallyWrong() {
+    String admin = adminToken();
+
+    ApiResponse response =
+        post(
+            "/api/repairs",
+            admin,
+            Map.of(
+                "customerName", "No Due Date",
+                "serviceType", "OIL CHANGE",
+                "severity", 3,
+                "vehicle", Map.of("licensePlate", "NODATE1", "state", "NY")));
+
+    assertEquals(400, response.status(), "body was: " + response.body());
+    assertEquals(
+        "An expected completion date is required",
+        response.asMap().get("error"),
+        "the message the form displays, actual body: " + response.body());
+  }
+
   private void assertRefused(ApiResponse response, String what) {
     assertTrue(
         response.isClientError(),

@@ -105,11 +105,12 @@ export const CustomDatePicker: React.FC<{
 
   return (
     <div className="relative w-full">
-      {/* Hidden input to maintain HTML5 'required' validation */}
+      {/* Hidden input to maintain HTML5 'required' validation. Must NOT be
+          readOnly: a readonly control is barred from constraint validation, so
+          `required` on it is silently ignored and the form submits empty. */}
       {required && (
         <input
           type="text"
-          readOnly
           required
           value={value}
           onChange={() => {}}
