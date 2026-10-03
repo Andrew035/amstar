@@ -41,7 +41,13 @@ fi
 mv "$OUT.tmp" "$OUT"
 
 # Sanity check: a valid dump always contains the tickets table.
-if ! gzip -dc "$OUT" | grep -q "CREATE TABLE public.service_tickets"; then
+# Counted, not `grep -q`: -q exits on the first match, which closes the pipe and
+# kills gzip with SIGPIPE. Under `set -o pipefail` that becomes the pipeline's
+# status, so a perfectly good dump reported as "missing service_tickets" any
+# time more than a pipe buffer (64 KB) of output remained after the match.
+# -c reads to the end, so gzip always finishes cleanly.
+tables=$(gzip -dc "$OUT" | grep -c "CREATE TABLE public.service_tickets" || true)
+if [ "${tables:-0}" -eq 0 ]; then
   echo "backup FAILED: dump missing service_tickets" >&2
   exit 1
 fi
