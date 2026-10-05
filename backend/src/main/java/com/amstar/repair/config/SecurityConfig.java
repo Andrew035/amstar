@@ -48,6 +48,11 @@ public class SecurityConfig {
                     // Explicitly allow browser preflight requests
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    // Revocation acts on the caller's own account, so it needs a
+                    // valid token. Must precede the /api/auth/** permitAll below:
+                    // the first matching rule wins, so the order is the rule.
+                    .requestMatchers(HttpMethod.POST, "/api/auth/sign-out-everywhere")
+                    .authenticated()
                     // Allow open access to auth endpoints
                     .requestMatchers("/api/auth/**")
                     .permitAll() // Open login/register

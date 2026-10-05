@@ -24,6 +24,9 @@ public class User {
 
   private String role; // e.g., "ADMIN", "SHOP_VIEW"
 
+  @Column(name = "token_version", nullable = false)
+  private Integer tokenVersion = 0;
+
   // Getters and Setters
   public Long getId() {
     return id;
@@ -71,5 +74,13 @@ public class User {
 
   public void setRole(String role) {
     this.role = role;
+  }
+
+  public Integer getTokenVersion() {
+    return tokenVersion;
+  }
+
+  public void setTokenVersion(Integer tokenVersion) {
+    this.tokenVersion = tokenVersion;
   }
 }

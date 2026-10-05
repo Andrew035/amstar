@@ -40,10 +40,10 @@ public class Vehicle {
   private Integer year;
 
   @Column(name = "car_image_url", length = 2000)
+  @Pattern(regexp = "^$|^https://.*", message = "Car image URL must be https")
   private String carImageUrl;
 
-  public Vehicle() {
-  }
+  public Vehicle() {}
 
   // Getters and Setters
 
