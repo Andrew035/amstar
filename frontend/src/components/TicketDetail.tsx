@@ -13,6 +13,7 @@ import { CustomDatePicker } from "./CustomDatePicker";
 import { MultiWorkerDropdown } from "./WorkerDropdown";
 import { ServicesCell } from "./ServicesCell";
 import { TicketNotes } from "./TicketNotes";
+import { PlateChip } from "./PlateChip";
 
 /**
  * The customer name, corrected in place - it was usually typed wrong at intake.
@@ -137,10 +138,7 @@ export const TicketDetail: React.FC<{
               {vehicleLabel(repair)}
             </h3>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 my-1.5">
-              <span className="px-2 py-0.5 rounded-sm border border-amstar-line bg-amstar-raised font-mono tabular-nums text-xs font-bold text-amstar-ink">
-                {repair.vehicle?.licensePlate || "No plate"}
-                {repair.vehicle?.state ? ` · ${repair.vehicle.state}` : ""}
-              </span>
+              <PlateChip vehicle={repair.vehicle} />
               {repair.vehicle?.vin && (
                 <span className="font-mono text-[11px] text-amstar-ink-faint truncate">
                   VIN {repair.vehicle.vin}

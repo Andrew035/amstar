@@ -12,9 +12,11 @@ import {
   invoiceTotal,
   matchesSearch,
   monthLabel,
+  partsSubtotal,
   usDate,
   vehicleLabel,
 } from "../lib/ticketFilters";
+import { PlateChip } from "../components/PlateChip";
 
 /** The date a repair closed on - the real one when we have it. */
 const closedOn = (r: VehicleRepair): string =>
@@ -223,12 +225,7 @@ export const HistoryPage: React.FC<{
                         {item.customerName}
                       </td>
                       <td className="p-2 xl:p-3">
-                        <span className="inline-block px-2 py-0.5 rounded-sm border border-amstar-line bg-amstar-raised font-mono tabular-nums text-xs font-bold text-amstar-ink">
-                          {item.vehicle?.licensePlate || "No plate"}
-                          {item.vehicle?.state
-                            ? ` \u00b7 ${item.vehicle.state}`
-                            : ""}
-                        </span>
+                        <PlateChip vehicle={item.vehicle} />
                       </td>
                       <td
                         className="p-1 max-lg:py-2"
@@ -293,10 +290,9 @@ export const HistoryPage: React.FC<{
                                     {daysInShop(item)}
                                   </span>
                                 </Fact>
-                                <Fact label="Retail / Wholesale / Labor">
+                                <Fact label="Parts / Labor">
                                   <span className="font-mono">
-                                    {money(item.retailPrice)} ·{" "}
-                                    {money(item.leasePrice)} ·{" "}
+                                    {money(partsSubtotal(item))} ·{" "}
                                     {money(item.laborPrice)}
                                   </span>
                                 </Fact>
@@ -315,9 +311,38 @@ export const HistoryPage: React.FC<{
                                   <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
                                     Parts
                                   </span>
-                                  <p className="bg-amstar-ground border border-amstar-line rounded-sm p-3 font-mono text-[11px] leading-relaxed text-amstar-ink-dim whitespace-pre-line min-h-[3.5rem]">
-                                    {item.parts || "No parts recorded."}
-                                  </p>
+                                  <div className="bg-amstar-ground border border-amstar-line rounded-sm p-3 min-h-[3.5rem]">
+                                    {(item.lineItems?.length ?? 0) > 0 ? (
+                                      <ul className="space-y-1">
+                                        {item.lineItems!.map((li, i) => (
+                                          <li
+                                            key={i}
+                                            className="flex justify-between gap-3 font-mono text-[11px] text-amstar-ink-dim"
+                                          >
+                                            <span className="truncate">
+                                              {li.quantity > 1
+                                                ? `${li.quantity}x `
+                                                : ""}
+                                              {li.description}
+                                              {li.vendor
+                                                ? ` (${li.vendor})`
+                                                : ""}
+                                            </span>
+                                            <span className="shrink-0 tabular-nums">
+                                              $
+                                              {(
+                                                li.unitPrice * li.quantity
+                                              ).toFixed(2)}
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="font-mono text-[11px] leading-relaxed text-amstar-ink-dim whitespace-pre-line">
+                                        {item.parts || "No parts recorded."}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>

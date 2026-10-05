@@ -6,6 +6,7 @@ import type {
   Technician,
   TicketActivity,
   VehicleRepair,
+  LineItem,
 } from "./types/repair";
 import { Navbar } from "./components/Navbar";
 import { Dashboard } from "./pages/Dashboard";
@@ -241,11 +242,28 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSavePricing = async (id: number, payload: any) => {
+  /**
+   * Line items and labor live behind two endpoints, but they are one Save to
+   * the shop. Both PATCH, then one refetch and one toast.
+   */
+  const handleSaveInvoice = async (
+    id: number,
+    payload: {
+      lineItems: LineItem[];
+      laborPrice: number;
+    },
+  ) => {
     try {
+      await apiFetch(`/api/repairs/${id}/line-items`, {
+        method: "PATCH",
+        body: JSON.stringify({ items: payload.lineItems }),
+      });
       await apiFetch(`/api/repairs/${id}/pricing`, {
         method: "PATCH",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          laborPrice: payload.laborPrice,
+          includeLabor: true,
+        }),
       });
       showToast("Pricing updated successfully!", "success");
       fetchQueue();
@@ -455,7 +473,7 @@ export const App: React.FC = () => {
               currentUser && isAdmin ? (
                 <PricingPage
                   repairs={repairs}
-                  onSavePricing={handleSavePricing}
+                  onSaveInvoice={handleSaveInvoice}
                 />
               ) : (
                 <Navigate to="/" replace />

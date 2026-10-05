@@ -21,7 +21,16 @@ export const CurrencyInput: React.FC<{
   onChange: (value: number) => void;
   disabled?: boolean;
   "aria-label"?: string;
-}> = ({ value, onChange, disabled, "aria-label": ariaLabel }) => {
+  /** Appended to the input, so a table row can size it. Same escape hatch
+      CustomDatePicker and ServicesCell already take. */
+  className?: string;
+}> = ({
+  value,
+  onChange,
+  disabled,
+  "aria-label": ariaLabel,
+  className = "",
+}) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/\D/g, "").slice(0, MAX_DIGITS);
     onChange(digits ? parseInt(digits, 10) / 100 : 0);
@@ -38,7 +47,7 @@ export const CurrencyInput: React.FC<{
       // Start fresh on focus - the register metaphor is "key in the amount",
       // not "edit the existing one".
       onFocus={(e) => e.target.select()}
-      className={NUMBER_INPUT_STYLE}
+      className={`${NUMBER_INPUT_STYLE} ${className}`}
     />
   );
 };

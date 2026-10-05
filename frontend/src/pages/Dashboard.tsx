@@ -315,6 +315,8 @@ const ACTION_TEXT: Record<TicketActivity["action"], string> = {
   PRICING: "updated pricing on",
   NOTES: "updated notes on",
   PARTS: "updated parts on",
+  LINE_ITEMS: "updated parts pricing on",
+  BILLING_TYPE: "changed billing type on",
   DUE_DATE: "moved the due date on",
   CUSTOMER: "corrected the customer on",
   DELETED: "deleted",
@@ -329,6 +331,8 @@ const ACTION_DOT: Record<TicketActivity["action"], string> = {
   PRICING: "bg-amstar-ink-faint",
   NOTES: "bg-amstar-ink-faint",
   PARTS: "bg-amstar-ink-faint",
+  LINE_ITEMS: "bg-amstar-ink-faint",
+  BILLING_TYPE: "bg-amstar-ink-faint",
   DUE_DATE: "bg-sev-3",
   CUSTOMER: "bg-amstar-ink-faint",
   DELETED: "bg-sev-5",
@@ -459,7 +463,7 @@ export const Dashboard: React.FC<{
     <div className={`flex flex-col gap-3 ${DASHBOARD_HEIGHT}`}>
       {/* Header */}
       <div className="shrink-0 flex items-end justify-between gap-3 border-b-2 border-amstar-red pb-1.5">
-        <h2 className="font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink">
+        <h2 className="font-cond text-2xl font-black uppercase tracking-wider text-amstar-ink">
           Shop Overview
         </h2>
         <span className="flex items-center gap-1.5 font-cond text-[11px] uppercase tracking-widest text-amstar-ink-dim">

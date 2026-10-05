@@ -33,6 +33,16 @@ export interface ServiceType {
   isActive: boolean;
 }
 
+/** One priced row on a ticket. The invoice is the sum of these plus labor. */
+export interface LineItem {
+  id?: number;
+  description: string;
+  unitPrice: number;
+  quantity: number;
+  vendor?: string;
+  position?: number;
+}
+
 export interface VehicleRepair {
   id?: number;
   customerName: string;
@@ -47,6 +57,15 @@ export interface VehicleRepair {
   priorityScore?: number;
   notes?: string;
   parts?: string;
+
+  // Priced rows. Absent on a shop-floor account - the API withholds them.
+  lineItems?: LineItem[];
+  billingType?: "RETAIL" | "WHOLESALE";
+  /** Computed server-side: line items + labor, or the legacy sum on old tickets. */
+  invoiceTotal?: number;
+
+  // Legacy pricing. Kept so tickets written before line items still total
+  // correctly; nothing new should write these.
   retailPrice?: number;
   leasePrice?: number;
   laborPrice?: number;
@@ -78,7 +97,9 @@ export interface TicketActivity {
     | "PARTS"
     | "DUE_DATE"
     | "CUSTOMER"
-    | "DELETED";
+    | "DELETED"
+    | "LINE_ITEMS"
+    | "BILLING_TYPE";
   detail: string | null;
   createdAt: string;
 }

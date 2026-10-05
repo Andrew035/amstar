@@ -1,5 +1,6 @@
 package com.amstar.repair.service;
 
+import com.amstar.repair.model.TicketLineItem;
 import com.amstar.repair.model.Vehicle;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
@@ -140,6 +141,10 @@ public class PriorityQueueService {
       repair.setIncludeLease(pricingData.getIncludeLease());
       repair.setIncludeLabor(pricingData.getIncludeLabor());
 
+      if (pricingData.getBillingType() != null) {
+        repair.setBillingType(pricingData.getBillingType());
+      }
+
       repository.save(repair);
       // No amount in the detail: shop-view users can read the feed.
       activity.record(repair, "PRICING", null);
@@ -215,6 +220,29 @@ public class PriorityQueueService {
               if (!Objects.equals(before, dueDate)) {
                 activity.record(repair, "DUE_DATE", before + " → " + dueDate);
               }
+              return true;
+            })
+        .orElse(false);
+  }
+
+  @Transactional
+  public boolean updateLineItems(Long id, List<TicketLineItem> incoming) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              // Mutate the tracked collection rather than replacing it, or
+              // orphanRemoval throws at flush.
+              repair.getLineItems().clear();
+              for (int i = 0; i < incoming.size(); i++) {
+                TicketLineItem item = incoming.get(i);
+                item.setId(null); // always insert; never adopt a client-supplied id
+                item.setTicket(repair);
+                item.setPosition(i);
+                repair.getLineItems().add(item);
+              }
+              repository.save(repair);
+              activity.record(repair, "LINE_ITEMS", null);
               return true;
             })
         .orElse(false);

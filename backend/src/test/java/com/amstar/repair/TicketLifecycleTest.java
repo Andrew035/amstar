@@ -36,6 +36,22 @@ public class TicketLifecycleTest extends IntegrationTest {
     assertOk(patch("/api/repairs/" + id + "/parts", admin, Map.of("parts", "Valve body VB-9912")));
     assertOk(
         patch(
+            "/api/repairs/" + id + "/line-items",
+            admin,
+            Map.of(
+                "items",
+                List.of(
+                    Map.of(
+                        "description",
+                        "FRONT ROTORS",
+                        "unitPrice",
+                        254.06,
+                        "quantity",
+                        1,
+                        "vendor",
+                        "PA")))));
+    assertOk(
+        patch(
             "/api/repairs/" + id + "/pricing",
             admin,
             Map.of("retailPrice", 1200.50, "includeRetail", true)));
@@ -66,6 +82,7 @@ public class TicketLifecycleTest extends IntegrationTest {
                 "CUSTOMER",
                 "NOTES",
                 "PARTS",
+                "LINE_ITEMS",
                 "PRICING")),
         "the activity feed is missing actions, saw: " + actions);
   }

@@ -49,6 +49,13 @@ export const monthLabel = (iso?: string | null): string => {
   return name ? `${name} ${year}` : "Undated";
 };
 
+/** Money, rendered one way everywhere. Grouped, two decimals, zero is still a number. */
+export const money = (n?: number | null): string =>
+  `$${(n ?? 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
 /**
  * Every way someone might type a ticket's dates: the ISO form, the US form with
  * and without leading zeros, and the month by name. Covers all three dates a
@@ -94,10 +101,23 @@ export const technicianList = (r: VehicleRepair): string[] =>
     .map((s) => s.trim())
     .filter(Boolean);
 
+export const partsSubtotal = (r: VehicleRepair): number =>
+  (r.lineItems ?? []).reduce(
+    (sum, li) => sum + (li.unitPrice || 0) * (li.quantity || 0),
+    0,
+  );
+
+/**
+ * Line items are the invoice. Tickets written before them fall back to the old
+ * include-flag sum, so no historic total changes. Mirrors
+ * VehicleRepair.getInvoiceTotal on the backend - keep the two in step.
+ */
 export const invoiceTotal = (r: VehicleRepair): number =>
-  (r.includeRetail ? r.retailPrice || 0 : 0) +
-  (r.includeLease ? r.leasePrice || 0 : 0) +
-  (r.includeLabor ? r.laborPrice || 0 : 0);
+  (r.lineItems?.length ?? 0) > 0
+    ? partsSubtotal(r) + (r.laborPrice || 0)
+    : (r.includeRetail ? r.retailPrice || 0 : 0) +
+      (r.includeLease ? r.leasePrice || 0 : 0) +
+      (r.includeLabor ? r.laborPrice || 0 : 0);
 
 export const isActive = (r: VehicleRepair) => r.status !== "COMPLETED";
 

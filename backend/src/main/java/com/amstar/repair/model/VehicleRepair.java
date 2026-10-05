@@ -7,7 +7,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -71,6 +73,17 @@ public class VehicleRepair {
   /** Free-text parts pad. Names, part numbers and quoted prices as typed. */
   @Column(columnDefinition = "TEXT")
   private String parts;
+
+  @OneToMany(
+      mappedBy = "ticket",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true,
+      fetch = FetchType.EAGER)
+  @OrderBy("position ASC")
+  private List<TicketLineItem> lineItems = new ArrayList<>();
+
+  @Column(name = "billing_type", nullable = false, length = 12)
+  private String billingType = "RETAIL";
 
   @ManyToMany(fetch = FetchType.EAGER)
   @OrderBy("name")
@@ -305,5 +318,44 @@ public class VehicleRepair {
 
   public void setParts(String parts) {
     this.parts = parts;
+  }
+
+  public List<TicketLineItem> getLineItems() {
+    return lineItems;
+  }
+
+  /**
+   * Plain assignment on purpose. Hibernate tracks the original collection instance for
+   * orphanRemoval, so reassigning it inside a transaction throws "A collection with
+   * cascade=all-delete-orphan was no longer referenced". Only Jackson and the detached read path
+   * use this; PriorityQueueService mutates the list in place.
+   */
+  public void setLineItems(List<TicketLineItem> lineItems) {
+    this.lineItems = lineItems;
+  }
+
+  public String getBillingType() {
+    return billingType;
+  }
+
+  public void setBillingType(String billingType) {
+    this.billingType = billingType;
+  }
+
+  /**
+   * Line items are the invoice. Tickets written before them keep the old maths, so no historic
+   * total changes and no data migration is needed.
+   */
+  @JsonProperty("invoiceTotal")
+  public BigDecimal getInvoiceTotal() {
+    if (lineItems != null && !lineItems.isEmpty()) {
+      return lineItems.stream()
+          .map(TicketLineItem::lineTotal)
+          .reduce(BigDecimal.ZERO, BigDecimal::add)
+          .add(laborPrice == null ? BigDecimal.ZERO : laborPrice);
+    }
+    return (Boolean.TRUE.equals(includeRetail) ? retailPrice : BigDecimal.ZERO)
+        .add(Boolean.TRUE.equals(includeLease) ? leasePrice : BigDecimal.ZERO)
+        .add(Boolean.TRUE.equals(includeLabor) ? laborPrice : BigDecimal.ZERO);
   }
 }

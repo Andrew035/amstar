@@ -159,7 +159,7 @@ export const Roster: React.FC<{
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h2 className="font-cond text-2xl uppercase tracking-widest text-amstar-ink">
+        <h2 className="font-cond text-2xl font-black uppercase tracking-wider text-amstar-ink">
           Shop Roster
         </h2>
         <p className="mt-1 text-sm text-amstar-ink-dim">

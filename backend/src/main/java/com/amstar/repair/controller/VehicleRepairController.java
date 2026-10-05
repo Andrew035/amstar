@@ -1,9 +1,11 @@
 package com.amstar.repair.controller;
 
+import com.amstar.repair.model.TicketLineItem;
 import com.amstar.repair.model.TicketStatus;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.service.PriorityQueueService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,7 @@ public class VehicleRepairController {
       for (VehicleRepair repair : queue) {
         repair.setNotes(null);
         repair.setParts(null);
+        repair.setLineItems(null);
       }
     }
     return queue;
@@ -90,6 +93,12 @@ public class VehicleRepairController {
         return ResponseEntity.badRequest()
             .body(java.util.Map.of("error", "Prices cannot be negative"));
       }
+    }
+    String billing = pricingData.getBillingType();
+    // Mirrors billing_type_valid; without it the DB returns a 409 instead of a 400.
+    if (billing != null && !billing.equals("RETAIL") && !billing.equals("WHOLESALE")) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "Billing type must be RETAIL or WHOLESALE"));
     }
 
     boolean isUpdated = priorityQueueService.updatePricing(id, pricingData);
@@ -185,10 +194,24 @@ public class VehicleRepairController {
     return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
   }
 
+  @PatchMapping("/{id}/line-items")
+  public ResponseEntity<?> updateLineItems(
+      @PathVariable Long id, @Valid @RequestBody LineItemsRequest request) {
+    return priorityQueueService.updateLineItems(id, request.items())
+        ? ResponseEntity.ok().build()
+        : ResponseEntity.notFound().build();
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
     // Through the service so the deletion is recorded in the activity feed.
     boolean isDeleted = priorityQueueService.deleteRepair(id);
     return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
   }
+
+  /**
+   * Wrapper rather than a bare List: @Valid does not cascade to the elements of a List request-body
+   * parameter, so the per-row constraints on TicketLineItem would never run.
+   */
+  public record LineItemsRequest(@Valid @NotNull List<TicketLineItem> items) {}
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amstar.repair.support.IntegrationTest;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -91,7 +92,9 @@ public class SecurityRulesTest extends IntegrationTest {
     assertForbidden(delete("/api/repairs/" + id, shop));
 
     assertEquals(
-        "PENDING", ticketById(admin, id).get("status"), "nothing should have changed on the ticket");
+        "PENDING",
+        ticketById(admin, id).get("status"),
+        "nothing should have changed on the ticket");
   }
 
   @Test
@@ -158,17 +161,24 @@ public class SecurityRulesTest extends IntegrationTest {
   }
 
   @Test
-  void shopViewCannotReadNotesOrParts() {
+  void shopViewCannotReadNotesPartsOrPrices() {
     String admin = adminToken();
     long id = createTicket(admin, "Kane", 3, "2026-12-01");
     patch("/api/repairs/" + id + "/notes", admin, Map.of("notes", "manager only"));
     patch("/api/repairs/" + id + "/parts", admin, Map.of("parts", "valve body VB-9912"));
+    patch(
+        "/api/repairs/" + id + "/line-items",
+        admin,
+        Map.of(
+            "items",
+            List.of(Map.of("description", "FRONT ROTORS", "unitPrice", 254.06, "quantity", 1))));
 
     assertEquals("manager only", ticketById(admin, id).get("notes"), "a manager still sees them");
 
     Map<String, Object> asShopFloor = ticketById(shopViewToken(), id);
     assertNull(asShopFloor.get("notes"), "notes must not reach a shop-floor account");
     assertNull(asShopFloor.get("parts"), "parts must not reach a shop-floor account");
+    assertNull(asShopFloor.get("lineItems"), "part prices must not reach a shop-floor account");
   }
 
   // --- helpers ------------------------------------------------------------

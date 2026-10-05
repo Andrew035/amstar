@@ -3,6 +3,8 @@ import React from "react";
 import type { VehicleRepair } from "../types/repair";
 import { TicketNotes } from "./TicketNotes";
 import { SEVERITY_LABELS } from "../styles/controls";
+import { vehicleLabel } from "../lib/ticketFilters";
+import { PlateChip } from "./PlateChip";
 
 /**
  * The vehicle snapshot: photo, who owns it, and the notes and parts pads.
@@ -62,7 +64,7 @@ export const VehicleModal: React.FC<{
             Vehicle
           </span>
           <span className="font-bold text-amstar-ink">
-            {repair.vehicle?.year} {repair.vehicle?.make}{" "}
+            {vehicleLabel(repair)}
             {repair.vehicle?.model}
           </span>
         </div>
@@ -79,10 +81,7 @@ export const VehicleModal: React.FC<{
             Plate
           </span>
           <div className="inline-block border border-amstar-line bg-amstar-field px-3 py-1 rounded font-mono tabular-nums text-center font-bold">
-            {repair.vehicle?.licensePlate}{" "}
-            <span className="text-[10px] block text-amstar-ink-dim">
-              {repair.vehicle?.state}
-            </span>
+            <PlateChip vehicle={repair.vehicle} />
           </div>
         </div>
       </div>
