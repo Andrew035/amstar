@@ -2,6 +2,7 @@ package com.amstar.repair.config;
 
 import com.amstar.repair.security.JwtAuthenticationFilter;
 import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +25,7 @@ public class SecurityConfig {
   private final JwtAuthenticationFilter jwtFilter;
 
   @Value("${amstar.cors.allowed-origin}")
-  private String allowedOrigin;
+  private List<String> allowedOrigins;
 
   // Inject custom JWT filter
   public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
@@ -83,7 +84,7 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     // Allow the React frontend
-    configuration.setAllowedOrigins(Arrays.asList(allowedOrigin));
+    configuration.setAllowedOrigins(allowedOrigins);
     // Allow the standard HTTP methods
     configuration.setAllowedMethods(
         Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
