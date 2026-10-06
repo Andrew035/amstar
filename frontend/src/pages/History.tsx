@@ -15,6 +15,7 @@ import {
   partsSubtotal,
   usDate,
   vehicleLabel,
+  isComeback,
 } from "../lib/ticketFilters";
 import { PlateChip } from "../components/PlateChip";
 
@@ -225,7 +226,14 @@ export const HistoryPage: React.FC<{
                         {item.customerName}
                       </td>
                       <td className="p-2 xl:p-3">
-                        <PlateChip vehicle={item.vehicle} />
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <PlateChip vehicle={item.vehicle} />
+                          {isComeback(item) && (
+                            <span className="inline-block px-1.5 rounded-sm bg-amstar-red text-white font-cond text-[9px] font-bold uppercase tracking-wider">
+                              Comeback
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td
                         className="p-1 max-lg:py-2"
