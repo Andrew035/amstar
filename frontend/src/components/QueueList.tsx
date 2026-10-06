@@ -6,7 +6,12 @@ import {
   getSeverityGlow,
   getStatusStyle,
 } from "../styles/controls";
-import { isOverdue, usDate, vehicleLabel } from "../lib/ticketFilters";
+import {
+  isComeback,
+  isOverdue,
+  usDate,
+  vehicleLabel,
+} from "../lib/ticketFilters";
 
 /**
  * The left half of the queue: every active ticket, one tappable row each.
@@ -79,6 +84,11 @@ export const QueueList: React.FC<{
               <span className="block truncate text-[11px] text-amstar-ink-dim">
                 {vehicleLabel(item)}
               </span>
+              {isComeback(item) && (
+                <span className="inline-block mt-0.5 px-1.5 rounded-sm bg-amstar-red text-white font-cond text-[9px] font-bold uppercase tracking-wider">
+                  Comeback
+                </span>
+              )}
             </span>
 
             <span className="shrink-0 text-right">

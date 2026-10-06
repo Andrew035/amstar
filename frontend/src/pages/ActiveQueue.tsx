@@ -8,6 +8,7 @@ import { FilterBanner } from "../components/FilterBanner";
 import { NewTicketModal } from "../components/NewTicketModal";
 import { QueueList } from "../components/QueueList";
 import { TicketDetail } from "../components/TicketDetail";
+import { QueueFilterDropdown } from "../components/QueueFilterDropdown";
 
 /**
  * The shop queue, as a list beside the ticket it selects.
@@ -36,6 +37,7 @@ export const ActiveQueue: React.FC<{
   onSaveNotes: (id: number, notes: string) => Promise<void>;
   onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
+  onSaveComeback: (id: number, isComeback: boolean) => void;
 }> = ({
   repairs,
   isAdmin,
@@ -52,6 +54,7 @@ export const ActiveQueue: React.FC<{
   onSaveNotes,
   onSaveParts,
   onDeleteClick,
+  onSaveComeback,
 }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,10 +98,14 @@ export const ActiveQueue: React.FC<{
           Shop Active Repairs
         </h2>
         <div className="flex items-center gap-4">
+          <QueueFilterDropdown
+            value={searchParams.get("filter") ?? ""}
+            onChange={(next) => setSearchParams(next ? { filter: next } : {})}
+          />
           <span className="font-mono tabular-nums text-xs text-amstar-ink-dim">
             {activeRepairs.length} active
           </span>
-          {isAdmin && !ticketFilter && (
+          {isAdmin && (
             <button
               type="button"
               onClick={() => setIsFormOpen(true)}
@@ -150,6 +157,7 @@ export const ActiveQueue: React.FC<{
             onServiceChange={onServiceChange}
             onSaveNotes={onSaveNotes}
             onSaveParts={onSaveParts}
+            onSaveComeback={onSaveComeback}
             onDeleteClick={onDeleteClick}
             className="flex-1 min-w-0 max-lg:min-h-[560px]"
           />

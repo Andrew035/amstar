@@ -202,6 +202,19 @@ public class VehicleRepairController {
         : ResponseEntity.notFound().build();
   }
 
+  @PatchMapping("/{id}/comeback")
+  public ResponseEntity<?> updateComeback(
+      @PathVariable Long id, @RequestBody java.util.Map<String, Object> request) {
+    // Boolean only: a JSON "true" or 1 is rejected rather than silently coerced.
+    if (!(request.get("isComeback") instanceof Boolean isComeback)) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "isComeback must be true or false"));
+    }
+
+    boolean isUpdated = priorityQueueService.updateComeback(id, isComeback);
+    return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+  }
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
     // Through the service so the deletion is recorded in the activity feed.

@@ -43,6 +43,10 @@ public class Vehicle {
   @Pattern(regexp = "^$|^https://.*", message = "Car image URL must be https")
   private String carImageUrl;
 
+  /** Known to the shop from before this app. Tickets in the system imply the rest. */
+  @Column(name = "is_comeback", nullable = false)
+  private Boolean isComeback = false;
+
   public Vehicle() {}
 
   // Getters and Setters
@@ -117,5 +121,13 @@ public class Vehicle {
 
   public void setCarImageUrl(String carImageUrl) {
     this.carImageUrl = carImageUrl;
+  }
+
+  public Boolean getIsComeback() {
+    return isComeback;
+  }
+
+  public void setIsComeback(Boolean isComeback) {
+    this.isComeback = isComeback;
   }
 }

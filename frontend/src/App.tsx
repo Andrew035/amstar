@@ -115,6 +115,19 @@ export const App: React.FC = () => {
     fetchQueue();
   };
 
+  const handleSaveComeback = async (id: number, isComeback: boolean) => {
+    if (!isAdmin) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/comeback`, {
+        method: "PATCH",
+        body: JSON.stringify({ isComeback }),
+      });
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not update the comeback flag.");
+    }
+  };
+
   const handleSaveParts = async (id: number, parts: string) => {
     if (!isAdmin) return;
     await apiFetch(`/api/repairs/${id}/parts`, {
@@ -345,6 +358,21 @@ export const App: React.FC = () => {
     }
   };
 
+  // Vehicles are deduplicated by VIN then plate, so a returning car reuses its
+  // row. Counting its tickets here means a second visit marks itself as a
+  // comeback without anyone ticking anything.
+  const repairsWithVisits = React.useMemo(() => {
+    const seen = new Map<number, number>();
+    repairs.forEach((r) => {
+      if (r.vehicle?.id)
+        seen.set(r.vehicle.id, (seen.get(r.vehicle.id) ?? 0) + 1);
+    });
+    return repairs.map((r) => ({
+      ...r,
+      ticketCount: r.vehicle?.id ? (seen.get(r.vehicle.id) ?? 1) : 1,
+    }));
+  }, [repairs]);
+
   // Service severities now come from the catalog table instead of being
   // reverse-engineered from whichever ticket happened to be newest.
   const historicalServiceMap: Record<string, number> = React.useMemo(() => {
@@ -427,7 +455,7 @@ export const App: React.FC = () => {
             element={
               currentUser ? (
                 <Dashboard
-                  repairs={repairs}
+                  repairs={repairsWithVisits}
                   technicianNames={technicianNames}
                   activity={activity}
                   isAdmin={isAdmin}
@@ -444,7 +472,7 @@ export const App: React.FC = () => {
             element={
               currentUser ? (
                 <ActiveQueue
-                  repairs={repairs}
+                  repairs={repairsWithVisits}
                   isAdmin={isAdmin}
                   currentUser={currentUser}
                   historicalServiceMap={historicalServiceMap}
@@ -459,6 +487,7 @@ export const App: React.FC = () => {
                   onDeleteClick={handleDeleteClick}
                   onSaveNotes={handleSaveNotes}
                   onSaveParts={handleSaveParts}
+                  onSaveComeback={handleSaveComeback}
                 />
               ) : (
                 <Navigate to="/login" replace />
@@ -472,7 +501,7 @@ export const App: React.FC = () => {
             element={
               currentUser && isAdmin ? (
                 <PricingPage
-                  repairs={repairs}
+                  repairs={repairsWithVisits}
                   onSaveInvoice={handleSaveInvoice}
                 />
               ) : (
@@ -487,7 +516,7 @@ export const App: React.FC = () => {
             element={
               currentUser && isAdmin ? (
                 <HistoryPage
-                  repairs={repairs}
+                  repairs={repairsWithVisits}
                   historicalServiceMap={historicalServiceMap}
                   technicianNames={technicianNames}
                   onStatusChange={handleStatusChange}
@@ -510,7 +539,7 @@ export const App: React.FC = () => {
               currentUser && isAdmin ? (
                 <Roster
                   technicians={technicians}
-                  repairs={repairs}
+                  repairs={repairsWithVisits}
                   onAddTechnician={handleAddTechnician}
                   onRenameTechnician={handleRenameTechnician}
                   onSetTechnicianActive={handleSetTechnicianActive}
@@ -533,6 +562,7 @@ export const App: React.FC = () => {
           onClose={() => setViewedRepair(null)}
           onSaveNotes={handleSaveNotes}
           onSaveParts={handleSaveParts}
+          onSaveComeback={handleSaveComeback}
         />
       )}
 

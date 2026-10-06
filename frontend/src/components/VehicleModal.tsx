@@ -3,7 +3,7 @@ import React from "react";
 import type { VehicleRepair } from "../types/repair";
 import { TicketNotes } from "./TicketNotes";
 import { SEVERITY_LABELS } from "../styles/controls";
-import { vehicleLabel } from "../lib/ticketFilters";
+import { isComeback, vehicleLabel } from "../lib/ticketFilters";
 import { PlateChip } from "./PlateChip";
 
 /**
@@ -17,7 +17,15 @@ export const VehicleModal: React.FC<{
   onClose: () => void;
   onSaveNotes: (id: number, notes: string) => Promise<void>;
   onSaveParts: (id: number, parts: string) => Promise<void>;
-}> = ({ repair, isAdmin, onClose, onSaveNotes, onSaveParts }) => (
+  onSaveComeback: (id: number, isComeback: boolean) => void;
+}> = ({
+  repair,
+  isAdmin,
+  onClose,
+  onSaveNotes,
+  onSaveParts,
+  onSaveComeback,
+}) => (
   <div
     onClick={() => onClose()}
     className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
@@ -80,9 +88,37 @@ export const VehicleModal: React.FC<{
           <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
             Plate
           </span>
-          <div className="inline-block border border-amstar-line bg-amstar-field px-3 py-1 rounded font-mono tabular-nums text-center font-bold">
-            <PlateChip vehicle={repair.vehicle} />
-          </div>
+          <PlateChip vehicle={repair.vehicle} />
+        </div>
+        <div>
+          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
+            Comeback
+          </span>
+          {isAdmin ? (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isComeback(repair)}
+              onClick={() => onSaveComeback(repair.id!, !isComeback(repair))}
+              disabled={(repair.ticketCount ?? 1) > 1}
+              title={
+                (repair.ticketCount ?? 1) > 1
+                  ? "This vehicle already has more than one ticket here"
+                  : undefined
+              }
+              className={`min-h-8 px-2.5 rounded-sm border font-cond text-[10px] font-bold uppercase tracking-wider transition-colors disabled:cursor-not-allowed ${
+                isComeback(repair)
+                  ? "bg-amstar-red border-amstar-red text-white"
+                  : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
+              }`}
+            >
+              {isComeback(repair) ? "Yes" : "No"}
+            </button>
+          ) : (
+            <span className="font-bold text-amstar-ink">
+              {isComeback(repair) ? "Yes" : "No"}
+            </span>
+          )}
         </div>
       </div>
 

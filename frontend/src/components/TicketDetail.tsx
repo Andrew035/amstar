@@ -6,7 +6,7 @@ import {
   SHARED_INPUT_STYLE,
   TABLE_DROPDOWN_STYLE,
 } from "../styles/controls";
-import { usDate, vehicleLabel } from "../lib/ticketFilters";
+import { isComeback, usDate, vehicleLabel } from "../lib/ticketFilters";
 import { SeverityDropdown } from "./SeverityDropdown";
 import { StatusDropdown } from "./StatusDropdown";
 import { CustomDatePicker } from "./CustomDatePicker";
@@ -86,6 +86,7 @@ export const TicketDetail: React.FC<{
   onSaveNotes: (id: number, notes: string) => Promise<void>;
   onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
+  onSaveComeback: (id: number, isComeback: boolean) => void;
   className?: string;
 }> = ({
   repair,
@@ -101,6 +102,7 @@ export const TicketDetail: React.FC<{
   onSaveNotes,
   onSaveParts,
   onDeleteClick,
+  onSaveComeback,
   className = "",
 }) => {
   if (!repair) {
@@ -151,6 +153,35 @@ export const TicketDetail: React.FC<{
               isAdmin={isAdmin}
               onSave={onCustomerNameChange}
             />
+            <div className="mt-2">
+              {isAdmin ? (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isComeback(repair)}
+                  onClick={() => onSaveComeback(id, !isComeback(repair))}
+                  disabled={(repair.ticketCount ?? 1) > 1}
+                  title={
+                    (repair.ticketCount ?? 1) > 1
+                      ? "This vehicle already has more than one ticket here"
+                      : undefined
+                  }
+                  className={`min-h-8 px-2.5 rounded-sm border font-cond text-[10px] font-bold uppercase tracking-wider transition-colors disabled:cursor-not-allowed ${
+                    isComeback(repair)
+                      ? "bg-amstar-red border-amstar-red text-white"
+                      : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
+                  }`}
+                >
+                  Comeback
+                </button>
+              ) : (
+                isComeback(repair) && (
+                  <span className="inline-block min-h-8 px-2.5 py-1 rounded-sm bg-amstar-red text-white font-cond text-[10px] font-bold uppercase tracking-wider">
+                    Comeback
+                  </span>
+                )
+              )}
+            </div>
           </div>
 
           <div className="shrink-0 w-40">

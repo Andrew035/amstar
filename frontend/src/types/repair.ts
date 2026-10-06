@@ -8,6 +8,7 @@ export interface Vehicle {
   year?: number;
   carImageUrl?: string;
   customer?: Customer;
+  isComeback?: boolean;
 }
 
 export interface Customer {
@@ -57,6 +58,7 @@ export interface VehicleRepair {
   priorityScore?: number;
   notes?: string;
   parts?: string;
+  ticketCount?: number;
 
   // Priced rows. Absent on a shop-floor account - the API withholds them.
   lineItems?: LineItem[];
@@ -99,7 +101,8 @@ export interface TicketActivity {
     | "CUSTOMER"
     | "DELETED"
     | "LINE_ITEMS"
-    | "BILLING_TYPE";
+    | "BILLING_TYPE"
+    | "COMEBACK";
   detail: string | null;
   createdAt: string;
 }

@@ -311,6 +311,31 @@ public class PriorityQueueService {
         .orElse(false);
   }
 
+  /**
+   * Marks the ticket's vehicle as one the shop has seen before. Reached through a ticket so it
+   * inherits the ADMIN rule on /api/repairs/**.
+   */
+  @Transactional
+  public boolean updateComeback(Long ticketId, boolean isComeback) {
+    return repository
+        .findById(ticketId)
+        .map(
+            repair -> {
+              Vehicle vehicle = repair.getVehicle();
+              if (vehicle == null) {
+                return false;
+              }
+              Boolean before = vehicle.getIsComeback();
+              vehicle.setIsComeback(isComeback);
+              vehicles.save(vehicle);
+              if (!Objects.equals(before, isComeback)) {
+                activity.record(repair, "COMEBACK", isComeback ? "Marked" : "Cleared");
+              }
+              return true;
+            })
+        .orElse(false);
+  }
+
   private static String readable(String status) {
     return status == null ? "—" : status.replace('_', ' ');
   }

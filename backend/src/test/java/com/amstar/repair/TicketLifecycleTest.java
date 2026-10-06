@@ -55,6 +55,7 @@ public class TicketLifecycleTest extends IntegrationTest {
             "/api/repairs/" + id + "/pricing",
             admin,
             Map.of("retailPrice", 1200.50, "includeRetail", true)));
+    assertOk(patch("/api/repairs/" + id + "/comeback", admin, Map.of("isComeback", true)));
 
     Map<String, Object> ticket = ticketById(admin, id);
     assertEquals("IN_PROGRESS", ticket.get("status"));
