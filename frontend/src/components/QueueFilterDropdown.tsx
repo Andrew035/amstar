@@ -5,7 +5,7 @@ import { panelCoords } from "../lib/floating";
 /** Everything parseTicketFilter understands, in the order a manager scans. */
 const OPTIONS: Array<{ value: string; label: string }> = [
   { value: "", label: "All tickets" },
-  { value: "returning", label: "Been in before" },
+  { value: "comeback", label: "Comebacks" },
   { value: "overdue", label: "Overdue" },
   { value: "due-today", label: "Due today" },
   { value: "due-soon", label: "Due by tomorrow" },
@@ -13,7 +13,6 @@ const OPTIONS: Array<{ value: string; label: string }> = [
   { value: "pending", label: "Pending" },
   { value: "in-progress", label: "In progress" },
   { value: "critical", label: "Critical (level 4-5)" },
-  { value: "comeback", label: "Comebacks" },
 ];
 
 const PANEL_HEIGHT = 360;

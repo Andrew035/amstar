@@ -135,12 +135,12 @@ export const isUnbilled = (r: VehicleRepair) =>
   r.status === "COMPLETED" && invoiceTotal(r) === 0;
 
 /**
- * A comeback: either the shop marked this car as known from before the app, or
- * it already has more than one ticket here. The derived half means a genuine
- * second visit flags itself.
+ * A comeback: a car the shop says it has seen before. Deliberately not derived
+ * from ticket count - the shop assigns this, and a flag that a derived rule can
+ * override is a flag that appears broken when you switch it off.
  */
 export const isComeback = (r: VehicleRepair): boolean =>
-  r.vehicle?.isComeback === true || (r.ticketCount ?? 1) > 1;
+  r.vehicle?.isComeback === true;
 
 /** Whole days between the due date and today (positive when late). */
 export const daysLate = (r: VehicleRepair, today = localISODate()): number =>

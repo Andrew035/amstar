@@ -98,13 +98,13 @@ export const ActiveQueue: React.FC<{
           Shop Active Repairs
         </h2>
         <div className="flex items-center gap-4">
+          <span className="font-mono tabular-nums text-xs text-amstar-ink-dim">
+            {activeRepairs.length} active
+          </span>
           <QueueFilterDropdown
             value={searchParams.get("filter") ?? ""}
             onChange={(next) => setSearchParams(next ? { filter: next } : {})}
           />
-          <span className="font-mono tabular-nums text-xs text-amstar-ink-dim">
-            {activeRepairs.length} active
-          </span>
           {isAdmin && (
             <button
               type="button"

@@ -100,19 +100,13 @@ export const VehicleModal: React.FC<{
               role="switch"
               aria-checked={isComeback(repair)}
               onClick={() => onSaveComeback(repair.id!, !isComeback(repair))}
-              disabled={(repair.ticketCount ?? 1) > 1}
-              title={
-                (repair.ticketCount ?? 1) > 1
-                  ? "This vehicle already has more than one ticket here"
-                  : undefined
-              }
-              className={`min-h-8 px-2.5 rounded-sm border font-cond text-[10px] font-bold uppercase tracking-wider transition-colors disabled:cursor-not-allowed ${
+              className={`min-h-8 px-2.5 rounded-sm border font-cond text-[10px] font-bold uppercase tracking-wider transition-colors ${
                 isComeback(repair)
-                  ? "bg-amstar-red border-amstar-red text-white"
+                  ? "bg-amstar-red border-amstar-red text-white hover:bg-red-700 hover:border-red-700"
                   : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
               }`}
             >
-              {isComeback(repair) ? "Yes" : "No"}
+              Comeback
             </button>
           ) : (
             <span className="font-bold text-amstar-ink">
