@@ -3,22 +3,22 @@ import { useNavigate } from "react-router-dom";
 import type { TicketActivity, VehicleRepair } from "../types/repair";
 import {
   getSeverityColor,
-  getSeverityGlow,
   PANEL_STYLE,
-  SEVERITY_LABELS,
   SEVERITY_TEXT,
 } from "../styles/controls";
 import {
   daysLate,
-  isActive,
+  isComeback,
   isDueOn,
   isOverdue,
-  isUnassigned,
-  isUnbilled,
   localISODate,
-  technicianList,
   vehicleLabel,
 } from "../lib/ticketFilters";
+import { shopVitals } from "../lib/shopStats";
+import { Empty, Panel } from "../components/dashboard/Panel";
+import { CapacityPanel } from "../components/dashboard/CapacityPanel";
+import { TargetPanel } from "../components/dashboard/TargetPanel";
+import { ThroughputPanel } from "../components/dashboard/ThroughputPanel";
 
 /*
  * Layout: one screen, no page scroll, from iPad mini portrait (sm, 640px) up.
@@ -37,52 +37,6 @@ const DASHBOARD_HEIGHT = "sm:h-[calc(100dvh-129px)]";
 // ---------------------------------------------------------------------------
 // Stat strip
 // ---------------------------------------------------------------------------
-
-const monthlyStats = (repairs: VehicleRepair[]) => {
-  const now = new Date();
-  const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const inMonth = (d?: string | null) => !!d && d.startsWith(prefix);
-
-  const completed = repairs.filter(
-    (r) => r.status === "COMPLETED" && inMonth(r.actualCompletionDate),
-  );
-  const intake = repairs.filter((r) => inMonth(r.entryDate)).length;
-  const avgSeverity = completed.length
-    ? completed.reduce((sum, r) => sum + (r.severity || 0), 0) /
-      completed.length
-    : 0;
-
-  const serviceCounts: Record<string, number> = {};
-  completed.forEach((r) => {
-    if (r.serviceType)
-      serviceCounts[r.serviceType] = (serviceCounts[r.serviceType] || 0) + 1;
-  });
-  const topService =
-    Object.entries(serviceCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ??
-    "None yet";
-
-  return {
-    // Short form: "September avg" does not fit a tile on an iPad.
-    monthName: now.toLocaleString("en-US", { month: "short" }),
-    completed: completed.length,
-    intake,
-    avgSeverity,
-    topService,
-  };
-};
-
-// Bright sev-* tokens are safe as large numbers on the dark ground (see controls.ts).
-const severityText = (avg: number) =>
-  avg >= 4.5
-    ? "text-sev-5"
-    : avg >= 3.5
-      ? "text-sev-4"
-      : avg >= 2.5
-        ? "text-sev-3"
-        : avg >= 1.5
-          ? "text-sev-2"
-          : "text-sev-1";
-
 const StatTile: React.FC<{
   label: string;
   value: React.ReactNode;
@@ -121,83 +75,34 @@ const StatTile: React.FC<{
   );
 };
 
-// ---------------------------------------------------------------------------
-// Panels
-// ---------------------------------------------------------------------------
-
-/**
- * A fixed-size dashboard panel. The body scrolls on its own, so a long list
- * never pushes the rest of the dashboard off screen.
- */
-const Panel: React.FC<{
-  title: string;
-  count?: number;
-  alarm?: boolean;
-  onOpen?: () => void;
-  className?: string;
-  children: React.ReactNode;
-}> = ({ title, count, alarm = false, onOpen, className = "", children }) => {
-  const heading = (
-    <>
-      <h3 className="font-cond text-sm uppercase tracking-widest text-amstar-ink-dim group-hover:text-amstar-ink transition-colors truncate">
-        {title}
-      </h3>
-      {count !== undefined && (
-        <span
-          className={`font-mono text-xl font-bold tabular-nums ${count > 0 && alarm ? "text-amstar-red-ink" : "text-amstar-ink"}`}
-        >
-          {count}
-        </span>
-      )}
-    </>
-  );
-  const headClass =
-    "shrink-0 flex items-baseline justify-between gap-3 px-4 py-2.5 border-b border-amstar-line-soft";
-  return (
-    <section
-      className={`${PANEL_STYLE} flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}
-    >
-      {onOpen ? (
-        <button
-          type="button"
-          onClick={onOpen}
-          className={`${headClass} group text-left hover:bg-amstar-raised transition-colors`}
-        >
-          {heading}
-        </button>
-      ) : (
-        <div className={headClass}>{heading}</div>
-      )}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">{children}</div>
-    </section>
-  );
-};
-
-const Empty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-sm text-amstar-ink-faint py-2">{children}</p>
-);
-
 const TicketRow: React.FC<{
   repair: VehicleRepair;
   onOpen: () => void;
   badge: React.ReactNode;
-  meta?: string;
-}> = ({ repair, onOpen, badge, meta }) => (
+}> = ({ repair, onOpen, badge }) => (
   <li>
     <button
       type="button"
       onClick={onOpen}
-      className="w-full min-h-11 flex items-center justify-between gap-3 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised transition-colors"
+      className="w-full min-h-11 flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised transition-colors"
     >
-      <span className="min-w-0">
-        <span className="block text-sm font-bold text-amstar-ink truncate">
-          {vehicleLabel(repair)}
-        </span>
-        <span className="block text-xs text-amstar-ink-dim truncate">
-          {repair.customerName}
-          {meta ? ` · ${meta}` : ""}
-        </span>
+      <span
+        className={`shrink-0 w-5 h-5 grid place-items-center rounded-sm font-cond text-[10px] font-bold ${SEVERITY_TEXT} ${getSeverityColor(repair.severity)}`}
+        aria-label={`Severity ${repair.severity}`}
+      >
+        {repair.severity}
       </span>
+      <span className="flex-1 min-w-0 truncate text-sm">
+        <span className="font-bold uppercase text-amstar-ink">
+          {vehicleLabel(repair)}
+        </span>{" "}
+        <span className="text-amstar-ink-faint">{repair.customerName}</span>
+      </span>
+      {isComeback(repair) && (
+        <span className="shrink-0 px-1.5 rounded-sm bg-amstar-red text-white font-cond text-[9px] font-bold uppercase tracking-wider">
+          Comeback
+        </span>
+      )}
       <span className="shrink-0">{badge}</span>
     </button>
   </li>
@@ -213,94 +118,6 @@ const Badge: React.FC<{ className: string; children: React.ReactNode }> = ({
     {children}
   </span>
 );
-
-const severityBadge = (r: VehicleRepair) => (
-  <Badge
-    className={`${getSeverityColor(r.severity)} ${getSeverityGlow(r.severity)}`}
-  >
-    {SEVERITY_LABELS[r.severity]}
-  </Badge>
-);
-
-// ---------------------------------------------------------------------------
-// Technician workload
-// ---------------------------------------------------------------------------
-
-const TechnicianWorkload: React.FC<{
-  repairs: VehicleRepair[];
-  technicianNames: string[];
-  today: string;
-  onOpenTech: (name: string) => void;
-}> = ({ repairs, technicianNames, today, onOpenTech }) => {
-  const active = repairs.filter(isActive);
-  const rows = technicianNames
-    .map((name) => {
-      const mine = active.filter((r) =>
-        technicianList(r).some((t) => t.toLowerCase() === name.toLowerCase()),
-      );
-      return {
-        name,
-        active: mine.length,
-        major: mine.filter((r) => r.severity >= 4).length,
-        overdue: mine.filter((r) => isOverdue(r, today)).length,
-      };
-    })
-    .sort((a, b) => b.active - a.active || a.name.localeCompare(b.name));
-
-  if (rows.length === 0) return <Empty>No technicians on the roster.</Empty>;
-
-  const cell = "w-10 shrink-0 text-center font-mono tabular-nums text-sm";
-
-  return (
-    <>
-      <div className="sticky -top-2 z-10 -mt-2 -mx-4 pl-4 pr-8 py-1 bg-amstar-surface border-b border-amstar-line-soft flex items-center gap-1 text-[10px] font-cond uppercase tracking-widest text-amstar-ink-faint">
-        <span className="flex-1">Technician</span>
-        <span className="w-10 text-center">Active</span>
-        <span className="w-10 text-center" title="Level 4-5 jobs">
-          L4-5
-        </span>
-        <span className="w-10 text-center">Late</span>
-      </div>
-      <ul>
-        {rows.map((row) => (
-          <li key={row.name}>
-            <button
-              type="button"
-              onClick={() => onOpenTech(row.name)}
-              className="w-full min-h-11 flex items-center gap-1 px-2 py-1 -mx-2 rounded-sm text-left hover:bg-amstar-raised transition-colors"
-            >
-              <span className="flex-1 min-w-0">
-                <span className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-amstar-ink truncate">
-                    {row.name}
-                  </span>
-                  {row.active === 0 && (
-                    <span className="shrink-0 px-1.5 py-0.5 rounded-sm bg-sev-1 text-black font-cond uppercase tracking-wider text-[10px]">
-                      Available
-                    </span>
-                  )}
-                </span>
-              </span>
-              <span className={`${cell} font-bold text-amstar-ink`}>
-                {row.active}
-              </span>
-              <span
-                className={`${cell} ${row.major > 0 ? "text-amstar-ink font-bold" : "text-amstar-ink-faint"}`}
-              >
-                {row.major}
-              </span>
-              <span
-                className={`${cell} ${row.overdue > 0 ? "text-amstar-red-ink font-bold" : "text-amstar-ink-faint"}`}
-              >
-                {row.overdue}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-};
 
 // ---------------------------------------------------------------------------
 // Activity feed
@@ -406,12 +223,10 @@ export const Dashboard: React.FC<{
 
   const today = localISODate();
   const tomorrow = localISODate(1);
-  const month = monthlyStats(repairs);
 
-  const pendingCount = repairs.filter((r) => r.status === "PENDING").length;
-  const inProgressCount = repairs.filter(
-    (r) => r.status === "IN_PROGRESS",
-  ).length;
+  const vitals = shopVitals(repairs, today);
+  // "--" rather than 0%: with no completed jobs yet, 0% on time would be a lie.
+  const pct = (n: number | null) => (n === null ? "--" : `${Math.round(n)}%`);
 
   const overdue = repairs
     .filter((r) => isOverdue(r, today))
@@ -419,19 +234,6 @@ export const Dashboard: React.FC<{
   const dueToday = repairs.filter((r) => isDueOn(r, today));
   const dueTomorrow = repairs.filter((r) => isDueOn(r, tomorrow));
   const dueSoon = [...overdue, ...dueToday, ...dueTomorrow];
-  const unassigned = repairs
-    .filter(isUnassigned)
-    .sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
-  const critical = repairs
-    .filter((r) => r.status === "PENDING" && r.severity >= 4)
-    .sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
-  const unbilled = repairs
-    .filter(isUnbilled)
-    .sort((a, b) =>
-      (b.actualCompletionDate || "").localeCompare(
-        a.actualCompletionDate || "",
-      ),
-    );
 
   const dueBadge = (r: VehicleRepair) => {
     if (isOverdue(r, today))
@@ -446,20 +248,6 @@ export const Dashboard: React.FC<{
       : r.expectedCompletionDate === today
         ? "due-today"
         : "due-tomorrow";
-
-  const summaryChip = (label: string, count: number, filter: string) => (
-    <button
-      type="button"
-      onClick={() => openQueue(filter)}
-      disabled={count === 0}
-      className="min-h-8 px-2 py-1 rounded-sm border border-amstar-line text-xs text-amstar-ink-dim hover:text-amstar-ink hover:bg-amstar-raised disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-    >
-      <span className="font-mono font-bold tabular-nums text-amstar-ink">
-        {count}
-      </span>{" "}
-      {label}
-    </button>
-  );
 
   return (
     <div className={`flex flex-col gap-3 ${DASHBOARD_HEIGHT}`}>
@@ -477,92 +265,57 @@ export const Dashboard: React.FC<{
         </span>
       </div>
 
-      {/* Stat strip: right now | this month */}
-      <div className="shrink-0 flex flex-wrap gap-2">
+      {/*
+        Five across rather than nine tiles. These answer "how is the shop
+        doing" and have to read from the counter, which a row of small
+        counters never did.
+      */}
+      <div className="shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         <StatTile
-          label="Pending"
-          value={pendingCount}
+          label="Active jobs"
+          value={vitals.activeCount}
           onOpen={() => openQueue("pending")}
         />
         <StatTile
-          label="In Progress"
-          value={inProgressCount}
-          onOpen={() => openQueue("in-progress")}
-        />
-        <StatTile
           label="Overdue"
-          value={overdue.length}
+          value={vitals.overdueCount}
           valueClass={
-            overdue.length ? "text-amstar-red-ink" : "text-amstar-ink"
+            vitals.overdueCount ? "text-amstar-red-ink" : "text-amstar-ink"
           }
           onOpen={() => openQueue("overdue")}
         />
         <StatTile
-          label="Unassigned"
-          value={unassigned.length}
-          valueClass={
-            unassigned.length ? "text-amstar-red-ink" : "text-amstar-ink"
-          }
-          onOpen={() => openQueue("unassigned")}
-        />
-        {isAdmin && (
-          <StatTile
-            label="Not Billed"
-            value={unbilled.length}
-            valueClass={
-              unbilled.length ? "text-amstar-red-ink" : "text-amstar-ink"
-            }
-            onOpen={() => navigate("/pricing?filter=unbilled")}
-          />
-        )}
-        <div
-          className="hidden lg:block w-px self-stretch bg-amstar-line mx-1"
-          aria-hidden="true"
-        />
-        <StatTile
-          label="Completed"
-          value={month.completed}
-          sub={month.monthName}
+          label="Finished on time"
+          value={pct(vitals.onTimeRate)}
           valueClass="text-sev-1"
           onOpen={() => navigate("/history")}
         />
         <StatTile
-          label="New Intake"
-          value={month.intake}
-          sub={month.monthName}
+          label="Average in shop"
+          value={
+            vitals.avgDaysInShop === null
+              ? "--"
+              : `${vitals.avgDaysInShop.toFixed(1)}d`
+          }
           valueClass="text-sev-2"
         />
         <StatTile
-          label="Severity"
-          value={month.avgSeverity.toFixed(1)}
-          sub={`${month.monthName} avg`}
-          valueClass={severityText(month.avgSeverity)}
+          label="Came back"
+          value={pct(vitals.comebackRate)}
+          valueClass="text-sev-3"
+          onOpen={() => openQueue("comeback")}
         />
-        <div className={`${PANEL_STYLE} flex-[2] min-w-[128px] px-3 py-2`}>
-          <span className="block font-cond text-[10px] uppercase tracking-widest text-amstar-ink-dim">
-            Top Service
-          </span>
-          <span
-            className="block text-sm font-bold text-amstar-ink leading-tight line-clamp-2"
-            title={month.topService}
-          >
-            {month.topService}
-          </span>
-          <span className="block text-[10px] text-amstar-ink-faint">
-            {month.monthName}
-          </span>
-        </div>
       </div>
 
       {/*
-        Panel grid. DOM order is chosen so both layouts read well:
-          lg (3x2): due soon | unassigned | critical  /  workload | not billed | activity
-          sm (2x3): due soon | unassigned  /  critical | workload  /  not billed | activity
-        Shop view has no "not billed" panel, so activity widens to fill its row.
+        Needs attention and activity on top, throughput as a full-width band,
+        capacity and targets below. The band is horizontal on purpose: stacked
+        it cost 250px, and that height is what lets every technician fit
+        without the capacity panel scrolling.
       */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-rows-[repeat(3,minmax(180px,1fr))] lg:grid-cols-3 lg:grid-rows-[repeat(2,minmax(180px,1fr))]">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:grid-rows-[minmax(0,1.15fr)_auto_minmax(0,1.3fr)]">
         <Panel
-          title="Overdue & Due Soon"
+          title="Needs attention"
           count={dueSoon.length}
           alarm={overdue.length > 0}
           onOpen={() => openQueue("due-soon")}
@@ -570,118 +323,46 @@ export const Dashboard: React.FC<{
           {dueSoon.length === 0 ? (
             <Empty>Nothing is late or due by tomorrow.</Empty>
           ) : (
-            <>
-              <div className="flex flex-wrap gap-1.5 py-1">
-                {summaryChip("overdue", overdue.length, "overdue")}
-                {summaryChip("today", dueToday.length, "due-today")}
-                {summaryChip("tomorrow", dueTomorrow.length, "due-tomorrow")}
-              </div>
-              <ul>
-                {dueSoon.map((r) => (
-                  <TicketRow
-                    key={r.id}
-                    repair={r}
-                    onOpen={() => openQueue(dueFilter(r))}
-                    badge={dueBadge(r)}
-                    meta={technicianList(r).join(", ") || "Unassigned"}
-                  />
-                ))}
-              </ul>
-            </>
-          )}
-        </Panel>
-
-        <Panel
-          title="Unassigned Jobs"
-          count={unassigned.length}
-          alarm
-          onOpen={() => openQueue("unassigned")}
-        >
-          {unassigned.length === 0 ? (
-            <Empty>Every active job has a technician.</Empty>
-          ) : (
             <ul>
-              {unassigned.map((r) => (
+              {dueSoon.map((r) => (
                 <TicketRow
                   key={r.id}
                   repair={r}
-                  onOpen={() => openQueue("unassigned")}
-                  badge={severityBadge(r)}
-                  meta={r.status === "IN_PROGRESS" ? "In progress" : "Pending"}
+                  onOpen={() => openQueue(dueFilter(r))}
+                  badge={dueBadge(r)}
                 />
               ))}
             </ul>
           )}
         </Panel>
 
-        <Panel
-          title="Critical Pending"
-          count={critical.length}
-          alarm
-          onOpen={() => openQueue("critical")}
-        >
-          {critical.length === 0 ? (
-            <Empty>No Level 4-5 tickets are waiting to start.</Empty>
-          ) : (
-            <ul>
-              {critical.map((r) => (
-                <TicketRow
-                  key={r.id}
-                  repair={r}
-                  onOpen={() => openQueue("critical")}
-                  badge={severityBadge(r)}
-                  meta={`Score ${r.priorityScore?.toFixed(0) ?? "—"}`}
-                />
-              ))}
-            </ul>
-          )}
-        </Panel>
-
-        <Panel title="Technician Workload">
-          <TechnicianWorkload
-            repairs={repairs}
-            technicianNames={technicianNames}
-            today={today}
-            onOpenTech={(name) => openQueue(`tech:${name}`)}
-          />
-        </Panel>
-
-        {/* Prices are admin-only; shop view never sees this panel. */}
-        {isAdmin && (
-          <Panel
-            title="Completed, Not Billed"
-            count={unbilled.length}
-            alarm
-            onOpen={() => navigate("/pricing?filter=unbilled")}
-          >
-            {unbilled.length === 0 ? (
-              <Empty>Every completed job has been priced.</Empty>
-            ) : (
-              <ul>
-                {unbilled.map((r) => (
-                  <TicketRow
-                    key={r.id}
-                    repair={r}
-                    onOpen={() => navigate("/pricing?filter=unbilled")}
-                    badge={<Badge className="bg-sev-3">$0.00</Badge>}
-                    meta={
-                      r.actualCompletionDate
-                        ? `Done ${r.actualCompletionDate}`
-                        : "Completed"
-                    }
-                  />
-                ))}
-              </ul>
-            )}
-          </Panel>
-        )}
-
-        <Panel
-          title="Recent Activity"
-          className={isAdmin ? "" : "sm:col-span-2"}
-        >
+        <Panel title="Recent activity">
           <ActivityFeed activity={activity} />
         </Panel>
+
+        <ThroughputPanel
+          repairs={repairs}
+          onOpenHistory={() => navigate("/history")}
+          className="lg:col-span-2"
+        />
+
+        <CapacityPanel
+          repairs={repairs}
+          technicianNames={technicianNames}
+          today={today}
+          onOpenTech={(name) => openQueue(`tech:${name}`)}
+          onOpenUnassigned={() => openQueue("unassigned")}
+        />
+
+        <TargetPanel
+          repairs={repairs}
+          today={today}
+          onOpenFilter={(f) =>
+            f === "unbilled" && isAdmin
+              ? navigate("/pricing?filter=unbilled")
+              : openQueue(f)
+          }
+        />
       </div>
     </div>
   );
