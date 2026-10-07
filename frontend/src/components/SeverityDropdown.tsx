@@ -4,8 +4,8 @@ import {
   OPTION_ROW_STYLE,
   SEVERITY_LABELS,
   SEVERITY_TEXT,
+  CHIP_HOVER,
   getSeverityColor,
-  getSeverityGlow,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
 
@@ -46,17 +46,24 @@ export const SeverityDropdown: React.FC<{
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={`inline-flex items-center justify-center gap-1.5 rounded-sm font-cond uppercase
-        tracking-wider whitespace-nowrap transition hover:brightness-110
-        ${SEVERITY_TEXT} ${getSeverityColor(value)} ${getSeverityGlow(value)}
+        tracking-wider whitespace-nowrap active:translate-y-px ${CHIP_HOVER}
+        ${SEVERITY_TEXT} ${getSeverityColor(value)}
         ${fullWidth ? "w-full min-h-11 px-3 text-xs" : "px-2 py-0.5 text-[11px]"}`}
       >
         {SEVERITY_LABELS[value]}
-        <span className="text-[8px] leading-none">▼</span>
+        {/* Points down when shut, up when open: the control states which it is. */}
+        <span
+          className={`text-[8px] leading-none transition-transform duration-200 ease-out ${
+            isOpen ? "-rotate-180" : ""
+          }`}
+        >
+          ▼
+        </span>
       </button>
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[100]"
+            className="fixed inset-0 z-[100] anim-fade"
             onClick={(e) => {
               e.stopPropagation();
               setIsOpen(false);

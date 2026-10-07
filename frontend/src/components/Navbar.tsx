@@ -1,5 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
+import { AmstarLogo } from "./AmstarLogo";
+import { HOVER } from "../styles/controls";
 
 interface NavbarProps {
   isAdmin: boolean;
@@ -12,12 +14,20 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onLogout,
 }) => {
+  /*
+   * The active tab used to be a static inset border. It is now a bar that
+   * grows out of the middle when a tab is picked, so when you move between
+   * pages the marker travels with you instead of blinking out and in.
+   * `select-none` keeps a double-tap on an iPad from highlighting the label.
+   */
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    // select-none prevents highlighting, transition-all unifies hover effects
-    `px-2 lg:px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm transition-all select-none ${
+    `relative px-2 lg:px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm
+    select-none ${HOVER} after:absolute after:left-2 after:right-2 after:bottom-0
+    after:h-0.5 after:rounded-full after:bg-amstar-red after:origin-center
+    after:transition-transform after:duration-200 after:ease-out ${
       isActive
-        ? "bg-amstar-raised text-white shadow-[inset_0_-2px_0_theme(colors.amstar.red)]"
-        : "text-amstar-ink-dim hover:bg-amstar-raised/50 hover:text-white"
+        ? "bg-amstar-raised text-white after:scale-x-100"
+        : "text-amstar-ink-dim hover:bg-amstar-raised/50 hover:text-white after:scale-x-0"
     }`;
 
   /** Full wording on a desktop, short below - five long labels do not fit an iPad. */
@@ -32,21 +42,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   );
 
   return (
-    <header className="bg-amstar-blue border-b border-amstar-line sticky top-0 z-40">
+    /*
+     * `shrink-0` rather than `sticky`: the bar is a flex item outside the
+     * scrolling area now (see App.tsx), so it stays put without needing to
+     * stick to anything, and it spans the window with no scrollbar beside it.
+     */
+    <header className="shrink-0 relative z-40 bg-amstar-blue border-b border-amstar-line">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-        {/* Brand: welded AM badge + wordmark */}
-        <div className="flex items-center gap-3 select-none">
-          <div className="w-9 h-9 bg-amstar-red rounded-sm grid place-items-center font-cond font-bold text-white text-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.28),0_1px_0_rgba(255,255,255,0.2)]">
-            AM
-          </div>
-          <div>
-            <h1 className="font-cond text-lg font-bold text-white tracking-tight leading-none">
-              AM STAR
-            </h1>
-            <span className="font-cond text-[10px] font-bold text-amstar-ink-faint tracking-[0.22em] uppercase">
-              Transmissions
-            </span>
-          </div>
+        {/* Brand: the shop's wordmark. `group` drives the logo's hover. */}
+        <div className="group shrink-0">
+          <AmstarLogo />
         </div>
 
         {/* Navigation Links - draggable={false} stops the ghost dragging! */}
@@ -79,7 +84,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
           <button
             onClick={onLogout}
-            className="font-cond text-[11px] uppercase tracking-widest text-amstar-red-ink hover:text-white bg-transparent hover:bg-amstar-red border border-amstar-red px-4 py-1.5 rounded-sm transition-all"
+            className="font-cond text-[11px] uppercase tracking-widest text-amstar-red-ink
+            hover:text-white bg-transparent hover:bg-amstar-red border border-amstar-red
+            px-4 py-1.5 rounded-sm active:translate-y-px
+            transition-[color,background-color,transform] duration-150 ease-out"
           >
             Log Out
           </button>

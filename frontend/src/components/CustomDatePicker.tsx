@@ -144,7 +144,7 @@ export const CustomDatePicker: React.FC<{
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[100]"
+            className="anim-fade fixed inset-0 z-[100]"
             onClick={(e) => {
               e.stopPropagation();
               setIsOpen(false);

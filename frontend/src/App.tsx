@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import type {
   ServiceType,
@@ -23,6 +23,7 @@ import { VehicleModal } from "./components/VehicleModal";
 import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
 
 export const App: React.FC = () => {
+  const location = useLocation();
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -386,18 +387,21 @@ export const App: React.FC = () => {
     );
 
   return (
-    <div className="min-h-screen bg-amstar-ground">
-      {/* Inline Animation CSS for the Toast */}
-      <style>
-        {`
-          @keyframes slideUp {
-            from { transform: translateY(150%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-          }
-          .animate-slide-up { animation: slideUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        `}
-      </style>
-
+    /*
+     * The page does not scroll; <main> does.
+     *
+     * With the document scrolling, the scrollbar sits beside the navbar and
+     * stops it reaching the window edge, and nothing can be painted into that
+     * strip - not a background, not a box-shadow, not an element overhanging
+     * it. Giving the scroll to <main> puts the scrollbar below the navbar
+     * instead, on one flat background where a transparent track is invisible,
+     * and lets the bar run the full width of the window.
+     *
+     * `scrollbar-gutter: stable` moves down here with it, so a page that
+     * scrolls and a page that does not still measure the same and the centred
+     * column never shifts between them.
+     */
+    <div className="h-dvh flex flex-col overflow-hidden bg-amstar-ground">
       {/* Top Navigation */}
       {currentUser && (
         <Navbar
@@ -407,8 +411,18 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/*
+        Keyed on the path so React throws the old page away and mounts the new
+        one, which is what replays `anim-rise`. Without the key the <main>
+        element persists across navigation and the animation only ever runs on
+        the first load. Remounting also returns a new page to the top, which
+        the document scroll used to do by itself.
+      */}
+      <main
+        key={location.pathname}
+        className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable] anim-rise"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* React Router DOM Routes */}
         <Routes>
           {/* Public Authentication Routes */}
@@ -538,6 +552,7 @@ export const App: React.FC = () => {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </div>
       </main>
 
       {viewedRepair && (
@@ -561,7 +576,7 @@ export const App: React.FC = () => {
       {/* Modern Floating Toast Notification */}
       {toast && (
         <div
-          className={`fixed bottom-8 right-8 px-6 py-4 rounded-sm shadow-2xl text-white font-bold text-sm z-[9999] flex items-center gap-3 animate-slide-up border border-amstar-line ${toast.type === "success" ? "bg-emerald-700" : "bg-red-600"}`}
+          className={`fixed bottom-8 right-8 px-6 py-4 rounded-sm shadow-2xl text-white font-bold text-sm z-[9999] flex items-center gap-3 anim-slide-up border border-amstar-line ${toast.type === "success" ? "bg-emerald-700" : "bg-red-600"}`}
         >
           <span className="text-lg">
             {toast.type === "success" ? "\u2713" : "⚠️"}

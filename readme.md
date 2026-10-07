@@ -1,6 +1,6 @@
 <div align="center">
 
-# AM Star Transmissions — Shop Manager
+# AM Star Transmissions, Shop Manager
 
 **Every vehicle in the shop, what it needs, who has it, and when it was promised.**
 
@@ -28,7 +28,7 @@ screens work at 1024px and 1440px without two codebases.
 
 **Priority queue.** Open tickets ranked automatically, not by hand. Severity
 counts most, then how long the car has been in, then how close the promise date
-is — `severity × 20 + daysInSystem × 2 + max(0, 50 − daysUntilDue × 5)`.
+is, `severity × 20 + daysInSystem × 2 + max(0, 50 − daysUntilDue × 5)`.
 Recomputed on every read, never stored, so changing the formula changes the
 ranking everywhere at once.
 
@@ -42,7 +42,7 @@ year and a photo arrive from NHTSA and Wikipedia. Services come from the shop's
 own catalog, which grows as new work is typed. Vehicles are deduplicated by VIN,
 then by plate and state, so a returning car keeps its history.
 
-**Split-view editing.** The queue is a list beside the ticket it selects —
+**Split-view editing.** The queue is a list beside the ticket it selects -
 status, severity, due date, technicians, services, notes and parts all in one
 pane. No modals stacked on modals.
 
@@ -51,15 +51,15 @@ included or excluded from the invoice. Completed work is a searchable ledger
 grouped by month, where any row opens to show what was actually done.
 
 **Two kinds of account.** Managers get everything. A shared shop-floor login is
-read-only — and read-only on the server, in `SecurityConfig`, not merely hidden
+read-only, and read-only on the server, in `SecurityConfig`, not merely hidden
 in the UI.
 
 ## Built with
 
 | Layer | |
 |---|---|
-| Frontend | React 19, TypeScript, Vite 8, Tailwind 3 — 5,800 lines |
-| Backend | Spring Boot 4.1 on Java 17, Spring Security + JWT, JPA — 2,400 lines |
+| Frontend | React 19, TypeScript, Vite 8, Tailwind 3, 5,800 lines |
+| Backend | Spring Boot 4.1 on Java 17, Spring Security + JWT, JPA, 2,400 lines |
 | Database | PostgreSQL 15, schema owned by Flyway (9 migrations) |
 | Hosting | AWS EC2, Docker Compose, Caddy for automatic HTTPS |
 | Backups | Hourly `pg_dump`, offsite to Backblaze B2, dead-man's switch |
@@ -67,10 +67,10 @@ in the UI.
 Some deliberate choices worth knowing about:
 
 - **Flyway owns the schema.** Hibernate runs with `ddl-auto=validate` and never
-  changes a table — it only checks the entities still match. Every change is a
+  changes a table, it only checks the entities still match. Every change is a
   new migration file.
 - **Rules are enforced twice.** Severity 1–5, valid statuses, non-negative
-  prices, completion date implies completed — once in Java for a readable 400,
+  prices, completion date implies completed, once in Java for a readable 400,
   once as a database CHECK as the backstop.
 - **The controls are hand-rolled.** Native `<select>` and `<input type="date">`
   were replaced because they are unusable on an iPad in a shop.
@@ -106,7 +106,7 @@ npm run dev
 ```
 
 API on `:8080`, app on `:5173`. Keep `AMSTAR_CORS_ORIGIN` and `AMSTAR_APP_URL`
-pointed at `http://localhost:5173` locally — production values in a local `.env`
+pointed at `http://localhost:5173` locally, production values in a local `.env`
 are the fastest way to a confusing CORS error.
 
 ## Documentation
@@ -122,7 +122,7 @@ are the fastest way to a confusing CORS error.
 Copyright © 2026 Andrew Velasquez. All rights reserved.
 
 Written for and licensed exclusively to AM Star Transmissions. Published here
-for reference only — see [`LICENSE`](LICENSE). Reading the source grants no
+for reference only, see [`LICENSE`](LICENSE). Reading the source grants no
 right to use it.
 
 ---

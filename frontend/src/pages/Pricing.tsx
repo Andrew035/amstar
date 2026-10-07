@@ -5,6 +5,7 @@ import {
   PANEL_STYLE,
   PRIMARY_BUTTON_STYLE,
   NUMBER_INPUT_STYLE,
+  HOVER,
   getStatusStyle,
 } from "../styles/controls";
 import { Truncated } from "../components/Truncated";
@@ -60,7 +61,7 @@ const blankLine = (): LineItem => ({
 });
 
 const ROW_INPUT =
-  "w-full min-h-11 px-3 bg-amstar-ground border border-amstar-line rounded-sm text-xs font-bold text-amstar-ink uppercase placeholder:text-amstar-ink-faint placeholder:normal-case transition-colors focus:border-amstar-red focus:outline-none";
+  "w-full min-h-11 px-3 bg-amstar-ground border border-amstar-line rounded-sm text-xs font-bold text-amstar-ink uppercase placeholder:text-amstar-ink-faint placeholder:normal-case transition-[border-color] duration-150 ease-out focus:border-amstar-red focus:outline-none";
 
 const PARTS_GRID = "grid grid-cols-[1fr_3.5rem_8rem_7rem_2.5rem] gap-1.5";
 
@@ -103,7 +104,7 @@ const InvoiceEditor: React.FC<{
   };
 
   return (
-    <div className="border-t border-amstar-line-soft bg-amstar-field p-4 sm:p-5">
+    <div className="anim-rise border-t border-amstar-line-soft bg-amstar-field p-4 sm:p-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
         <Fact label="VIN" value={item.vehicle?.vin} mono />
         <Fact label="Plate">
@@ -147,7 +148,17 @@ const InvoiceEditor: React.FC<{
         )}
 
         {lines.map((line, i) => (
-          <div key={i} className={`${PARTS_GRID} items-center`}>
+          /*
+           * `anim-row` runs on mount, so expanding a ticket deals the existing
+           * parts out in order and "+ Add part" slides in only the new line.
+           * Editing a line does not remount it, so nothing re-animates while
+           * somebody is typing in it.
+           */
+          <div
+            key={i}
+            style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+            className={`anim-row ${PARTS_GRID} items-center`}
+          >
             <input
               value={line.description}
               onChange={(e) =>
@@ -195,7 +206,7 @@ const InvoiceEditor: React.FC<{
               type="button"
               onClick={() => removeLine(i)}
               aria-label={`Remove ${line.description || `part ${i + 1}`}`}
-              className="min-h-11 w-full grid place-items-center rounded-sm text-amstar-ink-faint hover:text-white hover:bg-amstar-red transition-colors text-lg leading-none"
+              className={`min-h-11 w-full grid place-items-center rounded-sm text-amstar-ink-faint hover:text-white hover:bg-amstar-red active:translate-y-px text-lg leading-none ${HOVER}`}
             >
               &times;
             </button>
@@ -205,7 +216,7 @@ const InvoiceEditor: React.FC<{
         <button
           type="button"
           onClick={() => setLines([...lines, blankLine()])}
-          className="mt-1 min-h-11 px-3 rounded-sm border border-dashed border-amstar-line text-left font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink transition-colors"
+          className={`mt-1 min-h-11 px-3 rounded-sm border border-dashed border-amstar-line text-left font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink active:translate-y-px ${HOVER}`}
         >
           + Add part
         </button>
@@ -263,17 +274,26 @@ const PricingRow: React.FC<{
   isOpen: boolean;
   onToggle: () => void;
   onSaveInvoice: SaveInvoice;
-}> = ({ item, isOpen, onToggle, onSaveInvoice }) => {
+  index: number;
+}> = ({ item, isOpen, onToggle, onSaveInvoice, index }) => {
   const total = invoiceTotal(item);
   const needsPricing = isUnbilled(item);
 
   return (
-    <div className={`${PANEL_STYLE} overflow-hidden`}>
+    /*
+     * Rows deal in one after another, the same 25ms step the queue list uses.
+     * Capped at ten: past that the stagger stops reading as sequence and
+     * starts reading as the page being slow.
+     */
+    <div
+      style={{ animationDelay: `${Math.min(index, 10) * 25}ms` }}
+      className={`anim-row ${PANEL_STYLE} overflow-hidden`}
+    >
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface transition-colors"
+        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER}`}
       >
         <PlateChip
           vehicle={item.vehicle}
@@ -299,7 +319,7 @@ const PricingRow: React.FC<{
         </span>
         <span
           aria-hidden="true"
-          className={`w-4 shrink-0 text-center text-xs text-amstar-ink-faint transition-transform ${
+          className={`w-4 shrink-0 text-center text-xs text-amstar-ink-faint transition-transform duration-200 ease-out ${
             isOpen ? "rotate-90" : ""
           }`}
         >
@@ -342,10 +362,11 @@ export const PricingPage: React.FC<{
 
   const list = (items: VehicleRepair[]) => (
     <div className="flex flex-col gap-2">
-      {items.map((item) => (
+      {items.map((item, i) => (
         <PricingRow
           key={item.id}
           item={item}
+          index={i}
           isOpen={openId === item.id}
           onToggle={() => toggle(item.id)}
           onSaveInvoice={onSaveInvoice}

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import type { TicketActivity, VehicleRepair } from "../types/repair";
 import {
   getSeverityColor,
+  HOVER,
+  HOVER_LIFT,
   PANEL_STYLE,
   SEVERITY_TEXT,
 } from "../styles/controls";
@@ -66,7 +68,7 @@ const StatTile: React.FC<{
     <button
       type="button"
       onClick={onOpen}
-      className={`${base} hover:border-amstar-ink-faint hover:bg-amstar-raised transition-colors`}
+      className={`${base} ${HOVER_LIFT} hover:border-amstar-ink-faint hover:bg-amstar-raised`}
     >
       {body}
     </button>
@@ -79,12 +81,16 @@ const TicketRow: React.FC<{
   repair: VehicleRepair;
   onOpen: () => void;
   badge: React.ReactNode;
-}> = ({ repair, onOpen, badge }) => (
-  <li>
+  index: number;
+}> = ({ repair, onOpen, badge, index }) => (
+  <li
+    className="anim-row"
+    style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+  >
     <button
       type="button"
       onClick={onOpen}
-      className="w-full min-h-11 flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised transition-colors"
+      className={`w-full min-h-11 flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised ${HOVER}`}
     >
       <span
         className={`shrink-0 w-5 h-5 grid place-items-center rounded-sm font-cond text-[10px] font-bold ${SEVERITY_TEXT} ${getSeverityColor(repair.severity)}`}
@@ -177,8 +183,12 @@ const ActivityFeed: React.FC<{ activity: TicketActivity[] }> = ({
     <Empty>No activity yet. Changes to tickets will show up here.</Empty>
   ) : (
     <ul className="divide-y divide-amstar-line-soft">
-      {activity.map((event) => (
-        <li key={event.id} className="py-2 flex gap-3">
+      {activity.map((event, i) => (
+        <li
+          key={event.id}
+          className="py-2 flex gap-3 anim-row"
+          style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+        >
           <span
             className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${ACTION_DOT[event.action]}`}
             aria-hidden="true"
@@ -220,6 +230,13 @@ export const Dashboard: React.FC<{
   const navigate = useNavigate();
   const openQueue = (filter: string) =>
     navigate(`/queue?filter=${encodeURIComponent(filter)}`);
+  /*
+   * A heading opens the group; a row opens the car. This used to send the row's
+   * due-date filter, which landed you on a narrowed list with the highest
+   * priority ticket selected rather than the one you clicked. No filter here on
+   * purpose: you asked for a vehicle, so the queue shows it in full context.
+   */
+  const openTicket = (id?: number) => navigate(`/queue?ticket=${id}`);
 
   const today = localISODate();
   const tomorrow = localISODate(1);
@@ -242,13 +259,6 @@ export const Dashboard: React.FC<{
       return <Badge className="bg-sev-3">Today</Badge>;
     return <Badge className="bg-sev-2">Tomorrow</Badge>;
   };
-  const dueFilter = (r: VehicleRepair) =>
-    isOverdue(r, today)
-      ? "overdue"
-      : r.expectedCompletionDate === today
-        ? "due-today"
-        : "due-tomorrow";
-
   return (
     <div className={`flex flex-col gap-3 ${DASHBOARD_HEIGHT}`}>
       {/* Header */}
@@ -324,11 +334,12 @@ export const Dashboard: React.FC<{
             <Empty>Nothing is late or due by tomorrow.</Empty>
           ) : (
             <ul>
-              {dueSoon.map((r) => (
+              {dueSoon.map((r, i) => (
                 <TicketRow
                   key={r.id}
                   repair={r}
-                  onOpen={() => openQueue(dueFilter(r))}
+                  index={i}
+                  onOpen={() => openTicket(r.id)}
                   badge={dueBadge(r)}
                 />
               ))}

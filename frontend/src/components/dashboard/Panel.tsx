@@ -1,5 +1,5 @@
 import React from "react";
-import { PANEL_STYLE } from "../../styles/controls";
+import { HOVER, PANEL_STYLE } from "../../styles/controls";
 
 /**
  * A fixed-size dashboard panel. The body scrolls on its own, so a long list
@@ -15,7 +15,9 @@ export const Panel: React.FC<{
 }> = ({ title, count, alarm = false, onOpen, className = "", children }) => {
   const heading = (
     <>
-      <h3 className="font-cond text-sm uppercase tracking-widest text-amstar-ink-dim group-hover:text-amstar-ink transition-colors truncate">
+      <h3
+        className={`font-cond text-sm uppercase tracking-widest text-amstar-ink-dim group-hover:text-amstar-ink truncate ${HOVER}`}
+      >
         {title}
       </h3>
       {count !== undefined && (
@@ -37,7 +39,7 @@ export const Panel: React.FC<{
         <button
           type="button"
           onClick={onOpen}
-          className={`${headClass} group text-left hover:bg-amstar-raised transition-colors`}
+          className={`${headClass} group text-left hover:bg-amstar-raised ${HOVER}`}
         >
           {heading}
         </button>

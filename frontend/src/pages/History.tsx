@@ -4,6 +4,7 @@ import {
   SEARCH_INPUT_STYLE,
   PANEL_STYLE,
   PANEL_HEADING_STYLE,
+  HOVER,
 } from "../styles/controls";
 import { ServicesCell } from "../components/ServicesCell";
 import { MultiWorkerDropdown } from "../components/WorkerDropdown";
@@ -26,15 +27,15 @@ const closedOn = (r: VehicleRepair): string =>
 /** How long the car was with us. Both ends are UTC midnight, so this is exact. */
 const daysInShop = (r: VehicleRepair): string => {
   const end = closedOn(r);
-  if (!r.entryDate || !end) return "—";
+  if (!r.entryDate || !end) return "-";
   const days = Math.round(
     (new Date(end).getTime() - new Date(r.entryDate).getTime()) / 86400000,
   );
-  if (days < 0) return "—";
+  if (days < 0) return "-";
   return days === 1 ? "1 day" : `${days} days`;
 };
 
-const money = (n?: number) => (n ? `$${n.toFixed(2)}` : "—");
+const money = (n?: number) => (n ? `$${n.toFixed(2)}` : "-");
 
 /** One labelled fact inside an opened row. */
 const Fact: React.FC<{ label: string; children: React.ReactNode }> = ({
@@ -175,7 +176,7 @@ export const HistoryPage: React.FC<{
                 return (
                   <React.Fragment key={item.id}>
                     {startsMonth && (
-                      <tr className="bg-amstar-field">
+                      <tr className="anim-fade bg-amstar-field">
                         <th
                           colSpan={7}
                           scope="colgroup"
@@ -192,9 +193,19 @@ export const HistoryPage: React.FC<{
                       </tr>
                     )}
 
+                    {/*
+                      Fades rather than rising. A <tr> does accept a transform,
+                      but a row sliding 8px while its neighbours hold still
+                      drags it across their divide-y borders, which reads as a
+                      rendering fault rather than an entrance. Opacity alone
+                      still gives the ledger the sense of filling in.
+                    */}
                     <tr
                       onClick={toggle}
-                      className={`transition-colors cursor-pointer ${
+                      style={{
+                        animationDelay: `${Math.min(index, 12) * 22}ms`,
+                      }}
+                      className={`anim-fade cursor-pointer ${HOVER} ${
                         isOpen || viewedRepairId === item.id
                           ? "bg-amstar-raised"
                           : "bg-amstar-surface hover:bg-amstar-raised/60"
@@ -214,8 +225,18 @@ export const HistoryPage: React.FC<{
                           aria-label={`Details for ${vehicleLabel(item)}`}
                           className="flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink"
                         >
-                          <span className="shrink-0 text-[9px] text-amstar-ink-faint">
-                            {isOpen ? "▼" : "▶"}
+                          {/*
+                            One glyph that turns, not two that swap. Same
+                            control as the pricing page's disclosure, so the
+                            two ledgers behave identically.
+                          */}
+                          <span
+                            aria-hidden="true"
+                            className={`shrink-0 text-[9px] text-amstar-ink-faint transition-transform duration-200 ease-out ${
+                              isOpen ? "rotate-90" : ""
+                            }`}
+                          >
+                            ▶
                           </span>
                           <span className="truncate">
                             {usDate(closedOn(item))}
@@ -270,7 +291,7 @@ export const HistoryPage: React.FC<{
                           className="p-4 border-t border-amstar-red"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex flex-col lg:flex-row gap-5">
+                          <div className="anim-rise flex flex-col lg:flex-row gap-5">
                             {item.vehicle?.carImageUrl ? (
                               <img
                                 src={item.vehicle.carImageUrl}
@@ -369,14 +390,14 @@ export const HistoryPage: React.FC<{
                               <button
                                 type="button"
                                 onClick={() => onViewDeepDive(item)}
-                                className="w-full min-h-10 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors"
+                                className={`w-full min-h-10 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs active:translate-y-px ${HOVER}`}
                               >
                                 Vehicle Record
                               </button>
                               <button
                                 type="button"
                                 onClick={() => onDeleteClick(item.id!)}
-                                className="w-full min-h-10 bg-transparent border border-amstar-red text-amstar-red-ink hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs transition-colors"
+                                className={`w-full min-h-10 bg-transparent border border-amstar-red text-amstar-red-ink hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs active:translate-y-px ${HOVER}`}
                               >
                                 Delete Ticket
                               </button>

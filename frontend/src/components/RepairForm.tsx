@@ -104,7 +104,13 @@ const ServicePicker: React.FC<{
   onAutoSetSeverity: (severity: number) => void;
   /** Appended to the trigger, so the form can ring it red when it is blank. */
   className?: string;
-}> = ({ value, onChange, historicalMap, onAutoSetSeverity, className = "" }) => {
+}> = ({
+  value,
+  onChange,
+  historicalMap,
+  onAutoSetSeverity,
+  className = "",
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [coords, setCoords] = useState({
@@ -196,7 +202,7 @@ const ServicePicker: React.FC<{
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[100]"
+            className="anim-fade fixed inset-0 z-[100]"
             onClick={(e) => {
               e.stopPropagation();
               setIsOpen(false);
@@ -416,7 +422,7 @@ const StateSearch: React.FC<{
         onFocus={openDropdown}
         onBlur={handleBlur}
         placeholder="MD"
-        className={`${SHARED_INPUT_STYLE} text-center font-bold uppercase tabular-nums ${className}`}
+        className={`anim-fade ${SHARED_INPUT_STYLE} text-center font-bold uppercase tabular-nums ${className}`}
       />
       {isOpen && filteredStates.length > 0 && (
         <>
@@ -503,7 +509,9 @@ const FormWorkerDropdown: React.FC<{
             selectedArray.join(", ")
           )}
         </span>
-        <span className="text-xs ml-2 text-amstar-ink-faint shrink-0">▼</span>
+        <span className="anim-fade text-xs ml-2 text-amstar-ink-faint shrink-0">
+          ▼
+        </span>
       </div>
       {isOpen && (
         <>

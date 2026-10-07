@@ -59,7 +59,7 @@ export const QueueFilterDropdown: React.FC<{
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[100]"
+            className="anim-fade fixed inset-0 z-[100]"
             onClick={() => setIsOpen(false)}
             onWheel={() => setIsOpen(false)}
             onTouchMove={() => setIsOpen(false)}

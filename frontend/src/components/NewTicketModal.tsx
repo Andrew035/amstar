@@ -23,15 +23,21 @@ export const NewTicketModal: React.FC<{
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-start sm:items-center p-4 overflow-y-auto">
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+        className="anim-fade fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
+      {/*
+        The panel fades rather than popping, for the same reason the scrim is a
+        sibling: an element with a transform is also a containing block for
+        fixed descendants, and this panel is full of them. `anim-fade` only
+        touches opacity, so none of the form's dropdowns can land wrong.
+      */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-ticket-title"
-        className="relative my-auto w-full max-w-4xl bg-amstar-surface border border-amstar-line rounded shadow-2xl"
+        className="anim-fade relative my-auto w-full max-w-4xl bg-amstar-surface border border-amstar-line rounded shadow-2xl"
       >
         <div className="flex items-end justify-between gap-4 px-5 pt-5 pb-2 border-b-2 border-amstar-red">
           <h3

@@ -1,4 +1,4 @@
-# AM Star — Runbook
+# AM Star, Runbook
 
 The things you do regularly, and the traps that have already caught you once.
 
@@ -68,7 +68,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://amstartransmissions.org
 ```
 
 `200` from the last one and you are done. If the frontend looks unchanged, you
-skipped `npm run build` — see the trap list below.
+skipped `npm run build`, see the trap list below.
 
 ---
 
@@ -92,7 +92,7 @@ cd frontend && npm run dev                 # http://localhost:5173
 `~/.cache/amstar-dumps`, restores it over the local database, and prints ticket,
 technician and user counts plus the live schema version so you can see it landed.
 
-Run it again whenever you want to re-sync — especially before testing a
+Run it again whenever you want to re-sync, especially before testing a
 migration, which is the case where real rows behave differently from an empty
 table. It is not scheduled on purpose: a timer would wipe your local data in the
 middle of whatever you were reproducing.
@@ -109,7 +109,7 @@ AMSTAR_APP_URL=http://localhost:5173
 ```
 
 Keep a `.env.production.bak` beside it if you like, but never let production
-values sit in the Mac's `.env` — see trap 3 and trap 4.
+values sit in the Mac's `.env`, see trap 3 and trap 4.
 
 ---
 
@@ -132,7 +132,7 @@ docker exec amstar_postgres psql -U amstar_user -d drill \
 docker exec amstar_postgres psql -U amstar_user -d amstar_db -c "drop database drill;"
 ```
 
-The technician count is the meaningful one — it proves real rows came back
+The technician count is the meaningful one, it proves real rows came back
 rather than an empty schema. Ticket count should look like the shop's week.
 
 ### Is the schedule still alive
@@ -145,7 +145,7 @@ rclone ls amstar-remote:amstar-backups/ | tail -5 # offsite copy landed
 ```
 
 And healthchecks.io should be green. If it is red you have an email already;
-if it is green but the file list is stale, the ping is lying — check that the
+if it is green but the file list is stale, the ping is lying, check that the
 cron's `AMSTAR_HC_URL` is not also set somewhere else that still runs.
 
 ---
@@ -201,7 +201,7 @@ belongs in `.env` instead.
 ### 7. Never edit a migration that has run
 
 Flyway checksums every `V*.sql`. Change one that has been applied anywhere and
-the backend refuses to start. Fix forward with a new file — `V10__…` next.
+the backend refuses to start. Fix forward with a new file, `V10__…` next.
 
 Filenames need a **capital V**. A lowercase `v9__…` is silently ignored, which
 once shipped a missing CHECK constraint to production.
@@ -215,7 +215,7 @@ backup fails silently at 2am. The `PATH=` line in the crontab is load-bearing.
 
 The cron runs as root; you configured rclone as `ubuntu`. Without a copy at
 `/root/.config/rclone/rclone.conf` the hourly job quietly falls back to local
-only — and still exits 0, so the dead-man's switch never fires.
+only, and still exits 0, so the dead-man's switch never fires.
 
 ### 10. One dead-man's switch, one pinger
 
@@ -226,7 +226,7 @@ either runs. A dead server then looks healthy. One check per thing being watched
 
 Cloudflare's negative TTL is 1800s. Ask for a record that does not exist yet and
 your resolver caches "no such record" for thirty minutes, long after you have
-added it. Create first, then check — and use `dig +short name @1.1.1.1` to skip
+added it. Create first, then check, and use `dig +short name @1.1.1.1` to skip
 your own cache.
 
 ### 12. `truncate` needs `min-w-0` inside a flex container

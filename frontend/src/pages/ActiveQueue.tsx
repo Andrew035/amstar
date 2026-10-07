@@ -58,10 +58,37 @@ export const ActiveQueue: React.FC<{
 }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  // Set by the dashboard cards, e.g. /queue?filter=overdue
+  // Set by the dashboard: `filter` from a panel heading or a stat tile,
+  // `ticket` from a row, e.g. /queue?ticket=14
   const [searchParams, setSearchParams] = useSearchParams();
   const ticketFilter = parseTicketFilter(searchParams.get("filter"));
+
+  /**
+   * Rewrites one query param and leaves the rest alone. Passing the whole
+   * object would drop whichever param this call is not setting, which is how
+   * picking a filter used to throw away the selected ticket.
+   */
+  const setParam = (key: string, value: string | null, replace = false) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        return next;
+      },
+      { replace },
+    );
+
+  /*
+   * The selected ticket lives in the URL rather than in component state, so a
+   * link can point at one car. That is what the dashboard's "Needs attention"
+   * rows use: they used to send a filter, which narrowed the list but still
+   * opened whatever sat at the top of it.
+   *
+   * `replace` on row clicks keeps scrolling the queue out of the history
+   * stack, so Back returns to the dashboard rather than to the previous row.
+   */
+  const selectedId = Number(searchParams.get("ticket")) || null;
 
   const activeRepairs = repairs
     .filter((r) => r.status !== "COMPLETED")
@@ -103,7 +130,7 @@ export const ActiveQueue: React.FC<{
           </span>
           <QueueFilterDropdown
             value={searchParams.get("filter") ?? ""}
-            onChange={(next) => setSearchParams(next ? { filter: next } : {})}
+            onChange={(next) => setParam("filter", next || null)}
           />
           {isAdmin && (
             <button
@@ -122,7 +149,7 @@ export const ActiveQueue: React.FC<{
         <FilterBanner
           label={ticketFilter.label}
           count={activeRepairs.length}
-          onClear={() => setSearchParams({})}
+          onClear={() => setParam("filter", null)}
         />
       )}
 
@@ -139,7 +166,7 @@ export const ActiveQueue: React.FC<{
           <QueueList
             repairs={activeRepairs}
             selectedId={selected?.id}
-            onSelect={setSelectedId}
+            onSelect={(id) => setParam("ticket", String(id), true)}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             className="shrink-0 lg:w-[344px] xl:w-[380px] max-lg:h-96"

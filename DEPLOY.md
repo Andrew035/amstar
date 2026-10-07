@@ -1,4 +1,4 @@
-# AM Star — Deploy & Operations
+# AM Star, Deploy & Operations
 
 Everything needed to put this app on a server, keep it backed up, and get it
 back after a failure. Written so someone who is not the original developer can
@@ -24,7 +24,7 @@ Postgres.
                   │         └──────────► /srv/index.html  (React SPA)
                   ▼
          ┌─────────────────┐
-         │ amstar_backend  │  bound to 127.0.0.1:8080 — not public
+         │ amstar_backend  │  bound to 127.0.0.1:8080, not public
          └────────┬────────┘
                   │  internal docker network
                   ▼
@@ -39,7 +39,7 @@ the backend; the backend only by Caddy.
 
 **The frontend is not built by Docker.** Caddy bind-mounts `./frontend/dist`,
 so `npm run build` is a required deploy step. Forgetting it is the single most
-common deploy mistake — the symptom is a UI change that never appears.
+common deploy mistake, the symptom is a UI change that never appears.
 
 Sizing: 2 GB RAM is comfortable, 1 GB works. Ubuntu 22.04 or 24.04.
 
@@ -59,7 +59,7 @@ Every one of these is a placeholder that must be replaced before real use.
 | 6 | `application.properties` | `amstar.auth.admin-emails` | verify the manager emails |
 
 **Items 2 and 3 are silent failures.** Both default to `http://localhost:5173`.
-Wrong, the app still starts — password reset links just point at localhost and
+Wrong, the app still starts, password reset links just point at localhost and
 go nowhere.
 
 DNS must resolve to the server *before* first start. Caddy cannot get a
@@ -83,7 +83,7 @@ sudo mkdir -p /opt/amstar && sudo chown $USER /opt/amstar
 git clone <your-repo-url> /opt/amstar
 cd /opt/amstar
 
-# 3. Secrets — never committed
+# 3. Secrets, never committed
 cp .env.example .env
 openssl rand -base64 48   # -> AMSTAR_JWT_SECRET   (must be >= 32 bytes)
 openssl rand -base64 24   # -> POSTGRES_PASSWORD
@@ -94,7 +94,7 @@ chmod 600 .env
 # 4. Firewall
 sudo ufw allow 22 && sudo ufw allow 80 && sudo ufw allow 443 && sudo ufw enable
 
-# 5. Build the frontend — Docker does NOT do this
+# 5. Build the frontend, Docker does NOT do this
 cd frontend && npm ci && npm run build && cd ..
 
 # 6. Start
@@ -115,7 +115,7 @@ Then set up backups (section 5) and **run one restore drill** (section 7).
 ### Register the managers
 
 Each manager visits `https://<domain>/register` with the email listed in
-`amstar.auth.admin-emails` plus the signup code. Verify the roles took — a
+`amstar.auth.admin-emails` plus the signup code. Verify the roles took, a
 manager who sees no Pricing tab registered with the wrong address:
 
 ```bash
@@ -161,7 +161,7 @@ AMSTAR_HC_URL=https://hc-ping.com/YOUR-REAL-UUID
 EOF
 ) | crontab -'
 
-sudo crontab -l    # verify — running the above twice installs it twice
+sudo crontab -l    # verify, running the above twice installs it twice
 ```
 
 The `PATH=` line is required. Cron's default PATH does not include
@@ -179,10 +179,10 @@ rclone lsd amstar-remote:
 ```
 
 Backblaze B2's free tier (10 GB) holds years of these dumps. The application
-key must be a real **App Key**, not the account ID — a keyID is ~25 characters
+key must be a real **App Key**, not the account ID, a keyID is ~25 characters
 and the applicationKey ~31, starting `K00`.
 
-### Dead-man's switch — do not skip this
+### Dead-man's switch, do not skip this
 
 Without it, a backup that stops running looks exactly like one that works.
 
@@ -259,12 +259,12 @@ docker exec amstar_postgres psql -U amstar_user -d amstar_db \
 `max(entry_date)` tells you how much data was actually lost. That is the number
 the managers need to hear.
 
-Expect `ERROR: ... does not exist` messages during a restore — that is
+Expect `ERROR: ... does not exist` messages during a restore, that is
 `--clean --if-exists` dropping objects a fresh database does not have yet.
 
 ---
 
-## 7. Restore drill — quarterly
+## 7. Restore drill, quarterly
 
 The only thing that proves the backups work. Fifteen minutes, four times a year.
 
@@ -300,7 +300,7 @@ Existing account:
 docker exec amstar_postgres psql -U amstar_user -d amstar_db \
   -c "update users set role='ADMIN' where email='them@example.com';"
 ```
-They must log out and back in — the role lives in the JWT, which lasts 10 hours.
+They must log out and back in, the role lives in the JWT, which lasts 10 hours.
 
 ### Remove access
 
@@ -314,7 +314,7 @@ To cut it off immediately, rotate the JWT secret.
 
 ### Rotate the JWT secret
 
-Logs out everyone. This is the emergency lever for a compromised account —
+Logs out everyone. This is the emergency lever for a compromised account -
 a password reset alone does not invalidate existing tokens.
 
 ```bash
@@ -328,7 +328,7 @@ Managers use "Forgot your password?" on the login page. Links expire in 30
 minutes and are single-use; requesting a new one invalidates the previous.
 
 The endpoint always responds "if that address has an account…" regardless of
-whether it does — deliberate, so nobody can discover who has accounts. That
+whether it does, deliberate, so nobody can discover who has accounts. That
 means a broken SMTP config is silent. The only signal:
 
 ```bash
@@ -341,16 +341,16 @@ docker compose logs backend | grep "Failed to send password reset email"
 
 | Symptom | Cause |
 |---|---|
-| UI loads but all data blank | `frontend/dist` stale or missing — rebuild the frontend |
+| UI loads but all data blank | `frontend/dist` stale or missing, rebuild the frontend |
 | A UI change never appeared | `npm run build` skipped |
-| "You do not have permission to make that change" | Account is `SHOP_VIEW`, not `ADMIN` — see "Add a manager" in section 8 |
-| Kicked back to the login page | Token expired (10 hours) or the JWT secret was rotated — sign in again |
+| "You do not have permission to make that change" | Account is `SHOP_VIEW`, not `ADMIN`, see "Add a manager" in section 8 |
+| Kicked back to the login page | Token expired (10 hours) or the JWT secret was rotated, sign in again |
 | Backend won't start: `Could not resolve placeholder` | A variable missing from `.env` |
 | Backend won't start: `must be at least 32 bytes` | `AMSTAR_JWT_SECRET` too short |
-| Backend won't start: `missing table` | Flyway did not run — inspect `flyway_schema_history` |
+| Backend won't start: `missing table` | Flyway did not run, inspect `flyway_schema_history` |
 | No HTTPS | DNS not pointing here, 80/443 blocked, or the domain is still the placeholder |
 | Caddy: `forbidden by policy` | `Caddyfile` still says `shop.example.com` |
-| Reset emails never arrive | Check the mail log line in section 8 — usually a bad Gmail App Password (must be 16 chars) |
+| Reset emails never arrive | Check the mail log line in section 8, usually a bad Gmail App Password (must be 16 chars) |
 | Backups stopped | healthchecks.io alerts you. Check `/var/log/amstar-backup.log` |
 
 A failed migration leaves a row in `flyway_schema_history` that blocks retries:
@@ -386,7 +386,7 @@ Documented so they are decisions, not surprises.
 - **The service catalog has no cleanup path.** Typing a service creates it
   permanently; there is no UI to merge or delete. `PATCH /api/services/{id}`
   can deactivate one.
-- **Two emails with the same local part collide** — `mike@a.com` and
+- **Two emails with the same local part collide**, `mike@a.com` and
   `mike@b.com` both display as `mike`. Cosmetic; authorization uses the role
   claim, not the name.
 - **Single server.** No redundancy. Recovery means restoring from backup onto a

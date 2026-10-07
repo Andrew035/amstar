@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTruncationTooltip } from '../lib/useTruncationTooltip';
+import React from "react";
+import { useTruncationTooltip } from "../lib/useTruncationTooltip";
 
 /**
  * One-line text that ellipsises and reveals the full value on hover.
@@ -12,16 +12,18 @@ export const Truncated: React.FC<{
   className?: string;
   fallback?: string;
   tapToReveal?: boolean;
-}> = ({ value, className = '', fallback = '—', tapToReveal = true }) => {
+}> = ({ value, className = "", fallback = "-", tapToReveal = true }) => {
   const text = value?.trim() || fallback;
-  const { anchorRef, handlers, tooltip } = useTruncationTooltip<HTMLSpanElement>(
-    text,
-    tapToReveal,
-  );
+  const { anchorRef, handlers, tooltip } =
+    useTruncationTooltip<HTMLSpanElement>(text, tapToReveal);
 
   return (
     <>
-      <span ref={anchorRef} className={`block truncate ${className}`} {...handlers}>
+      <span
+        ref={anchorRef}
+        className={`block truncate ${className}`}
+        {...handlers}
+      >
         {text}
       </span>
       {tooltip}

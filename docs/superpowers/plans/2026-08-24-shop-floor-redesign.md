@@ -1,4 +1,4 @@
-# Shop Floor / Steel Redesign — Implementation Plan
+# Shop Floor / Steel Redesign, Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -14,7 +14,7 @@
 
 - **Scope is `frontend/` only.** No backend, API, `priorityScore`, or auth changes.
 - **Brand colors are frozen:** `amstar-blue` `#0b3068` and `amstar-red` `#d62027` keep their exact values.
-- **No `alert()` / `confirm()`.** Existing convention — use `showToast` or inline `error` state.
+- **No `alert()` / `confirm()`.** Existing convention, use `showToast` or inline `error` state.
 - **Hand-rolled controls keep their mechanics.** The `getBoundingClientRect()` → `position: fixed` panel at `z-[101]` + `z-[100]` backdrop with `onWheel`/`onTouchMove` pattern is unchanged. Only colors change.
 - **No new dropdown libraries.** No state or data-fetching libraries.
 - **Layout and information architecture are unchanged.** Only the skin changes.
@@ -22,10 +22,10 @@
 
 ### Verification cycle (replaces TDD for this plan)
 
-**This repo has no frontend tests** — `CLAUDE.md` states this explicitly, and CI only runs `npm install && npm run build`. Do **not** invent a test framework for a visual redesign; that is out of scope and would fail review. Every task instead ends with this cycle, run from `frontend/`:
+**This repo has no frontend tests**, `CLAUDE.md` states this explicitly, and CI only runs `npm install && npm run build`. Do **not** invent a test framework for a visual redesign; that is out of scope and would fail review. Every task instead ends with this cycle, run from `frontend/`:
 
 ```bash
-npm run build      # tsc -b && vite build — the type gate CI enforces
+npm run build      # tsc -b && vite build, the type gate CI enforces
 npm run lint       # oxlint
 ```
 
@@ -33,7 +33,7 @@ npm run lint       # oxlint
 
 ### Tailwind JIT constraint
 
-Tailwind scans source files for **literal** class strings. Never build a class name by interpolation (`` `bg-sev-${n}` ``) — the class will be purged from the CSS and render as nothing. Always map to complete literal strings, as `getSeverityColor` does in Task 2.
+Tailwind scans source files for **literal** class strings. Never build a class name by interpolation (`` `bg-sev-${n}` ``), the class will be purged from the CSS and render as nothing. Always map to complete literal strings, as `getSeverityColor` does in Task 2.
 
 ---
 
@@ -57,7 +57,7 @@ cd frontend
 npm install @fontsource-variable/oswald @fontsource/roboto-mono
 ```
 
-These are self-hosted font packages. Do **not** substitute a Google Fonts `<link>` in `index.html` — the spec requires the UI to render correctly without outbound network access.
+These are self-hosted font packages. Do **not** substitute a Google Fonts `<link>` in `index.html`, the spec requires the UI to render correctly without outbound network access.
 
 - [ ] **Step 2: Replace `frontend/tailwind.config.js` entirely**
 
@@ -160,19 +160,19 @@ body {
 
 - [ ] **Step 5: Update the app shell in `frontend/src/App.tsx`**
 
-Line 219 — the loading state:
+Line 219, the loading state:
 
 ```tsx
   if (loading) return <div className='p-8 text-center text-amstar-ink-dim'>Connecting to AMStar database...</div>
 ```
 
-Line 221 — the root wrapper:
+Line 221, the root wrapper:
 
 ```tsx
     <div className='min-h-screen bg-amstar-ground'>
 ```
 
-Leave the inline `<style>` block with `@keyframes slideUp` exactly as-is — the toast animation depends on it and it is not defined in `tailwind.config.js`.
+Leave the inline `<style>` block with `@keyframes slideUp` exactly as-is, the toast animation depends on it and it is not defined in `tailwind.config.js`.
 
 - [ ] **Step 6: Verify the build and the tokens resolve**
 
@@ -180,7 +180,7 @@ Leave the inline `<style>` block with `@keyframes slideUp` exactly as-is — the
 cd frontend && npm run build && npm run lint
 ```
 
-Expected: both pass. Then `npm run dev` and load http://localhost:5173 — the page background must be dark navy `#13243d`. Pages will still be full of light cards at this point; that is expected and gets fixed in Tasks 3–9.
+Expected: both pass. Then `npm run dev` and load http://localhost:5173, the page background must be dark navy `#13243d`. Pages will still be full of light cards at this point; that is expected and gets fixed in Tasks 3–9.
 
 - [ ] **Step 7: Commit**
 
@@ -246,7 +246,7 @@ export const PANEL_ROW_STYLE =
   "px-4 py-2.5 text-sm font-bold text-amstar-ink hover:bg-amstar-surface cursor-pointer border-b border-amstar-line-soft last:border-0 transition-colors";
 
 // Severity ramp. Level 2 moved from blue to cyan because blue-500 is invisible
-// against the navy ground. Keys map to COMPLETE literal class strings — Tailwind
+// against the navy ground. Keys map to COMPLETE literal class strings, Tailwind
 // purges anything built by interpolation, so never write `bg-sev-${severity}`.
 const SEVERITY_BG: Record<number, string> = {
   1: "bg-sev-1",
@@ -288,7 +288,7 @@ export const getStatusStyle = (status?: string): string => {
 cd frontend && npm run build && npm run lint
 ```
 
-Expected: both pass. Nothing imports the module yet, so there is no visual change. If `tsc -b` reports the file as unused, that is not an error — unused *exports* are fine; only unused *locals* are flagged.
+Expected: both pass. Nothing imports the module yet, so there is no visual change. If `tsc -b` reports the file as unused, that is not an error, unused *exports* are fine; only unused *locals* are flagged.
 
 - [ ] **Step 3: Commit**
 
@@ -483,7 +483,7 @@ Then apply these substitutions in the `Dashboard` return block:
 
 | Current | Replacement |
 |---|---|
-| `border-b-2 border-amstar-red pb-2` | unchanged — keep it |
+| `border-b-2 border-amstar-red pb-2` | unchanged, keep it |
 | `text-2xl font-black text-amstar-blue` | `font-cond text-2xl font-bold uppercase tracking-wider text-amstar-ink` |
 | `bg-white p-6 rounded-xl border border-slate-200 shadow-sm` (both panels) | `` `${PANEL_STYLE} p-6` `` |
 | `text-base font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4` | `font-cond text-base uppercase tracking-widest text-amstar-ink-dim border-b border-amstar-line-soft pb-3 mb-4` |
@@ -513,7 +513,7 @@ cd frontend && npm run build && npm run lint
 grep -n 'slate-\|bg-white\|text-blue-600\|text-emerald-600\|sky-100' src/pages/Dashboard.tsx
 ```
 
-Expected: build and lint pass; the grep returns **no matches**. Then `npm run dev` and load Shop Overview — three gauge dials with tick marks and mono numerals, both list panels dark, and any severity-5 badge visibly glowing.
+Expected: build and lint pass; the grep returns **no matches**. Then `npm run dev` and load Shop Overview, three gauge dials with tick marks and mono numerals, both list panels dark, and any severity-5 badge visibly glowing.
 
 - [ ] **Step 8: Commit**
 
@@ -568,7 +568,7 @@ Replace the leading `fixed bg-white border border-slate-200 shadow-2xl rounded-l
 - Line 119: `` className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`} ``
 - Line 185: `` className={FLOATING_PANEL_STYLE} ``
 
-Leave every `style={{ top: coords.top, left: coords.left, width: coords.width }}` and `onClick={e => e.stopPropagation()}` untouched. Leave the `z-[100]` backdrops untouched — they are transparent.
+Leave every `style={{ top: coords.top, left: coords.left, width: coords.width }}` and `onClick={e => e.stopPropagation()}` untouched. Leave the `z-[100]` backdrops untouched, they are transparent.
 
 - [ ] **Step 3: Convert the option rows inside those panels**
 
@@ -592,7 +592,7 @@ Apply these substitutions across the file:
 | `rounded-xl` on panels | `rounded` |
 | `text-amstar-blue` on headings | `text-amstar-ink` plus `font-cond uppercase tracking-wider` |
 
-Table `<th>` cells get `PANEL_HEADING_STYLE` (its value is exactly `font-cond uppercase tracking-widest text-amstar-ink-dim`) — import the constant rather than repeating the literal. Any cell rendering an id, priority score, date, VIN, or plate gets `font-mono tabular-nums`.
+Table `<th>` cells get `PANEL_HEADING_STYLE` (its value is exactly `font-cond uppercase tracking-widest text-amstar-ink-dim`), import the constant rather than repeating the literal. Any cell rendering an id, priority score, date, VIN, or plate gets `font-mono tabular-nums`.
 
 - [ ] **Step 5: Restore the severity badge with the lamp glow**
 
@@ -631,14 +631,14 @@ git commit -m "feat(ui): convert active queue to Shop Floor theme"
 
 - [ ] **Step 1: Delete the local constants and helper, and resolve the name collision**
 
-**Read this step carefully — `History.tsx` contains a naming trap.**
+**Read this step carefully, `History.tsx` contains a naming trap.**
 
 `History.tsx` declares two local constants of its own:
 
-- Line 4: `SEARCH_INPUT_STYLE` — byte-identical to `ActiveQueue.tsx`'s and `Pricing.tsx`'s. Straight swap for the shared one.
-- Line 5: `TABLE_DROPDOWN_STYLE` — **a misnomer.** Its value is `"px-3 py-1.5 bg-transparent border border-transparent hover:border-slate-300 focus:bg-white ... cursor-pointer uppercase"`, which is `ActiveQueue.tsx`'s **`INLINE_INPUT_STYLE`**, not its `TABLE_DROPDOWN_STYLE`. The same identifier means two different things in the two files.
+- Line 4: `SEARCH_INPUT_STYLE`, byte-identical to `ActiveQueue.tsx`'s and `Pricing.tsx`'s. Straight swap for the shared one.
+- Line 5: `TABLE_DROPDOWN_STYLE`, **a misnomer.** Its value is `"px-3 py-1.5 bg-transparent border border-transparent hover:border-slate-300 focus:bg-white ... cursor-pointer uppercase"`, which is `ActiveQueue.tsx`'s **`INLINE_INPUT_STYLE`**, not its `TABLE_DROPDOWN_STYLE`. The same identifier means two different things in the two files.
 
-So: delete lines 4 and 5, and delete the local `getStatusStyle` at lines 100–106 (byte-identical to `ActiveQueue.tsx`'s). Then rewrite the two usages of the old local `TABLE_DROPDOWN_STYLE` — **line 23** and **line 84** — to use `INLINE_INPUT_STYLE`.
+So: delete lines 4 and 5, and delete the local `getStatusStyle` at lines 100–106 (byte-identical to `ActiveQueue.tsx`'s). Then rewrite the two usages of the old local `TABLE_DROPDOWN_STYLE`, **line 23** and **line 84**, to use `INLINE_INPUT_STYLE`.
 
 Do **not** import `TABLE_DROPDOWN_STYLE` into this file. Importing it under the old name would silently give History's controls a filled `amstar-field` background where they are meant to be transparent until focused.
 
@@ -798,7 +798,7 @@ with:
           <SeveritySegments value={severity} onChange={setSeverity} />
 ```
 
-The props and the value written to state are identical, so `handleSubmit` and the `onAutoSetSeverity={setSeverity}` auto-fill from `ServiceAutocomplete` keep working untouched — auto-fill now lights a segment instead of changing dropdown text.
+The props and the value written to state are identical, so `handleSubmit` and the `onAutoSetSeverity={setSeverity}` auto-fill from `ServiceAutocomplete` keep working untouched, auto-fill now lights a segment instead of changing dropdown text.
 
 - [ ] **Step 5: Convert the three remaining floating panels**
 
@@ -806,7 +806,7 @@ The props and the value written to state are identical, so `handleSubmit` and th
 - Line 225 (`ServiceAutocomplete`): `` className={`${FLOATING_PANEL_STYLE} max-h-48 overflow-y-auto`} ``
 - Line 293 (`FormWorkerDropdown`): `` className={`${FLOATING_PANEL_STYLE} w-64`} ``
 
-(Line numbers shift once `SeverityDropdown` is deleted in Step 2 — locate them by the `fixed bg-white border border-slate-200 shadow-2xl` string instead.) Preserve each `style={{ ... }}` and `onClick={e => e.stopPropagation()}`.
+(Line numbers shift once `SeverityDropdown` is deleted in Step 2, locate them by the `fixed bg-white border border-slate-200 shadow-2xl` string instead.) Preserve each `style={{ ... }}` and `onClick={e => e.stopPropagation()}`.
 
 - [ ] **Step 6: Convert the form chrome**
 
@@ -864,7 +864,7 @@ Import `{ SHARED_INPUT_STYLE, PANEL_STYLE, LABEL_STYLE }` from `../styles/contro
 | Current | Replacement |
 |---|---|
 | `bg-white p-8 rounded-2xl shadow-xl border border-slate-100 w-full max-w-md` | `` `${PANEL_STYLE} p-8 shadow-2xl w-full max-w-md` `` |
-| `w-4 h-8 bg-amstar-red rounded-sm` | `w-11 h-11 bg-amstar-red rounded-sm grid place-items-center font-cond font-bold text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.28)]` — and put the text `AM` inside the div |
+| `w-4 h-8 bg-amstar-red rounded-sm` | `w-11 h-11 bg-amstar-red rounded-sm grid place-items-center font-cond font-bold text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.28)]`, and put the text `AM` inside the div |
 | `text-3xl font-black text-amstar-blue tracking-tight leading-none` | `font-cond text-3xl font-bold text-amstar-ink tracking-tight leading-none` |
 | `text-sm font-semibold text-slate-500 tracking-widest uppercase` | `font-cond text-sm text-amstar-ink-dim tracking-[0.22em] uppercase` |
 | `text-xl font-bold text-slate-800 mb-6 text-center` | `font-cond text-xl uppercase tracking-wider text-amstar-ink-dim mb-6 text-center` |
@@ -917,7 +917,7 @@ git commit -m "feat(ui): convert login, register, and pricing to Shop Floor them
 
 | Current | Replacement |
 |---|---|
-| `bg-slate-900/60 backdrop-blur-sm` (backdrop) | unchanged — it works on dark |
+| `bg-slate-900/60 backdrop-blur-sm` (backdrop) | unchanged, it works on dark |
 | `bg-white rounded-2xl p-6 w-full max-w-xl shadow-2xl border border-slate-100` | `bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-xl shadow-2xl` |
 | `border-b border-slate-100 pb-3 mb-4` | `border-b border-amstar-line pb-3 mb-4` |
 | `text-xl font-bold text-amstar-blue` | `font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink` |
@@ -930,7 +930,7 @@ git commit -m "feat(ui): convert login, register, and pricing to Shop Floor them
 | `border border-slate-400 bg-slate-100 ... rounded` (plate) | `border border-amstar-line bg-amstar-field ... rounded font-mono tabular-nums` |
 | `text-[10px] block text-slate-500` (plate state) | `text-[10px] block text-amstar-ink-dim` |
 | `bg-slate-50 p-4 rounded-xl border border-slate-100` (job/severity block) | `bg-amstar-surface p-4 rounded border border-amstar-line` |
-| `font-bold text-amstar-red text-base` | unchanged — red on `amstar-surface` reads fine |
+| `font-bold text-amstar-red text-base` | unchanged, red on `amstar-surface` reads fine |
 | `text-xs font-bold text-slate-600` | `text-xs font-bold text-amstar-ink-dim` |
 | `bg-amstar-blue text-white px-2 py-0.5 rounded` (status chip) | `bg-amstar-blue text-white px-2 py-0.5 rounded-sm font-cond uppercase tracking-wider border border-amstar-line` |
 
@@ -959,9 +959,9 @@ Under "Frontend conventions", replace this bullet:
 with:
 
 ```markdown
-- **Shared style strings, not components.** `src/styles/controls.ts` is the single source for control styling: `SHARED_INPUT_STYLE`, `SEARCH_INPUT_STYLE`, `NUMBER_INPUT_STYLE`, `TABLE_DROPDOWN_STYLE`, `INLINE_INPUT_STYLE`, plus `PANEL_STYLE`, `PANEL_HEADING_STYLE`, `LABEL_STYLE`, `FLOATING_PANEL_STYLE`, and `PANEL_ROW_STYLE`. They are exported strings rather than components on purpose — call sites interpolate them into `className`, so styling changes stay a one-line edit without a component rewrite. Import them; never redeclare them per file (they used to be duplicated, and the copies drifted).
-- **The theme is dark.** Colors come from the `amstar` Tailwind tokens in `tailwind.config.js` — `ground` / `surface` / `raised` / `field` for the elevation ramp, `line` / `line-soft` for borders, `ink` / `ink-dim` / `ink-faint` for text. `amstar-blue` is now the navbar and chrome; `amstar-red` is reserved for alarm, focus rings, and primary actions. Never introduce a raw `bg-white` or `slate-*` class — there is no light mode to fall back to.
-- **Severity colors** come from `getSeverityColor(severity)` in `src/styles/controls.ts`, backed by the `sev-1`…`sev-5` tokens; level 5 also takes `getSeverityGlow` for the lit-lamp treatment. Because Tailwind purges interpolated class names, the helper maps to complete literal strings — never build one with `` `bg-sev-${n}` ``.
+- **Shared style strings, not components.** `src/styles/controls.ts` is the single source for control styling: `SHARED_INPUT_STYLE`, `SEARCH_INPUT_STYLE`, `NUMBER_INPUT_STYLE`, `TABLE_DROPDOWN_STYLE`, `INLINE_INPUT_STYLE`, plus `PANEL_STYLE`, `PANEL_HEADING_STYLE`, `LABEL_STYLE`, `FLOATING_PANEL_STYLE`, and `PANEL_ROW_STYLE`. They are exported strings rather than components on purpose, call sites interpolate them into `className`, so styling changes stay a one-line edit without a component rewrite. Import them; never redeclare them per file (they used to be duplicated, and the copies drifted).
+- **The theme is dark.** Colors come from the `amstar` Tailwind tokens in `tailwind.config.js`, `ground` / `surface` / `raised` / `field` for the elevation ramp, `line` / `line-soft` for borders, `ink` / `ink-dim` / `ink-faint` for text. `amstar-blue` is now the navbar and chrome; `amstar-red` is reserved for alarm, focus rings, and primary actions. Never introduce a raw `bg-white` or `slate-*` class, there is no light mode to fall back to.
+- **Severity colors** come from `getSeverityColor(severity)` in `src/styles/controls.ts`, backed by the `sev-1`…`sev-5` tokens; level 5 also takes `getSeverityGlow` for the lit-lamp treatment. Because Tailwind purges interpolated class names, the helper maps to complete literal strings, never build one with `` `bg-sev-${n}` ``.
 ```
 
 Also update the "Hand-rolled dropdowns and date picker" bullet: the list of controls should drop `SeverityDropdown` and note that severity is now an inline segmented `radiogroup` in `RepairForm.tsx`.
@@ -973,9 +973,9 @@ cd frontend
 grep -rnE 'bg-white|(bg|hover:bg|focus:bg|text|border|divide)-(slate|gray|zinc|red|sky|amber|emerald|blue|orange|green|rose|yellow|indigo)-(50|100|200|300)' --include='*.tsx' src/
 ```
 
-Expected: **no matches.** The pre-change baseline was 37 `bg-white` occurrences across the frontend. Any hit here is a surface that was missed — fix it before committing.
+Expected: **no matches.** The pre-change baseline was 37 `bg-white` occurrences across the frontend. Any hit here is a surface that was missed, fix it before committing.
 
-This is the **widened** pattern from Amendment B. The original narrow version (`bg-white` plus `slate-*` only) let pastel tints on other palettes — `bg-red-50`, `bg-sky-50`, `bg-amber-50`, `bg-blue-50`, `bg-emerald-50` — pass every sweep, and those encode real UI states. Do not narrow it back.
+This is the **widened** pattern from Amendment B. The original narrow version (`bg-white` plus `slate-*` only) let pastel tints on other palettes, `bg-red-50`, `bg-sky-50`, `bg-amber-50`, `bg-blue-50`, `bg-emerald-50`, pass every sweep, and those encode real UI states. Do not narrow it back.
 
 Legitimate survivors, which this pattern deliberately does not match: saturated `-500`/`-600`/`-700` values such as `red-600`/`red-700` on primary action buttons, `emerald-*`/`red-*` on the toast, and `text-emerald-600` on the History total-price cell.
 
@@ -994,14 +994,14 @@ cd frontend && npm run build && npm run lint
 Then `npm run dev` and walk the whole app as `admin1`:
 
 1. Login page, Register page.
-2. Shop Overview — gauges, both list panels, monthly report.
-3. Active Queue — table plus all three dropdowns opened.
-4. Completed History — table plus all three dropdowns opened.
-5. Pricing Calculator — search field and all three number inputs.
-6. Intake form — date picker, service autocomplete, technician dropdown, severity segments.
+2. Shop Overview, gauges, both list panels, monthly report.
+3. Active Queue, table plus all three dropdowns opened.
+4. Completed History, table plus all three dropdowns opened.
+5. Pricing Calculator, search field and all three number inputs.
+6. Intake form, date picker, service autocomplete, technician dropdown, severity segments.
 7. Deep-dive modal (click a vehicle), delete-confirm modal, and a toast (change a status).
 
-Every floating panel must be `#22406b`. **Nine panels total** — four in `RepairForm.tsx`, minus the deleted `SeverityDropdown`, plus three each in `ActiveQueue.tsx` and `History.tsx`.
+Every floating panel must be `#22406b`. **Nine panels total**, four in `RepairForm.tsx`, minus the deleted `SeverityDropdown`, plus three each in `ActiveQueue.tsx` and `History.tsx`.
 
 - [ ] **Step 7: Commit**
 
@@ -1021,20 +1021,20 @@ This also contradicts a decision already made in this plan: `getStatusStyle` (Ta
 **Fix.** `controls.ts` gains one export:
 
 ```ts
-// All five sev-* values are bright, so severity chips take dark text — matching
+// All five sev-* values are bright, so severity chips take dark text, matching
 // getStatusStyle's treatment of status chips. Never pair text-white with bg-sev-*.
 export const SEVERITY_TEXT = "text-amstar-ground";
 ```
 
 Every severity badge uses `` `${SEVERITY_TEXT} ${getSeverityColor(n)} ${getSeverityGlow(n)}` `` and **never** `text-white`.
 
-Sites: `Dashboard.tsx` (1, retrofit), `ActiveQueue.tsx` (1, Task 5), `History.tsx` (1, Task 6). `RepairForm.tsx`'s segmented selector is unaffected — its selected segment is `text-white` on a translucent red *fill over a dark ground*, not on a bright `sev-*` background, so it stays as specified.
+Sites: `Dashboard.tsx` (1, retrofit), `ActiveQueue.tsx` (1, Task 5), `History.tsx` (1, Task 6). `RepairForm.tsx`'s segmented selector is unaffected, its selected segment is `text-white` on a translucent red *fill over a dark ground*, not on a bright `sev-*` background, so it stays as specified.
 
 Task 4b applies this to `controls.ts` and `Dashboard.tsx`. Tasks 5 and 6 adopt it natively.
 
 ## Amendment B (mid-execution, after Task 5 review)
 
-**Problem — a hole in the verification design, not in any implementation.** Every task's grep sweep and the Task 9 full sweep search only for `bg-white` and `slate-*`. Light *tints on other palettes* — `bg-red-50`, `bg-sky-50`, `bg-amber-50`, `bg-blue-50`, `bg-emerald-50`, `border-red-100`, `border-emerald-100`, `border-blue-200` — pass through every sweep untouched and render as near-white patches on the dark theme. No task's substitution table covers them.
+**Problem, a hole in the verification design, not in any implementation.** Every task's grep sweep and the Task 9 full sweep search only for `bg-white` and `slate-*`. Light *tints on other palettes*, `bg-red-50`, `bg-sky-50`, `bg-amber-50`, `bg-blue-50`, `bg-emerald-50`, `border-red-100`, `border-emerald-100`, `border-blue-200`, pass through every sweep untouched and render as near-white patches on the dark theme. No task's substitution table covers them.
 
 **Corrected sweep pattern.** Replace the `slate-`/`bg-white` sweep everywhere it appears with:
 
@@ -1050,22 +1050,22 @@ Legitimate survivors are the saturated `-500`/`-600` values inside helpers being
 |---|---|---|---|
 | `ActiveQueue.tsx:229` | `hover:bg-red-50` | click-to-delete affordance (admin only) | `hover:bg-amstar-red/20` |
 | `ActiveQueue.tsx:229` | `bg-sky-50` | row currently open in the deep-dive modal | `bg-amstar-raised` |
-| `ActiveQueue.tsx:229` | `bg-amber-50` | **top-priority ticket** (`index === 0 && !searchTerm`) — the next job | `bg-sev-3/20` |
+| `ActiveQueue.tsx:229` | `bg-amber-50` | **top-priority ticket** (`index === 0 && !searchTerm`), the next job | `bg-sev-3/20` |
 | `History.tsx:197` | `hover:bg-red-50` | click-to-delete affordance | `hover:bg-amstar-red/20` |
 | `History.tsx:197` | `bg-sky-50` | row open in the deep-dive modal | `bg-amstar-raised` |
 | `RepairForm.tsx:96` | `bg-blue-50 border-blue-200` | "today" in the date picker | `bg-amstar-raised border-amstar-red/50` |
 | `Pricing.tsx:44` | `bg-blue-50/40 border-amstar-blue/30` | edited/dirty pricing row | `bg-amstar-raised border-amstar-red/40` |
-| `Register.tsx:64` | `bg-emerald-50 text-emerald-600 border-emerald-100` | success message | `bg-sev-1/20 text-white border-sev-1` — **corrected, see below** |
+| `Register.tsx:64` | `bg-emerald-50 text-emerald-600 border-emerald-100` | success message | `bg-sev-1/20 text-white border-sev-1`, **corrected, see below** |
 
-`RepairForm.tsx:117-119` (`bg-emerald-500`/`bg-blue-500`/`bg-amber-500` in the `SeverityDropdown` options array) and `History.tsx:102-104` (local `getStatusStyle`) need no treatment — both are inside code Tasks 7 and 6 delete outright.
+`RepairForm.tsx:117-119` (`bg-emerald-500`/`bg-blue-500`/`bg-amber-500` in the `SeverityDropdown` options array) and `History.tsx:102-104` (local `getStatusStyle`) need no treatment, both are inside code Tasks 7 and 6 delete outright.
 
-**Assignment.** `ActiveQueue.tsx` is already complete, so its three row-highlight fixes are batched into Task 6 alongside `History.tsx`'s two — the same change in two files. Tasks 7 and 8 pick up their own rows above.
+**Assignment.** `ActiveQueue.tsx` is already complete, so its three row-highlight fixes are batched into Task 6 alongside `History.tsx`'s two, the same change in two files. Tasks 7 and 8 pick up their own rows above.
 
 ### Amendment B correction (after Task 8 review)
 
 The success-box row above originally read `bg-sev-1/20 text-sev-1 border-sev-1/50`. That was **wrong** and shipped a WCAG AA failure at **3.55:1**.
 
-Root cause worth remembering: `sev-1` is a *background* token, designed to be paired with dark text (`SEVERITY_TEXT`). Using it as a **foreground over a translucent tint of itself** puts two similar luminances against each other — the green text sits at L≈0.36 and the composited green-tinted background at L≈0.066, far closer than the white-on-red pattern it was modelled on. **The `text-<colour>` on `bg-<same colour>/20` pattern does not generalise.** It happens to work for red only because white is the foreground.
+Root cause worth remembering: `sev-1` is a *background* token, designed to be paired with dark text (`SEVERITY_TEXT`). Using it as a **foreground over a translucent tint of itself** puts two similar luminances against each other, the green text sits at L≈0.36 and the composited green-tinted background at L≈0.066, far closer than the white-on-red pattern it was modelled on. **The `text-<colour>` on `bg-<same colour>/20` pattern does not generalise.** It happens to work for red only because white is the foreground.
 
 Corrected values, mirroring the already-passing error box:
 
@@ -1074,7 +1074,7 @@ Corrected values, mirroring the already-passing error box:
 | Success box (`Register.tsx`) | `bg-sev-1/20 text-white border-sev-1` | **9.00:1** |
 | Error box (existing, unchanged) | `bg-amstar-red/20 text-white border-amstar-red` | 11.97:1 |
 
-Also corrected in the same pass — `Pricing.tsx` "Total Billed" (`text-emerald-600` on the new `bg-amstar-ground/40`) measured 3.62:1 and passed only via the large-text exemption, because Task 8 darkened the background beneath it without recomputing. It becomes `text-sev-1`, which measures **5.38:1** and clears AA at any size while staying green.
+Also corrected in the same pass, `Pricing.tsx` "Total Billed" (`text-emerald-600` on the new `bg-amstar-ground/40`) measured 3.62:1 and passed only via the large-text exemption, because Task 8 darkened the background beneath it without recomputing. It becomes `text-sev-1`, which measures **5.38:1** and clears AA at any size while staying green.
 
 ## Amendment D (pre-emptive, before Task 9)
 
@@ -1085,15 +1085,15 @@ Contrast computed **ahead of** implementation this time, rather than caught in r
 | Success | `text-white` on `bg-emerald-600` `#059669` | **3.77:1** | **FAIL** → `bg-emerald-700` `#047857` = **5.48:1** |
 | Error | `text-white` on `bg-red-600` `#dc2626` | 4.83:1 | passes, leave it |
 
-Toast text is `text-sm font-bold` — small text, so the 4.5:1 floor applies, not the 3:1 large-text exemption.
+Toast text is `text-sm font-bold`, small text, so the 4.5:1 floor applies, not the 3:1 large-text exemption.
 
 Darkening the background is preferred over switching the success toast to dark text: it keeps `text-white` on **both** toasts, so the two states stay visually consistent and only one class changes.
 
 Verified fine and needing no change: the deep-dive modal's status chip, `text-white` on `bg-amstar-blue` `#0b3068`, at **12.83:1**.
 
-## Amendment E (after Task 9 review) — red as text on dark is systemically broken
+## Amendment E (after Task 9 review), red as text on dark is systemically broken
 
-**The worst plan defect of this run.** Task 9's Step 1 table asserted, of `font-bold text-amstar-red` on `bg-amstar-surface`: *"unchanged — red on amstar-surface reads fine."* That claim was never computed. It measures **2.43:1**.
+**The worst plan defect of this run.** Task 9's Step 1 table asserted, of `font-bold text-amstar-red` on `bg-amstar-surface`: *"unchanged, red on amstar-surface reads fine."* That claim was never computed. It measures **2.43:1**.
 
 `amstar-red` `#d62027` is a dark, saturated red. It works as a **fill** under white text (5.13:1) and as a border. As **text on a dark ground it cannot clear AA anywhere**:
 
@@ -1103,12 +1103,12 @@ Verified fine and needing no change: the deep-dive modal's status chip, `text-wh
 | `sev-5` `#ff3b41` | 3.54:1 ❌ | 2.96:1 ❌ | 3.64:1 ❌ |
 | **`#ff9ca0`** | **6.25:1 ✅** | **5.22:1 ✅** | **6.42:1 ✅** |
 
-The Task 9 reviewer found the two instances inside its own diff. An audit of the whole tree found **six**, four of them in files already reviewed and approved — the per-task reviews could not see them because each reviewer is scoped to one task's diff. This is the class of defect only a whole-tree audit catches.
+The Task 9 reviewer found the two instances inside its own diff. An audit of the whole tree found **six**, four of them in files already reviewed and approved, the per-task reviews could not see them because each reviewer is scoped to one task's diff. This is the class of defect only a whole-tree audit catches.
 
-**Fix — add a text-specific red token.** `amstar-red` stays frozen and keeps its fill/border role. New token in `tailwind.config.js`:
+**Fix, add a text-specific red token.** `amstar-red` stays frozen and keeps its fill/border role. New token in `tailwind.config.js`:
 
 ```js
-// Red as TEXT on a dark ground. amstar-red #d62027 is a fill colour — as text it
+// Red as TEXT on a dark ground. amstar-red #d62027 is a fill colour, as text it
 // measures 2.0-2.5:1 on every surface in this theme and fails WCAG AA. Never use
 // text-amstar-red on a dark background; use text-amstar-red-ink.
 "red-ink": "#ff9ca0",
@@ -1125,13 +1125,13 @@ All six `text-amstar-red` usages become `text-amstar-red-ink`:
 | `Register.tsx` | 115 | "Log in" link |
 | `Dashboard.tsx` | 181 | "Critical Pending Vehicles" heading |
 
-`bg-amstar-red` and `border-amstar-red` are untouched everywhere — those roles are fine.
+`bg-amstar-red` and `border-amstar-red` are untouched everywhere, those roles are fine.
 
-**Deferred, for the final review to triage:** `border-amstar-red` against dark grounds measures ~2.4:1, under the 3:1 WCAG floor for non-text UI boundaries. Every current use pairs the border with another cue (a fill, a label, or a focus ring), so nothing depends on the border alone — but a future control that does would fail.
+**Deferred, for the final review to triage:** `border-amstar-red` against dark grounds measures ~2.4:1, under the 3:1 WCAG floor for non-text UI boundaries. Every current use pairs the border with another cue (a fill, a label, or a focus ring), so nothing depends on the border alone, but a future control that does would fail.
 
 ## Amendment C (mid-execution, after Task 7 review)
 
-**Problem — a functional bug in this plan's own Task 7 Step 3 code.** `SeveritySegments`'s arrow-key handler was written as `onKeyDown={e => handleKeyDown(e, level)}`, deriving the next value from **the pressed button's own fixed `level`** rather than from the current `value`, and never moving DOM focus.
+**Problem, a functional bug in this plan's own Task 7 Step 3 code.** `SeveritySegments`'s arrow-key handler was written as `onKeyDown={e => handleKeyDown(e, level)}`, deriving the next value from **the pressed button's own fixed `level`** rather than from the current `value`, and never moving DOM focus.
 
 Because all five buttons are stable across renders (`key={level}`), focus stays on whichever button the user originally reached. The same closure therefore handles every subsequent keypress:
 
@@ -1160,7 +1160,7 @@ const SeveritySegments: React.FC<{ value: number; onChange: (val: number) => voi
   };
 ```
 
-Each button gains `ref={el => { btnRefs.current[level - 1] = el; }}` and its handler becomes the bare `onKeyDown={handleKeyDown}`. `useRef` must be added to the existing `react` import. The ref callback uses a block body deliberately — an arrow with an expression body returns a value, which React 19 rejects as a ref callback.
+Each button gains `ref={el => { btnRefs.current[level - 1] = el; }}` and its handler becomes the bare `onKeyDown={handleKeyDown}`. `useRef` must be added to the existing `react` import. The ref callback uses a block body deliberately, an arrow with an expression body returns a value, which React 19 rejects as a ref callback.
 
 Everything else about the component (five segments, `type="button"`, `role="radiogroup"`/`role="radio"`, `aria-checked`, roving `tabIndex`, `min-h-[44px]`, controlled-value behavior) was verified correct and is unchanged.
 

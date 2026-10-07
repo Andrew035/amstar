@@ -27,7 +27,7 @@ export const ServicesCell: React.FC<{
    * second service is added.
    */
   className?: string;
-  /** Shown under the modal title, e.g. "2010 FORD E-250 — Kane". */
+  /** Shown under the modal title, e.g. "2010 FORD E-250 · Kane". */
   subtitle?: string;
 }> = ({
   value,
@@ -119,7 +119,7 @@ export const ServicesCell: React.FC<{
             e.stopPropagation();
             close();
           }}
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 normal-case"
+          className="anim-fade fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 normal-case"
         >
           <div
             role="dialog"

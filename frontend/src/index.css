@@ -7,28 +7,37 @@ body {
   background-color: #13243d;
   color: #eef3fa;
   font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Roboto",
-    "Oxygen",
-    "Ubuntu",
-    "Cantarell",
-    "Fira Sans",
-    "Droid Sans",
-    "Helvetica Neue",
-    sans-serif;
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark scrollbars so browser chrome doesn't stay light against the app. */
+/*
+ * A thumb and nothing else. The track is transparent everywhere, so a
+ * scrollbar sits on whatever it is scrolling rather than cutting a strip of
+ * its own colour through it.
+ *
+ * The old track was hard-coded to #13243d, the page background. That is
+ * invisible against the page and wrong everywhere else: a dark stripe down the
+ * side of every amstar-surface panel, every modal, and the queue list, and a
+ * notch beside the navbar where the blue stopped and the strip began. The
+ * navbar closes that last gap itself, with a box-shadow that paints its blue
+ * out under the gutter (see Navbar.tsx).
+ *
+ * These scrollbars take real layout width, which is why <main> in App.tsx
+ * carries `scrollbar-gutter: stable`. Styling them at all is what rules out the
+ * overlay scrollbars macOS would draw over the content, but unstyled they are
+ * light grey on a dark app, which is worse than a reserved 10px.
+ */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
+  background: transparent;
 }
-::-webkit-scrollbar-track {
-  background: #13243d;
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #2d5590;
@@ -37,6 +46,131 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3a68a8;
 }
+/* Firefox. The second value is the track, which stays out of the way too. */
 * {
-  scrollbar-color: #2d5590 #13243d;
+  scrollbar-color: #2d5590 transparent;
+}
+
+/*
+ * The wordmark's yellow edge. It lives here rather than in a Tailwind class
+ * because the width is in `em`: one rule serves the 26px navbar lockup and the
+ * 46px login one, and anything else the mark is ever set at.
+ *
+ * `paint-order: stroke fill` is what keeps the stroke OUTSIDE the glyph.
+ * Without it -webkit-text-stroke centres on the outline and eats half its
+ * width out of the letter, which thins a bold face back to a medium.
+ *
+ * The colour is amstar-yellow from tailwind.config.js. It is duplicated here
+ * because -webkit-text-stroke needs a literal; change it in both places.
+ */
+.logo-stroke {
+  -webkit-text-stroke: 0.055em #f2e60f;
+  paint-order: stroke fill;
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion
+ *
+ * Four keyframes cover everything the app animates. They are plain CSS rather
+ * than a library because every one of them runs on mount and never again:
+ * there is no state to drive, nothing to interrupt, and no reason to ship a
+ * runtime for it. Only transform and opacity animate, so each stays on the
+ * compositor.
+ *
+ * The timing is one easing curve (a fast-out, settle-in cubic) at three
+ * durations: 140ms for something that opens under your finger, 220ms for a
+ * row, 300ms for a whole page. Anything slower than that reads as lag on a
+ * screen somebody is working from.
+ * ------------------------------------------------------------------------ */
+
+@keyframes amstar-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes amstar-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Panels grow from just under their trigger, so the eye keeps the connection. */
+@keyframes amstar-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes amstar-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(150%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * `backwards`, never `forwards` or `both`.
+ *
+ * A filling animation keeps supplying the animated value after it finishes, and
+ * "animated transform: none" computes to an identity matrix rather than to no
+ * transform at all. An identity matrix still makes the element a containing
+ * block for `position: fixed` descendants, so with `both` on <main> every
+ * hand-rolled dropdown in the app was positioning itself against <main>'s
+ * padding box instead of the viewport: correct-looking `top`/`left`, panel in
+ * the wrong place, and further off the wider the window got, because `mx-auto`
+ * pushes <main>'s left edge further in.
+ *
+ * `backwards` gives the same picture - the first keyframe is held through any
+ * delay, which is what keeps staggered rows from flashing before their turn -
+ * and then hands the element back to its own styles. Every animation here ends
+ * on the element's base state, so there is nothing to keep filling.
+ */
+.anim-rise {
+  animation: amstar-rise 300ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.anim-row {
+  animation: amstar-rise 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.anim-fade {
+  animation: amstar-fade 200ms ease-out backwards;
+}
+.anim-pop {
+  animation: amstar-pop 140ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  transform-origin: top center;
+}
+.anim-slide-up {
+  animation: amstar-slide-up 350ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/*
+ * Not a preference to honour politely: on iOS, "Reduce Motion" is set by people
+ * who get motion sick from it. Everything collapses to its finished state.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

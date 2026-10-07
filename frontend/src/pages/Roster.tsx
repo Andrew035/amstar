@@ -132,7 +132,7 @@ export const Roster: React.FC<{
           {tech.fullName}
         </span>
         <span className="shrink-0 font-mono tabular-nums text-xs text-amstar-ink-dim">
-          {open > 0 ? `${open} open` : "—"}
+          {open > 0 ? `${open} open` : "-"}
         </span>
         <button
           type="button"

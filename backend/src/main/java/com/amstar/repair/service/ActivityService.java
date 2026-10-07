@@ -34,7 +34,7 @@ public class ActivityService {
     return activity.findTop30ByOrderByCreatedAtDescIdDesc();
   }
 
-  /** "2010 FORD E-250 — Kane", snapshotted so it survives the ticket's deletion. */
+  /** "2010 FORD E-250 · Kane", snapshotted so it survives the ticket's deletion. */
   static String label(VehicleRepair repair) {
     Vehicle v = repair.getVehicle();
     String car =
@@ -49,7 +49,7 @@ public class ActivityService {
                 .replaceAll("\\s+", " ");
     String customer = repair.getCustomerName();
     String label = car.isEmpty() ? "Ticket #" + repair.getId() : car;
-    if (customer != null && !customer.isBlank()) label += " — " + customer;
+    if (customer != null && !customer.isBlank()) label += " · " + customer;
     return truncate(label, 200);
   }
 

@@ -70,7 +70,9 @@ export const MultiWorkerDropdown: React.FC<{
       <div
         onClick={openDropdown}
         className={`${
-          inline ? `${INLINE_INPUT_STYLE} group` : `${TABLE_DROPDOWN_STYLE} w-full`
+          inline
+            ? `${INLINE_INPUT_STYLE} group`
+            : `${TABLE_DROPDOWN_STYLE} w-full`
         } flex justify-between items-center ${className}`}
       >
         <Truncated
@@ -91,7 +93,7 @@ export const MultiWorkerDropdown: React.FC<{
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[100]"
+            className="anim-fade fixed inset-0 z-[100]"
             onClick={(e) => {
               e.stopPropagation();
               setIsOpen(false);

@@ -28,11 +28,11 @@ export const VehicleModal: React.FC<{
 }) => (
   <div
     onClick={() => onClose()}
-    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
+    className="anim-fade fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
   >
     <div
       onClick={(e) => e.stopPropagation()}
-      className="bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl"
+      className="anim-pop bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl"
     >
       <div className="flex justify-between items-center border-b border-amstar-line pb-3 mb-4">
         <h3 className="font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink">

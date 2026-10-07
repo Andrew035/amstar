@@ -337,6 +337,6 @@ public class PriorityQueueService {
   }
 
   private static String readable(String status) {
-    return status == null ? "—" : status.replace('_', ' ');
+    return status == null ? "-" : status.replace('_', ' ');
   }
 }

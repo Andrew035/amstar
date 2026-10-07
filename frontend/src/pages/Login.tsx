@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AmstarLogo } from "../components/AmstarLogo";
 import { Link, useNavigate } from "react-router-dom";
 import {
   SHARED_INPUT_STYLE,
@@ -61,18 +62,8 @@ export const Login: React.FC<{ onLoginSuccess: () => void }> = ({
   return (
     <div className="flex justify-center items-center min-h-[80vh]">
       <div className={`${PANEL_STYLE} p-8 shadow-2xl w-full max-w-md`}>
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="w-11 h-11 bg-amstar-red rounded-sm grid place-items-center font-cond font-bold text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.28)]">
-              AM
-            </div>
-            <h1 className="font-cond text-3xl font-bold text-amstar-ink tracking-tight leading-none">
-              AM STAR
-            </h1>
-          </div>
-          <span className="font-cond text-sm text-amstar-ink-dim tracking-[0.22em] uppercase">
-            Transmissions
-          </span>
+        <div className="group flex justify-center mb-8">
+          <AmstarLogo size="page" />
         </div>
 
         <h2 className="font-cond text-xl uppercase tracking-wider text-amstar-ink-dim mb-6 text-center">
