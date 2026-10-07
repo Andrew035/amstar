@@ -64,7 +64,7 @@ body {
  * because -webkit-text-stroke needs a literal; change it in both places.
  */
 .logo-stroke {
-  -webkit-text-stroke: 0.055em #fbe207;
+  -webkit-text-stroke: 0.055em #eef3fa;
   paint-order: stroke fill;
 }
 
