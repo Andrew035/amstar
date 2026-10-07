@@ -3,8 +3,13 @@
 // existing convention of interpolating style constants into `className`, so call
 // sites keep their current shape. See CLAUDE.md, "Shared style strings".
 
+/*
+ * The border is the focus indicator and carries the contrast; the ring behind
+ * it is a soft halo. The halo alone never qualified - at 40% over a field it
+ * composites to 1.21:1, which is not an indicator, it is a tint.
+ */
 const FOCUS =
-  "focus:outline-none focus:border-amstar-red focus:ring-2 focus:ring-amstar-red/40";
+  "focus:outline-none focus:border-amstar-red-edge focus:ring-2 focus:ring-amstar-red-edge/40";
 
 /**
  * How long anything under the pointer takes to answer it. 150ms is the longest

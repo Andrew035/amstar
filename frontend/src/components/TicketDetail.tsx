@@ -59,8 +59,8 @@ const CustomerNameField: React.FC<{
       }}
       className="w-full max-w-xs px-2 py-1 -ml-2 bg-transparent border border-transparent rounded-sm
       text-sm font-bold text-amstar-ink transition-colors cursor-pointer hover:border-amstar-line
-      focus:bg-amstar-field focus:cursor-text focus:outline-none focus:border-amstar-red
-      focus:ring-2 focus:ring-amstar-red/40"
+      focus:bg-amstar-field focus:cursor-text focus:outline-none focus:border-amstar-red-edge
+      focus:ring-2 focus:ring-amstar-red-edge/40"
     />
   );
 };

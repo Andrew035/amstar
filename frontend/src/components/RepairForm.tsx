@@ -69,9 +69,9 @@ const SeveritySegments: React.FC<{
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(level)}
             onKeyDown={handleKeyDown}
-            className={`flex-1 min-h-[44px] rounded font-cond text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amstar-red/40 ${
+            className={`flex-1 min-h-[44px] rounded font-cond text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amstar-red-edge/40 focus:border-amstar-red-edge ${
               selected
-                ? "text-white border border-amstar-red bg-amstar-red/[0.16] shadow-[inset_0_0_12px_rgba(214,32,39,0.35)]"
+                ? "text-white border border-amstar-red-edge bg-amstar-red/[0.16]"
                 : "text-amstar-ink-faint border border-amstar-line hover:border-amstar-red/60"
             }`}
           >
@@ -601,7 +601,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
    * until the next submit.
    */
   const ringIfMissing = (field: string, value: string) =>
-    missing.includes(field) && !value.trim() ? "ring-2 ring-amstar-red" : "";
+    missing.includes(field) && !value.trim() ? "ring-2 ring-amstar-red-edge" : "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

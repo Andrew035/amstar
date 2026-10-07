@@ -82,7 +82,7 @@ export const TicketNotes: React.FC<{
         placeholder={isAdmin ? placeholder : emptyText}
         className={`w-full ${textareaClass} resize-none overflow-y-auto px-3 py-2 bg-amstar-field border border-amstar-line
         rounded font-mono text-xs leading-relaxed text-amstar-ink shadow-inner transition focus:outline-none
-        focus:border-amstar-red focus:ring-2 focus:ring-amstar-red/40 disabled:opacity-60 disabled:cursor-not-allowed`}
+        focus:border-amstar-red-edge focus:ring-2 focus:ring-amstar-red-edge/40 disabled:opacity-60 disabled:cursor-not-allowed`}
       />
 
       {error && (

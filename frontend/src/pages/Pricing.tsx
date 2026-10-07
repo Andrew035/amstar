@@ -61,7 +61,7 @@ const blankLine = (): LineItem => ({
 });
 
 const ROW_INPUT =
-  "w-full min-h-11 px-3 bg-amstar-ground border border-amstar-line rounded-sm text-xs font-bold text-amstar-ink uppercase placeholder:text-amstar-ink-faint placeholder:normal-case transition-[border-color] duration-150 ease-out focus:border-amstar-red focus:outline-none";
+  "w-full min-h-11 px-3 bg-amstar-ground border border-amstar-line rounded-sm text-xs font-bold text-amstar-ink uppercase placeholder:text-amstar-ink-faint placeholder:normal-case transition-[border-color] duration-150 ease-out focus:border-amstar-red-edge focus:outline-none";
 
 const PARTS_GRID = "grid grid-cols-[1fr_3.5rem_8rem_7rem_2.5rem] gap-1.5";
 

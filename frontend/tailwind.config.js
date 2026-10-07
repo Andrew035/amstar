@@ -14,17 +14,30 @@ export default {
       colors: {
         amstar: {
           blue: "#0b3068",
-          red: "#d62027",
-          // Off the shop's business card (#e7d90e as photographed, white
-          // balanced against the card stock). It is the wordmark's outline and
+          red: "#c41b22",
+          // Off the shop's business card. It is the wordmark's outline and
           // nothing else: red stays the alarm colour, and a second bright
           // accent loose in the UI would compete with it. Also spelled out in
           // `.logo-stroke` in index.css, which needs it as a raw value.
-          yellow: "#f2e60f",
-          // Red as TEXT on a dark ground. amstar-red #d62027 is a fill colour; as
+          //
+          // This and `red` above are shared with the marketing site, which
+          // sampled the same card. One pair of values across both properties
+          // so the wordmark is identical wherever it appears.
+          yellow: "#fbe207",
+          // Red as TEXT on a dark ground. amstar-red #c41b22 is a fill colour; as
           // text it measures 2.0-2.5:1 on every surface here and fails WCAG AA.
           // Never use text-amstar-red on a dark background; use text-amstar-red-ink.
           "red-ink": "#ff9ca0",
+          // Red as an OUTLINE: focus rings, validation rings, and the marks
+          // that say which thing is selected. The fill red has to stay dark
+          // enough to carry white text (5.95:1), which leaves it at 1.8-2.6:1
+          // against these grounds - under the 3:1 WCAG 1.4.11 asks of a focus
+          // indicator. This is the same hue lightened until it clears 3:1 on
+          // every ground in the theme, 3.55:1 at worst (on `raised`).
+          //
+          // It is a stroke colour only. White on it is ~2.3:1, so never fill
+          // with it, and `red-ink` is still the one for text.
+          "red-edge": "#f9666b",
           ground: "#13243d",
           surface: "#1b3459",
           raised: "#22406b",

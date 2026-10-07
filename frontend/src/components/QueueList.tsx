@@ -94,7 +94,7 @@ export const QueueList: React.FC<{
               border-b border-amstar-line-soft border-l-[3px]
               transition-[background-color,border-color] duration-150 ease-out ${
                 selected
-                  ? "bg-amstar-raised border-l-amstar-red"
+                  ? "bg-amstar-raised border-l-amstar-red-edge"
                   : "border-l-transparent hover:bg-amstar-raised/50"
               }`}
             >
