@@ -295,10 +295,7 @@ const PricingRow: React.FC<{
         aria-expanded={isOpen}
         className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER}`}
       >
-        <PlateChip
-          vehicle={item.vehicle}
-          className="w-[6.5rem] shrink-0 truncate"
-        />
+        <PlateChip vehicle={item.vehicle} className="shrink-0" />
         <span className="flex-1 min-w-0 truncate font-cond text-sm font-bold uppercase tracking-wide text-amstar-ink">
           {vehicleLabel(item)}
         </span>
