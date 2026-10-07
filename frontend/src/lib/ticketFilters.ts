@@ -148,6 +148,21 @@ export const daysLate = (r: VehicleRepair, today = localISODate()): number =>
     (Date.parse(today) - Date.parse(r.expectedCompletionDate)) / 86_400_000,
   );
 
+/**
+ * How long the car has been with us, in whole days. Same date arithmetic as
+ * `daysLate`: both ends are UTC midnight, so there is no partial-day drift.
+ */
+export const daysInShop = (
+  r: VehicleRepair,
+  today = localISODate(),
+): number | null =>
+  r.entryDate
+    ? Math.max(
+        0,
+        Math.round((Date.parse(today) - Date.parse(r.entryDate)) / 86_400_000),
+      )
+    : null;
+
 export const vehicleLabel = (r: VehicleRepair): string =>
   [r.vehicle?.year, r.vehicle?.make, r.vehicle?.model]
     .filter(Boolean)
