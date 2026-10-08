@@ -1,4 +1,4 @@
-amstartransmissions.org, www.amstartransmissions.org, app.amstartransmissions.org {
+app.amstartransmissions.org {
   encode gzip
 
     handle /api/auth/forgot-password {
