@@ -45,7 +45,6 @@ public class VehicleRepairController {
         repair.setParts(null);
         repair.setLineItems(null);
         repair.setRetailPrice(null);
-        repair.setLeasePrice(null);
         repair.setLaborPrice(null);
       }
     }
@@ -116,10 +115,7 @@ public class VehicleRepairController {
       @PathVariable Long id, @RequestBody VehicleRepair pricingData) {
     // tickets_price_non_negative rejects these at the database otherwise.
     for (BigDecimal price :
-        java.util.List.of(
-            pricingData.getRetailPrice(),
-            pricingData.getLeasePrice(),
-            pricingData.getLaborPrice())) {
+        java.util.List.of(pricingData.getRetailPrice(), pricingData.getLaborPrice())) {
       if (price != null && price.signum() < 0) {
         return ResponseEntity.badRequest()
             .body(java.util.Map.of("error", "Prices cannot be negative"));

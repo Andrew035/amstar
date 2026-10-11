@@ -116,7 +116,6 @@ export const invoiceTotal = (r: VehicleRepair): number =>
   (r.lineItems?.length ?? 0) > 0
     ? partsSubtotal(r) + (r.laborPrice || 0)
     : (r.includeRetail ? r.retailPrice || 0 : 0) +
-      (r.includeLease ? r.leasePrice || 0 : 0) +
       (r.includeLabor ? r.laborPrice || 0 : 0);
 
 export const isActive = (r: VehicleRepair) => r.status !== "COMPLETED";

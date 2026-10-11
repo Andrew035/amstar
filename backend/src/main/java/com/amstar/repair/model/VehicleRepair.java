@@ -52,17 +52,11 @@ public class VehicleRepair {
   @Column(name = "retail_price", nullable = false, precision = 10, scale = 2)
   private BigDecimal retailPrice = BigDecimal.ZERO;
 
-  @Column(name = "lease_price", nullable = false, precision = 10, scale = 2)
-  private BigDecimal leasePrice = BigDecimal.ZERO;
-
   @Column(name = "labor_price", nullable = false, precision = 10, scale = 2)
   private BigDecimal laborPrice = BigDecimal.ZERO;
 
   @Column(name = "include_retail", nullable = false)
   private Boolean includeRetail = false;
-
-  @Column(name = "include_lease", nullable = false)
-  private Boolean includeLease = false;
 
   @Column(name = "include_labor", nullable = false)
   private Boolean includeLabor = false;
@@ -240,14 +234,6 @@ public class VehicleRepair {
     this.retailPrice = retailPrice;
   }
 
-  public BigDecimal getLeasePrice() {
-    return leasePrice;
-  }
-
-  public void setLeasePrice(BigDecimal leasePrice) {
-    this.leasePrice = leasePrice;
-  }
-
   public BigDecimal getLaborPrice() {
     return laborPrice;
   }
@@ -262,14 +248,6 @@ public class VehicleRepair {
 
   public void setIncludeRetail(Boolean includeRetail) {
     this.includeRetail = includeRetail;
-  }
-
-  public Boolean getIncludeLease() {
-    return includeLease;
-  }
-
-  public void setIncludeLease(Boolean includeLease) {
-    this.includeLease = includeLease;
   }
 
   public Boolean getIncludeLabor() {
@@ -360,7 +338,6 @@ public class VehicleRepair {
     // NPE inside serialization, which surfaces as an opaque 500 on the whole
     // queue read rather than as a redacted field.
     return zeroIfNull(Boolean.TRUE.equals(includeRetail) ? retailPrice : BigDecimal.ZERO)
-        .add(zeroIfNull(Boolean.TRUE.equals(includeLease) ? leasePrice : BigDecimal.ZERO))
         .add(zeroIfNull(Boolean.TRUE.equals(includeLabor) ? laborPrice : BigDecimal.ZERO));
   }
 

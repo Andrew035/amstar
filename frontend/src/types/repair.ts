@@ -68,10 +68,8 @@ export interface VehicleRepair {
   // Legacy pricing. Kept so tickets written before line items still total
   // correctly; nothing new should write these.
   retailPrice?: number;
-  leasePrice?: number;
   laborPrice?: number;
   includeRetail?: boolean;
-  includeLease?: boolean;
   includeLabor?: boolean;
 
   // Normalized data the backend now also sends. Nothing reads these yet -

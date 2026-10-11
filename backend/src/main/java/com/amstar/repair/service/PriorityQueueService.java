@@ -166,10 +166,8 @@ public class PriorityQueueService {
       VehicleRepair repair = optionalRepair.get();
 
       repair.setRetailPrice(pricingData.getRetailPrice());
-      repair.setLeasePrice(pricingData.getLeasePrice());
       repair.setLaborPrice(pricingData.getLaborPrice());
       repair.setIncludeRetail(pricingData.getIncludeRetail());
-      repair.setIncludeLease(pricingData.getIncludeLease());
       repair.setIncludeLabor(pricingData.getIncludeLabor());
 
       if (pricingData.getBillingType() != null) {
