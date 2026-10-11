@@ -103,6 +103,22 @@ public class TicketLifecycleTest extends IntegrationTest {
         null,
         ticketById(admin, id).get("actualCompletionDate"),
         "reopening a ticket must clear the completion date");
+
+    // READY_FOR_INVOICE is not COMPLETED, so tickets_completion_matches_status
+    // requires a null date here too. If updateRepairStatus ever stops clearing
+    // it, this write fails the CHECK and comes back a 409 rather than a 200.
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE")));
+    Map<String, Object> ready = ticketById(admin, id);
+    assertEquals("READY_FOR_INVOICE", ready.get("status"));
+    assertEquals(
+        null, ready.get("actualCompletionDate"), "only COMPLETED may carry a completion date");
+
+    // And the round trip back out of COMPLETED, which is how an admin fixes a
+    // ticket invoiced by mistake.
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "COMPLETED")));
+    assertTrue(ticketById(admin, id).get("actualCompletionDate") != null);
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE")));
+    assertEquals(null, ticketById(admin, id).get("actualCompletionDate"));
   }
 
   @Test

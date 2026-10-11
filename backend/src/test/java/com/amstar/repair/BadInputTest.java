@@ -40,6 +40,13 @@ public class BadInputTest extends IntegrationTest {
       assertRefused(
           patch("/api/repairs/" + id + "/status", admin, Map.of("status", bad)), "status " + bad);
     }
+
+    // The positive half: forgetting either the Java set or the database CHECK
+    // makes the new status unreachable, and the shop's whole handoff with it.
+    assertTrue(
+        patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE"))
+            .isOk(),
+        "READY_FOR_INVOICE must be accepted");
   }
 
   @Test
@@ -142,8 +149,8 @@ public class BadInputTest extends IntegrationTest {
 
   /** A 4xx with a message is a refusal; a 5xx is the app falling over. */
   /**
-   * The UI shows whatever is in "error", so a refusal has to name the field the shop got wrong.
-   * A generic string here means the form can only say "something went wrong".
+   * The UI shows whatever is in "error", so a refusal has to name the field the shop got wrong. A
+   * generic string here means the form can only say "something went wrong".
    */
   @Test
   void aRefusalNamesWhatIsActuallyWrong() {
@@ -154,10 +161,14 @@ public class BadInputTest extends IntegrationTest {
             "/api/repairs",
             admin,
             Map.of(
-                "customerName", "No Due Date",
-                "serviceType", "OIL CHANGE",
-                "severity", 3,
-                "vehicle", Map.of("licensePlate", "NODATE1", "state", "NY")));
+                "customerName",
+                "No Due Date",
+                "serviceType",
+                "OIL CHANGE",
+                "severity",
+                3,
+                "vehicle",
+                Map.of("licensePlate", "NODATE1", "state", "NY")));
 
     assertEquals(400, response.status(), "body was: " + response.body());
     assertEquals(
