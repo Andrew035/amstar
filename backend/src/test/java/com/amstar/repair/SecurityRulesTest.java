@@ -47,7 +47,25 @@ public class SecurityRulesTest extends IntegrationTest {
   @Test
   void theEmailAllowlistDecidesWhoIsAManager() {
     assertEquals("ADMIN", roleIn(adminToken()));
-    assertEquals("SHOP_VIEW", roleIn(shopViewToken()));
+    assertEquals("BOOKKEEPER", roleIn(bookkeeperToken()));
+  }
+
+  @Test
+  void anUnlistedEmailCannotRegisterEvenWithTheCode() {
+    ApiResponse response =
+        post(
+            "/api/auth/register",
+            null,
+            Map.of(
+                "email", "stranger@example.com",
+                "password", "Password123",
+                "signupCode", SIGNUP_CODE));
+
+    assertEquals(400, response.status());
+    assertEquals(
+        "Invalid signup code",
+        response.asMap().get("error"),
+        "the message must not reveal that the code was right and the address wrong");
   }
 
   @Test
@@ -71,14 +89,14 @@ public class SecurityRulesTest extends IntegrationTest {
 
   @Test
   void shopViewCanReadTheQueue() {
-    assertTrue(get("/api/repairs/queue", shopViewToken()).isOk());
+    assertTrue(get("/api/repairs/queue", bookkeeperToken()).isOk());
   }
 
   @Test
   void shopViewCannotChangeATicket() {
     String admin = adminToken();
     long id = createTicket(admin, "Kane", 3, "2026-12-01");
-    String shop = shopViewToken();
+    String shop = bookkeeperToken();
 
     assertForbidden(patch("/api/repairs/" + id + "/status", shop, Map.of("status", "COMPLETED")));
     assertForbidden(patch("/api/repairs/" + id + "/severity", shop, Map.of("severity", 5)));
@@ -99,7 +117,7 @@ public class SecurityRulesTest extends IntegrationTest {
 
   @Test
   void shopViewCannotCreateATicketOrChangeTheRoster() {
-    String shop = shopViewToken();
+    String shop = bookkeeperToken();
 
     assertForbidden(
         post(
@@ -175,10 +193,42 @@ public class SecurityRulesTest extends IntegrationTest {
 
     assertEquals("manager only", ticketById(admin, id).get("notes"), "a manager still sees them");
 
-    Map<String, Object> asShopFloor = ticketById(shopViewToken(), id);
+    Map<String, Object> asShopFloor = ticketById(bookkeeperToken(), id);
     assertNull(asShopFloor.get("notes"), "notes must not reach a shop-floor account");
     assertNull(asShopFloor.get("parts"), "parts must not reach a shop-floor account");
     assertNull(asShopFloor.get("lineItems"), "part prices must not reach a shop-floor account");
+  }
+
+  /**
+   * The documented way to change someone's role: a SQL update plus a token_version bump. Pinned as
+   * a test because the bump is the half that is easy to forget, and forgetting it leaves a demoted
+   * account holding admin authority until its token expires up to ten hours later.
+   */
+  @Test
+  void demotingAnAdminToBookkeeperTakesEffectImmediately() {
+    String oldToken = adminToken();
+    long id = createTicket(oldToken, "Rosalind", 3, "2026-12-01");
+    assertEquals("ADMIN", roleIn(oldToken));
+
+    jdbc.update(
+        "update users set role = 'BOOKKEEPER', token_version = token_version + 1 where email = ?",
+        ADMIN_EMAIL);
+
+    // The bump is what makes it immediate: JwtAuthenticationFilter compares the
+    // token's tv claim against the row on every single request.
+    assertEquals(
+        401,
+        get("/api/repairs/queue", oldToken).status(),
+        "the old admin token must stop working the moment the role changes");
+
+    ApiResponse login =
+        post("/api/auth/login", null, Map.of("email", ADMIN_EMAIL, "password", "Password123"));
+    assertTrue(login.isOk(), "the account still exists and the password is unchanged");
+    String newToken = (String) login.asMap().get("token");
+
+    assertEquals("BOOKKEEPER", roleIn(newToken));
+    assertForbidden(patch("/api/repairs/" + id + "/severity", newToken, Map.of("severity", 5)));
+    assertTrue(get("/api/repairs/queue", newToken).isOk(), "she can still read the queue");
   }
 
   // --- helpers ------------------------------------------------------------
