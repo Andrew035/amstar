@@ -5,14 +5,12 @@ import { HOVER } from "../styles/controls";
 
 interface NavbarProps {
   isAdmin: boolean;
-  canSeeBilling: boolean;
   currentUser: string;
   onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   isAdmin,
-  canSeeBilling,
   currentUser,
   onLogout,
 }) => {
@@ -64,13 +62,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           <NavLink to="/queue" className={linkClass} draggable={false}>
             <Label full="Queue" short="Queue" />
           </NavLink>
-          {canSeeBilling && (
-            <NavLink to="/invoices" className={linkClass} draggable={false}>
-              <Label full="Invoices" short="Invoices" />
-            </NavLink>
-          )}
           {isAdmin && (
             <>
+              <NavLink to="/invoices" className={linkClass} draggable={false}>
+                <Label full="Invoices" short="Invoices" />
+              </NavLink>
               <NavLink to="/history" className={linkClass} draggable={false}>
                 <Label full="History" short="History" />
               </NavLink>

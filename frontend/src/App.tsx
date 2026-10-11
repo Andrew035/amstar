@@ -287,6 +287,8 @@ export const App: React.FC = () => {
     payload: {
       lineItems: LineItem[];
       laborPrice: number;
+      notes: string;
+      parts: string;
     },
   ) => {
     try {
@@ -301,10 +303,21 @@ export const App: React.FC = () => {
           includeLabor: true,
         }),
       });
-      showToast("Pricing updated successfully!", "success");
+      await apiFetch(`/api/repairs/${id}/notes`, {
+        method: "PATCH",
+        body: JSON.stringify({ notes: payload.notes }),
+      });
+      await apiFetch(`/api/repairs/${id}/parts`, {
+        method: "PATCH",
+        body: JSON.stringify({ parts: payload.parts }),
+      });
+      showToast("Invoice saved.", "success");
       fetchQueue();
     } catch (error) {
-      toastError(error, "Could not save pricing.");
+      // Four sequential writes, so a failure part way through leaves the
+      // earlier ones applied. Acceptable here: every one of them is idempotent
+      // and the page refetches, so saving again settles it.
+      toastError(error, "Could not save the invoice.");
     }
   };
 
@@ -447,7 +460,6 @@ export const App: React.FC = () => {
       {currentUser && (
         <Navbar
           isAdmin={isAdmin}
-          canSeeBilling={canSeeBilling}
           currentUser={currentUser}
           onLogout={handleLogout}
         />
@@ -544,10 +556,9 @@ export const App: React.FC = () => {
             <Route
               path="/invoices"
               element={
-                currentUser && canSeeBilling ? (
+                currentUser && isAdmin ? (
                   <PricingPage
                     repairs={repairs}
-                    isAdmin={isAdmin}
                     onSaveInvoice={handleSaveInvoice}
                     onMarkInvoiced={handleMarkInvoiced}
                   />
