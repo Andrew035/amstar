@@ -79,7 +79,7 @@ export const PricingModal: React.FC<{
           <button
             onClick={onClose}
             aria-label="Close"
-            className="min-h-11 shrink-0 px-2 text-2xl leading-none text-amstar-ink-faint hover:text-amstar-ink"
+            className="min-h-11 shrink-0 px-2 text-2xl leading-none text-amstar-ink-faint hover:text-amstar-ink active:translate-y-px"
           >
             &times;
           </button>
@@ -88,19 +88,15 @@ export const PricingModal: React.FC<{
         <PartsEditor lines={lines} onChange={setLines} />
 
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4 border-t border-amstar-line-soft pt-4">
-          <div className="flex items-end gap-6">
+          <div className="flex items-start gap-6">
             <div>
-              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
-                Parts
-              </span>
-              <span className="font-mono text-sm tabular-nums text-amstar-ink">
+              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Parts</span>
+              <span className="flex min-h-11 items-center font-mono text-sm tabular-nums text-amstar-ink">
                 {money(partsTotal)}
               </span>
             </div>
             <div>
-              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
-                Labor
-              </span>
+              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Labor</span>
               <CurrencyInput
                 value={laborPrice}
                 onChange={setLaborPrice}
@@ -109,11 +105,9 @@ export const PricingModal: React.FC<{
               />
             </div>
             <div>
-              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
-                Total
-              </span>
+              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Total</span>
               <span
-                className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${
+                className={`flex min-h-11 items-center font-mono text-2xl font-bold tracking-tight tabular-nums ${
                   total > 0 ? "text-sev-1" : "text-amstar-ink-faint"
                 }`}
               >

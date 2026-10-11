@@ -8,6 +8,7 @@ import {
   getSeverityColor,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
+import { DropdownArrow } from "./DropdownArrow";
 
 /**
  * Admin-only severity picker. Changing it reorders the queue, because severity
@@ -51,14 +52,7 @@ export const SeverityDropdown: React.FC<{
         ${fullWidth ? "w-full min-h-11 px-3 text-xs" : "px-2 py-0.5 text-[11px]"}`}
       >
         {SEVERITY_LABELS[value]}
-        {/* Points down when shut, up when open: the control states which it is. */}
-        <span
-          className={`text-[8px] leading-none transition-transform duration-200 ease-out ${
-            isOpen ? "-rotate-180" : ""
-          }`}
-        >
-          ▼
-        </span>
+        <DropdownArrow isOpen={isOpen} className="!text-current opacity-70" />
       </button>
       {isOpen && (
         <>

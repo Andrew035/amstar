@@ -40,7 +40,7 @@ export const VehicleModal: React.FC<{
         </h3>
         <button
           onClick={() => onClose()}
-          className="text-amstar-ink-faint hover:text-amstar-ink text-2xl leading-none"
+          className="text-amstar-ink-faint hover:text-amstar-ink text-2xl leading-none active:translate-y-px"
         >
           &times;
         </button>
@@ -104,7 +104,7 @@ export const VehicleModal: React.FC<{
                 isComeback(repair)
                   ? "bg-amstar-red border-amstar-red text-white hover:bg-red-700 hover:border-red-700"
                   : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
-              }`}
+              } active:translate-y-px`}
             >
               Comeback
             </button>

@@ -3,9 +3,11 @@ import React, { useState } from "react";
 import {
   FLOATING_PANEL_STYLE,
   PANEL_ROW_STYLE,
+  PRESS,
   getStatusStyle,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
+import { DropdownArrow } from "./DropdownArrow";
 
 /**
  * The ticket's status, as a dropdown. Identical on the queue and on history.
@@ -53,12 +55,17 @@ export const StatusDropdown: React.FC<{
   return (
     <div className="relative w-full">
       <div
+        role="button"
+        tabIndex={0}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         onClick={openDropdown}
-        className={`w-full px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center border ${getStatusStyle(value)} ${className}`}
+        className={`w-full px-3 py-1.5 rounded-sm text-xs font-bold cursor-pointer transition-all flex justify-between items-center gap-1 border ${PRESS} ${getStatusStyle(value)} ${className}`}
       >
         <span className="truncate flex-1 min-w-0 text-center">
           {currentLabel}
         </span>
+        <DropdownArrow isOpen={isOpen} className="!text-current opacity-70" />
       </div>
       {isOpen && (
         <>

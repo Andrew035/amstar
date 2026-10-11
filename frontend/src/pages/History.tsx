@@ -223,7 +223,7 @@ export const HistoryPage: React.FC<{
                           }}
                           aria-expanded={isOpen}
                           aria-label={`Details for ${vehicleLabel(item)}`}
-                          className="flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink"
+                          className="flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink active:translate-y-px"
                         >
                           {/*
                             One glyph that turns, not two that swap. Same
@@ -236,7 +236,7 @@ export const HistoryPage: React.FC<{
                               isOpen ? "rotate-90" : ""
                             }`}
                           >
-                            ▶
+                            ▸
                           </span>
                           <span className="truncate">
                             {usDate(closedOn(item))}

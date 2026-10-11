@@ -14,6 +14,7 @@ import {
 import { apiFetch, ApiError } from "../api";
 import { panelCoords } from "../lib/floating";
 import { CustomDatePicker } from "./CustomDatePicker";
+import { DropdownArrow } from "./DropdownArrow";
 
 const SeveritySegments: React.FC<{
   value: number;
@@ -73,7 +74,7 @@ const SeveritySegments: React.FC<{
               selected
                 ? "text-white border border-amstar-red-edge bg-amstar-red/[0.16]"
                 : "text-amstar-ink-faint border border-amstar-line hover:border-amstar-red/60"
-            }`}
+            } active:translate-y-px`}
           >
             {level}
           </button>
@@ -196,7 +197,7 @@ const ServicePicker: React.FC<{
           </span>
         )}
         */}
-        <span className="text-xs text-amstar-ink-faint shrink-0">▼</span>
+        <DropdownArrow isOpen={isOpen} />
       </div>
 
       {isOpen && (
@@ -254,7 +255,7 @@ const ServicePicker: React.FC<{
                 <button
                   type="button"
                   onClick={addTyped}
-                  className="w-full min-h-10 px-3 py-2 rounded-sm text-left text-xs font-bold text-amstar-red-ink uppercase hover:bg-amstar-surface transition-colors"
+                  className="w-full min-h-10 px-3 py-2 rounded-sm text-left text-xs font-bold text-amstar-red-ink uppercase hover:bg-amstar-surface transition-colors active:translate-y-px"
                 >
                   + Add "{q}"
                 </button>
@@ -509,9 +510,7 @@ const FormWorkerDropdown: React.FC<{
             selectedArray.join(", ")
           )}
         </span>
-        <span className="anim-fade text-xs ml-2 text-amstar-ink-faint shrink-0">
-          ▼
-        </span>
+        <DropdownArrow isOpen={isOpen} className="anim-fade ml-2" />
       </div>
       {isOpen && (
         <>
@@ -808,7 +807,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors"
+            className="px-5 py-2.5 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors active:translate-y-px"
           >
             Cancel
           </button>

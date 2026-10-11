@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FLOATING_PANEL_STYLE, TABLE_DROPDOWN_STYLE } from "../styles/controls";
+import {
+  FLOATING_PANEL_STYLE,
+  PRESS,
+  TABLE_DROPDOWN_STYLE,
+} from "../styles/controls";
+import { DropdownArrow } from "./DropdownArrow";
 import { panelCoords } from "../lib/floating";
 
 /** Everything parseTicketFilter understands, in the order a manager scans. */
@@ -50,10 +55,10 @@ export const QueueFilterDropdown: React.FC<{
         onClick={open}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`${TABLE_DROPDOWN_STYLE} min-h-11 flex items-center gap-2 shrink-0`}
+        className={`${TABLE_DROPDOWN_STYLE} ${PRESS} min-h-11 flex items-center gap-2 shrink-0`}
       >
         <span className="truncate">{current.label}</span>
-        <span className="text-[10px] text-amstar-ink-faint">▼</span>
+        <DropdownArrow isOpen={isOpen} />
       </button>
 
       {isOpen && (
@@ -83,7 +88,7 @@ export const QueueFilterDropdown: React.FC<{
                   option.value === value
                     ? "bg-amstar-surface text-amstar-ink"
                     : "text-amstar-ink-dim hover:bg-amstar-surface"
-                }`}
+                } active:translate-y-px`}
               >
                 {option.label}
               </button>

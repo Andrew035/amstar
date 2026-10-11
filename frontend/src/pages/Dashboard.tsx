@@ -68,7 +68,7 @@ const StatTile: React.FC<{
     <button
       type="button"
       onClick={onOpen}
-      className={`${base} ${HOVER_LIFT} hover:border-amstar-ink-faint hover:bg-amstar-raised`}
+      className={`${base} ${HOVER_LIFT} hover:border-amstar-ink-faint hover:bg-amstar-raised active:translate-y-px`}
     >
       {body}
     </button>
@@ -90,7 +90,7 @@ const TicketRow: React.FC<{
     <button
       type="button"
       onClick={onOpen}
-      className={`w-full min-h-11 flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised ${HOVER}`}
+      className={`w-full min-h-11 flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised ${HOVER} active:translate-y-px`}
     >
       <span
         className={`shrink-0 w-5 h-5 grid place-items-center rounded-sm font-cond text-[10px] font-bold ${SEVERITY_TEXT} ${getSeverityColor(repair.severity)}`}

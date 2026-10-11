@@ -159,19 +159,15 @@ const InvoiceEditor: React.FC<{
       </div>
 
       <div className="mt-4 pt-4 border-t border-amstar-line-soft flex flex-wrap items-end justify-between gap-4">
-        <div className="flex items-end gap-6">
+        <div className="flex items-start gap-6">
           <div>
-            <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-              Parts
-            </span>
-            <span className="font-mono tabular-nums text-sm text-amstar-ink">
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Parts</span>
+            <span className="flex min-h-11 items-center font-mono text-sm tabular-nums text-amstar-ink">
               {money(partsTotal)}
             </span>
           </div>
           <div>
-            <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-              Labor
-            </span>
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Labor</span>
             <CurrencyInput
               value={laborPrice}
               onChange={setLaborPrice}
@@ -180,11 +176,9 @@ const InvoiceEditor: React.FC<{
             />
           </div>
           <div>
-            <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-              Total
-            </span>
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Total</span>
             <span
-              className={`font-mono tabular-nums text-2xl font-bold tracking-tight ${
+              className={`flex min-h-11 items-center font-mono text-2xl font-bold tracking-tight tabular-nums ${
                 currentTotal > 0 ? "text-sev-1" : "text-amstar-ink-faint"
               }`}
             >
@@ -251,7 +245,7 @@ const PricingRow: React.FC<{
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER}`}
+        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER} active:translate-y-px`}
       >
         <PlateChip vehicle={item.vehicle} className="shrink-0" />
         <span className="flex-1 min-w-0 truncate font-cond text-sm font-bold uppercase tracking-wide text-amstar-ink">

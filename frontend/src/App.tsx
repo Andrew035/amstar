@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import type {
@@ -9,6 +9,7 @@ import type {
   LineItem,
 } from "./types/repair";
 import { Navbar } from "./components/Navbar";
+import { Toast, type ToastTone } from "./components/Toast";
 import { Dashboard } from "./pages/Dashboard";
 import { ActiveQueue } from "./pages/ActiveQueue";
 import { PricingPage } from "./pages/Pricing";
@@ -22,6 +23,18 @@ import { Roster } from "./pages/Roster";
 import { VehicleModal } from "./components/VehicleModal";
 import { PricingModal } from "./components/PricingModal";
 import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
+
+/**
+ * What the shop did, not how alarming it is. Green for something added or
+ * changed, red for something removed, amber for something that failed.
+ */
+export type ToastType = "success" | "deleted" | "error";
+
+const TOAST_TONE: Record<ToastType, ToastTone> = {
+  success: "ok",
+  deleted: "gone",
+  error: "warn",
+};
 
 export const App: React.FC = () => {
   const location = useLocation();
@@ -39,18 +52,19 @@ export const App: React.FC = () => {
   const [viewedRepair, setViewedRepair] = useState<VehicleRepair | null>(null);
   const [pricedRepair, setPricedRepair] = useState<VehicleRepair | null>(null);
 
-  // Global Toast Notification State
+  // Global Toast Notification State. The id exists so a second toast remounts
+  // the component rather than inheriting the first one's running timer.
   const [toast, setToast] = useState<{
+    id: number;
     message: string;
-    type: "success" | "error";
+    type: ToastType;
   } | null>(null);
+  const toastId = useRef(0);
 
-  // Helper function to display toast and auto-dismiss after 3 seconds
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
+  /** Toast owns its own lifetime, including pausing while it is being dragged. */
+  const showToast = (message: string, type: ToastType) => {
+    toastId.current += 1;
+    setToast({ id: toastId.current, message, type });
   };
 
   const toastError = (error: unknown, fallback: string) =>
@@ -125,6 +139,7 @@ export const App: React.FC = () => {
       method: "PATCH",
       body: JSON.stringify({ notes }),
     });
+    showToast("Notes saved.", "success");
     fetchQueue();
   };
 
@@ -135,6 +150,7 @@ export const App: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ isComeback }),
       });
+      showToast(isComeback ? "Marked as a comeback." : "Comeback cleared.", "success");
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not update the comeback flag.");
@@ -147,6 +163,7 @@ export const App: React.FC = () => {
       method: "PATCH",
       body: JSON.stringify({ parts }),
     });
+    showToast("Parts saved.", "success");
     fetchQueue();
   };
 
@@ -194,6 +211,7 @@ export const App: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ status: newStatus }),
       });
+      showToast("Status updated.", "success");
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not update status.");
@@ -224,6 +242,7 @@ export const App: React.FC = () => {
         body: JSON.stringify({ severity }),
       });
       // Refetch reorders the queue: severity feeds priorityScore.
+      showToast("Severity updated.", "success");
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not update severity.");
@@ -237,6 +256,7 @@ export const App: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ customerName: name }),
       });
+      showToast("Customer updated.", "success");
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not update the customer name.");
@@ -251,6 +271,7 @@ export const App: React.FC = () => {
         body: JSON.stringify({ dueDate }),
       });
       // Refetch reorders the queue: the due date feeds priorityScore.
+      showToast("Due date updated.", "success");
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not update the due date.");
@@ -264,6 +285,7 @@ export const App: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ worker: workerUsername }),
       });
+      showToast("Technicians updated.", "success");
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not assign technician.");
@@ -277,6 +299,7 @@ export const App: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ serviceType: newService }),
       });
+      showToast("Services updated.", "success");
       fetchQueue();
       fetchReferenceData();
     } catch (error) {
@@ -400,7 +423,7 @@ export const App: React.FC = () => {
       });
       showToast(
         active ? "Back on the roster." : "Removed from the roster.",
-        "success",
+        active ? "success" : "deleted",
       );
       fetchReferenceData();
     } catch (error) {
@@ -414,11 +437,21 @@ export const App: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
+  /**
+   * The new-ticket form's success path. ActiveQueue passes this as onRefresh,
+   * which it uses for nothing else, so the toast belongs here rather than
+   * inside the form.
+   */
+  const handleTicketCreated = () => {
+    showToast("Ticket created.", "success");
+    fetchQueue();
+  };
+
   const confirmDelete = async () => {
     if (repairToDelete === null) return;
     try {
       await apiFetch(`/api/repairs/${repairToDelete}`, { method: "DELETE" });
-      showToast("Repair permanently deleted.", "success");
+      showToast("Repair permanently deleted.", "deleted");
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not delete the repair.");
@@ -547,7 +580,7 @@ export const App: React.FC = () => {
                     currentUser={currentUser}
                     historicalServiceMap={historicalServiceMap}
                     technicianNames={technicianNames}
-                    onRefresh={fetchQueue}
+                    onRefresh={handleTicketCreated}
                     onStatusChange={handleStatusChange}
                     onSeverityChange={handleSeverityChange}
                     onDueDateChange={handleDueDateChange}
@@ -660,16 +693,13 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Modern Floating Toast Notification */}
       {toast && (
-        <div
-          className={`fixed bottom-8 right-8 px-6 py-4 rounded-sm shadow-2xl text-white font-bold text-sm z-[9999] flex items-center gap-3 anim-slide-up border border-amstar-line ${toast.type === "success" ? "bg-emerald-700" : "bg-red-600"}`}
-        >
-          <span className="text-lg">
-            {toast.type === "success" ? "\u2713" : "⚠️"}
-          </span>
-          <span>{toast.message}</span>
-        </div>
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          tone={TOAST_TONE[toast.type]}
+          onDismiss={() => setToast(null)}
+        />
       )}
     </div>
   );

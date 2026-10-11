@@ -141,7 +141,7 @@ export const QueueList: React.FC<{
                   : late
                     ? "border-l-sev-5/70 hover:bg-amstar-raised/50"
                     : "border-l-transparent hover:bg-amstar-raised/50"
-              }`}
+              } active:translate-y-px`}
             >
               {/* Severity, named. The digit is the level, the tooltip the word. */}
               <span

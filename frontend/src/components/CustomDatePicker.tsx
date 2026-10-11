@@ -165,7 +165,7 @@ export const CustomDatePicker: React.FC<{
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors"
+                className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors active:translate-y-px"
               >
                 {"<"}
               </button>
@@ -175,7 +175,7 @@ export const CustomDatePicker: React.FC<{
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors"
+                className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors active:translate-y-px"
               >
                 {">"}
               </button>

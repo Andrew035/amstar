@@ -168,7 +168,7 @@ export const TicketDetail: React.FC<{
                     isComeback(repair)
                       ? "bg-amstar-red border-amstar-red text-white hover:bg-red-700 hover:border-red-700"
                       : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
-                  }`}
+                  } active:translate-y-px`}
                 >
                   Comeback
                 </button>
@@ -317,7 +317,7 @@ export const TicketDetail: React.FC<{
             onClick={() => onDeleteClick(id)}
             className="ml-auto px-5 min-h-11 bg-transparent border border-amstar-red text-amstar-red-ink
             hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs
-            transition-colors"
+            transition-colors active:translate-y-px"
           >
             Delete Ticket
           </button>

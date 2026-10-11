@@ -20,7 +20,7 @@ export const FilterBanner: React.FC<{
     <button
       type="button"
       onClick={onClear}
-      className="min-h-9 px-3 py-1.5 rounded-sm border border-amstar-line text-xs font-bold text-amstar-ink uppercase tracking-wider hover:bg-amstar-raised transition-colors"
+      className="min-h-9 px-3 py-1.5 rounded-sm border border-amstar-line text-xs font-bold text-amstar-ink uppercase tracking-wider hover:bg-amstar-raised transition-colors active:translate-y-px"
     >
       Clear filter &times;
     </button>
