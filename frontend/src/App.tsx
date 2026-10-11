@@ -20,6 +20,7 @@ import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import { Roster } from "./pages/Roster";
 import { VehicleModal } from "./components/VehicleModal";
+import { PricingModal } from "./components/PricingModal";
 import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
 
 export const App: React.FC = () => {
@@ -36,6 +37,7 @@ export const App: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [repairToDelete, setRepairToDelete] = useState<number | null>(null);
   const [viewedRepair, setViewedRepair] = useState<VehicleRepair | null>(null);
+  const [pricedRepair, setPricedRepair] = useState<VehicleRepair | null>(null);
 
   // Global Toast Notification State
   const [toast, setToast] = useState<{
@@ -306,6 +308,25 @@ export const App: React.FC = () => {
     }
   };
 
+  /**
+   * Parts only, for the modal on the queue. Separate from handleSaveInvoice,
+   * which also PATCHes /pricing for labor - that call is ADMIN-only and would
+   * 403 for the bookkeeper, losing her parts with it.
+   */
+  const handleSaveLineItems = async (id: number, lineItems: LineItem[]) => {
+    if (!canSeeBilling) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/line-items`, {
+        method: "PATCH",
+        body: JSON.stringify({ items: lineItems }),
+      });
+      showToast("Parts updated.", "success");
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not save the parts.");
+    }
+  };
+
   const handleAddTechnician = async (fullName: string): Promise<boolean> => {
     if (!isAdmin) return false;
     try {
@@ -510,6 +531,8 @@ export const App: React.FC = () => {
                     onSaveNotes={handleSaveNotes}
                     onSaveParts={handleSaveParts}
                     onSaveComeback={handleSaveComeback}
+                    canSeeBilling={canSeeBilling}
+                    onOpenPricing={setPricedRepair}
                   />
                 ) : (
                   <Navigate to="/login" replace />
@@ -593,6 +616,14 @@ export const App: React.FC = () => {
           onSaveNotes={handleSaveNotes}
           onSaveParts={handleSaveParts}
           onSaveComeback={handleSaveComeback}
+        />
+      )}
+
+      {pricedRepair && (
+        <PricingModal
+          repair={pricedRepair}
+          onClose={() => setPricedRepair(null)}
+          onSave={handleSaveLineItems}
         />
       )}
 

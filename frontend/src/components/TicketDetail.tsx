@@ -87,6 +87,8 @@ export const TicketDetail: React.FC<{
   onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
   onSaveComeback: (id: number, isComeback: boolean) => void;
+  canSeeBilling: boolean;
+  onOpenPricing: (repair: VehicleRepair) => void;
   className?: string;
 }> = ({
   repair,
@@ -103,6 +105,8 @@ export const TicketDetail: React.FC<{
   onSaveParts,
   onDeleteClick,
   onSaveComeback,
+  canSeeBilling,
+  onOpenPricing,
   className = "",
 }) => {
   if (!repair) {
@@ -190,6 +194,20 @@ export const TicketDetail: React.FC<{
               <span className="block text-sm font-bold text-amstar-ink">
                 {repair.status?.replace(/_/g, " ")}
               </span>
+            )}
+            {/*
+             * Parts are the bookkeeper's to enter, so this sits under the status
+             * control rather than behind the Invoices page she cannot reach. It
+             * writes PATCH /line-items only; labor stays on the invoice.
+             */}
+            {canSeeBilling && (
+              <button
+                type="button"
+                onClick={() => onOpenPricing(repair)}
+                className="mt-2 w-full min-h-11 px-3 rounded-sm border border-amstar-line bg-amstar-field font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink active:translate-y-px transition-[color,border-color,transform] duration-150 ease-out"
+              >
+                Parts &amp; Pricing
+              </button>
             )}
           </div>
         </div>

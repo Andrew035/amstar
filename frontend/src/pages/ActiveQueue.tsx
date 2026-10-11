@@ -38,6 +38,8 @@ export const ActiveQueue: React.FC<{
   onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
   onSaveComeback: (id: number, isComeback: boolean) => void;
+  canSeeBilling: boolean;
+  onOpenPricing: (repair: VehicleRepair) => void;
 }> = ({
   repairs,
   isAdmin,
@@ -55,6 +57,8 @@ export const ActiveQueue: React.FC<{
   onSaveParts,
   onDeleteClick,
   onSaveComeback,
+  canSeeBilling,
+  onOpenPricing,
 }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -186,6 +190,8 @@ export const ActiveQueue: React.FC<{
             onSaveParts={onSaveParts}
             onSaveComeback={onSaveComeback}
             onDeleteClick={onDeleteClick}
+            canSeeBilling={canSeeBilling}
+            onOpenPricing={onOpenPricing}
             className="flex-1 min-w-0 max-lg:min-h-[560px]"
           />
         </div>
