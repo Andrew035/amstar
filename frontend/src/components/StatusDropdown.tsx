@@ -19,11 +19,15 @@ export const StatusDropdown: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
-  // COMPLETED stays reachable so an admin can correct a mistake, but the
-  // everyday path out of the shop is TO INVOICE - the bookkeeper is the one who
-  // completes a ticket, from the Invoices page. The label is short because the
-  // status column is w-40 and "READY FOR INVOICE" truncates there; the stored
-  // value is READY_FOR_INVOICE everywhere else.
+  /*
+   * COMPLETED stays here so a ticket can be corrected in place - on a History
+   * row it is also the current value, and a dropdown that cannot show the state
+   * it is in reads as broken. The everyday path out of the shop is still TO
+   * INVOICE, with an owner marking it invoiced from the Invoices page.
+   *
+   * TO INVOICE is short because the status column is w-40 and "READY FOR
+   * INVOICE" truncates there; the stored value is READY_FOR_INVOICE everywhere.
+   */
   const options = [
     { val: "PENDING", label: "PENDING" },
     { val: "IN_PROGRESS", label: "IN PROGRESS" },

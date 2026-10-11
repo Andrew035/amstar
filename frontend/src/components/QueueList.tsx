@@ -188,7 +188,7 @@ export const QueueList: React.FC<{
                   </span>
                 )}
                 <span className="font-cond uppercase tracking-wider text-[9px] text-amstar-ink-faint">
-                  {item.status?.replace("_", " ")}
+                  {item.status?.replace(/_/g, " ")}
                 </span>
               </span>
             </button>
