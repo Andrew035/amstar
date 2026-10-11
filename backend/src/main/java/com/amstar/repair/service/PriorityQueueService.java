@@ -91,11 +91,19 @@ public class PriorityQueueService {
               String oldStatus = repair.getStatus();
               repair.setStatus(newStatus);
 
-              // Automatically stamp the date when completed
-              if ("COMPLETED".equals(newStatus)) {
-                repair.setActualCompletionDate(LocalDate.now());
+              // actual_completion_date records when the REPAIR finished, so it is
+              // stamped as soon as the shop says the work is done - at
+              // READY_FOR_INVOICE, not at COMPLETED. Mirrors
+              // tickets_completion_matches_status in V17.
+              if (TicketStatus.COMPLETED.equals(newStatus)
+                  || TicketStatus.READY_FOR_INVOICE.equals(newStatus)) {
+                // Only stamp it once. Moving between the two finished states, or
+                // invoicing a car days later, must not rewrite when it was fixed.
+                if (repair.getActualCompletionDate() == null) {
+                  repair.setActualCompletionDate(LocalDate.now());
+                }
               } else {
-                // Remove the date if accidently marked complete and reverted
+                // Back to open work: the repair is not finished after all.
                 repair.setActualCompletionDate(null);
               }
 
@@ -110,12 +118,15 @@ public class PriorityQueueService {
   }
 
   /**
-   * The bookkeeper's one write: READY_FOR_INVOICE becomes COMPLETED once the invoice exists.
+   * READY_FOR_INVOICE becomes COMPLETED once the invoice exists. Admin only, from the Invoices
+   * page.
    *
-   * <p>Deliberately not a parameter on updateRepairStatus. That method accepts any status, and this
-   * account is entitled to exactly one transition; refusing every other source status is what keeps
-   * the narrow endpoint narrow. Without the check, a bookkeeper could complete a car still on the
-   * lift.
+   * <p>Deliberately not a parameter on updateRepairStatus: refusing every other source status means
+   * a car still on the lift cannot be completed by accident.
+   *
+   * <p>Does not touch actual_completion_date. That records when the repair finished, which happened
+   * at READY_FOR_INVOICE; stamping it again here would rewrite history every time an invoice was
+   * written late.
    */
   @Transactional
   public boolean markInvoiced(Long id) {
@@ -130,7 +141,6 @@ public class PriorityQueueService {
                         + ".");
               }
               repair.setStatus(TicketStatus.COMPLETED);
-              repair.setActualCompletionDate(LocalDate.now());
               repository.save(repair);
               // No amount: every signed-in account can read this feed.
               activity.record(repair, "INVOICED", "Invoice completed");

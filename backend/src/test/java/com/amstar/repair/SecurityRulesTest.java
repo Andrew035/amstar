@@ -237,33 +237,32 @@ public class SecurityRulesTest extends IntegrationTest {
   }
 
   @Test
-  void theBookkeeperMayInvoiceButMayNotSetAnyStatus() {
+  void theBookkeeperMayPricePartsButNothingElse() {
     String admin = adminToken();
     long id = createTicket(admin, "Dalisay", 3, "2026-12-01");
     String books = bookkeeperToken();
 
-    // The general status endpoint stays ADMIN-only. That is the whole reason
-    // /invoiced exists as a path of its own.
+    // Her write: the parts, with a cost each, from the modal on the queue.
+    assertTrue(
+        patch(
+                "/api/repairs/" + id + "/line-items",
+                books,
+                Map.of(
+                    "items",
+                    List.of(
+                        Map.of("description", "VALVE BODY", "unitPrice", 318.40, "quantity", 1))))
+            .isOk(),
+        "the bookkeeper enters the parts");
+    assertEquals(1, ((List<?>) ticketById(admin, id).get("lineItems")).size());
+
+    // Labor is the owner's, and it lives on /pricing. Granting her /pricing to
+    // reach line items would have handed her labor as well.
+    assertForbidden(patch("/api/repairs/" + id + "/pricing", books, Map.of("laborPrice", 500)));
+
+    // Invoicing is the owner's too, from a page she cannot reach.
+    assertForbidden(patch("/api/repairs/" + id + "/invoiced", books, null));
     assertForbidden(patch("/api/repairs/" + id + "/status", books, Map.of("status", "COMPLETED")));
     assertEquals("PENDING", ticketById(admin, id).get("status"));
-
-    // Not ready yet: a 400, and nothing moves.
-    assertEquals(400, patch("/api/repairs/" + id + "/invoiced", books, null).status());
-    assertEquals("PENDING", ticketById(admin, id).get("status"));
-
-    assertTrue(
-        patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE"))
-            .isOk());
-    assertTrue(patch("/api/repairs/" + id + "/invoiced", books, null).isOk());
-
-    Map<String, Object> done = ticketById(admin, id);
-    assertEquals("COMPLETED", done.get("status"));
-    assertTrue(done.get("actualCompletionDate") != null, "COMPLETED must stamp the date");
-
-    // Also proves INVOICED is in the activity_action_valid CHECK. Without it the
-    // write above would have come back a 409 instead.
-    assertTrue(
-        activityActions(admin).contains("INVOICED"), "the invoice event must reach the feed");
   }
 
   // --- helpers ------------------------------------------------------------

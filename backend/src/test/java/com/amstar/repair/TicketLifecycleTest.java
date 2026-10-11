@@ -104,20 +104,22 @@ public class TicketLifecycleTest extends IntegrationTest {
         ticketById(admin, id).get("actualCompletionDate"),
         "reopening a ticket must clear the completion date");
 
-    // READY_FOR_INVOICE is not COMPLETED, so tickets_completion_matches_status
-    // requires a null date here too. If updateRepairStatus ever stops clearing
-    // it, this write fails the CHECK and comes back a 409 rather than a 200.
+    // actual_completion_date records when the REPAIR finished, so it is stamped
+    // at READY_FOR_INVOICE and has to survive being invoiced afterwards.
     assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE")));
     Map<String, Object> ready = ticketById(admin, id);
     assertEquals("READY_FOR_INVOICE", ready.get("status"));
-    assertEquals(
-        null, ready.get("actualCompletionDate"), "only COMPLETED may carry a completion date");
+    Object repairFinished = ready.get("actualCompletionDate");
+    assertTrue(repairFinished != null, "the repair is done, so the date is stamped here");
 
-    // And the round trip back out of COMPLETED, which is how an admin fixes a
-    // ticket invoiced by mistake.
     assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "COMPLETED")));
-    assertTrue(ticketById(admin, id).get("actualCompletionDate") != null);
-    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE")));
+    assertEquals(
+        repairFinished,
+        ticketById(admin, id).get("actualCompletionDate"),
+        "invoicing must not rewrite when the repair finished");
+
+    // Back to open work: the repair turns out not to be finished after all.
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "IN_PROGRESS")));
     assertEquals(null, ticketById(admin, id).get("actualCompletionDate"));
   }
 

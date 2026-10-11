@@ -66,12 +66,16 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/technicians", "/api/services")
                     .authenticated()
-                    // The bookkeeper's single write. Must precede the
-                    // /api/repairs/** ADMIN rule below: first match wins, so
-                    // order is the rule. Scoped to one path and one verb, so
-                    // the general status endpoint stays ADMIN and a bookkeeper
-                    // cannot move a ticket anywhere else.
-                    .requestMatchers(HttpMethod.PATCH, "/api/repairs/*/invoiced")
+                    // The bookkeeper prices the parts, from the modal on the
+                    // queue. Must precede the /api/repairs/** ADMIN rule below:
+                    // first match wins, so order is the rule.
+                    //
+                    // Scoped to this one path deliberately. laborPrice lives on
+                    // /pricing, which stays ADMIN-only because labor is the
+                    // owner's to set; granting /pricing here would hand it to
+                    // her, and hiding the input in React is not a boundary.
+                    // /line-items carries a cost per part and nothing else.
+                    .requestMatchers(HttpMethod.PATCH, "/api/repairs/*/line-items")
                     .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     // Writes: managers only. Enforced here, not just in the UI.
                     .requestMatchers("/api/repairs/**")
