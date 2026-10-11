@@ -3,15 +3,16 @@ import React, { useState } from "react";
 import type { LineItem, VehicleRepair } from "../types/repair";
 import { PRIMARY_BUTTON_STYLE } from "../styles/controls";
 import { money, vehicleLabel } from "../lib/ticketFilters";
+import { CurrencyInput } from "./CurrencyInput";
 import { PartsEditor } from "./PartsEditor";
 import { PlateChip } from "./PlateChip";
 
 /**
  * Parts and their costs for one car, opened from its row in the queue.
  *
- * <p>Deliberately has no labor field. Labor is the owner's and lives on
- * PATCH /pricing, which is ADMIN-only. This modal writes PATCH /line-items and
- * nothing else, which is exactly the grant the bookkeeper has.
+ * <p>Prices the whole job: the parts with a cost each, plus labor. Both roles
+ * reach it, and it writes PATCH /line-items and PATCH /pricing. The Invoices
+ * page is where the owner adds the notes and the parts pad on top.
  *
  * <p>anim-pop is safe here, unlike NewTicketModal: nothing inside this panel is
  * a position-fixed dropdown, so there is no containing-block trap.
@@ -19,15 +20,21 @@ import { PlateChip } from "./PlateChip";
 export const PricingModal: React.FC<{
   repair: VehicleRepair;
   onClose: () => void;
-  onSave: (id: number, lineItems: LineItem[]) => Promise<void>;
+  onSave: (
+    id: number,
+    lineItems: LineItem[],
+    laborPrice: number,
+  ) => Promise<void>;
 }> = ({ repair, onClose, onSave }) => {
   const [lines, setLines] = useState<LineItem[]>(repair.lineItems ?? []);
+  const [laborPrice, setLaborPrice] = useState<number>(repair.laborPrice || 0);
   const [isSaving, setIsSaving] = useState(false);
 
   const partsTotal = lines.reduce(
     (sum, l) => sum + (l.unitPrice || 0) * (l.quantity || 0),
     0,
   );
+  const total = partsTotal + laborPrice;
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -39,6 +46,7 @@ export const PricingModal: React.FC<{
       lines
         .filter((l) => l.description.trim())
         .map((l) => ({ ...l, quantity: l.quantity || 1 })),
+      laborPrice,
     );
     setIsSaving(false);
     onClose();
@@ -80,23 +88,45 @@ export const PricingModal: React.FC<{
         <PartsEditor lines={lines} onChange={setLines} />
 
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4 border-t border-amstar-line-soft pt-4">
-          <div>
-            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
-              Parts total
-            </span>
-            <span className="font-mono text-2xl font-bold tracking-tight tabular-nums text-amstar-ink">
-              {money(partsTotal)}
-            </span>
-            <span className="mt-1 block text-[11px] text-amstar-ink-faint">
-              Labor is added on the invoice.
-            </span>
+          <div className="flex items-end gap-6">
+            <div>
+              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
+                Parts
+              </span>
+              <span className="font-mono text-sm tabular-nums text-amstar-ink">
+                {money(partsTotal)}
+              </span>
+            </div>
+            <div>
+              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
+                Labor
+              </span>
+              <CurrencyInput
+                value={laborPrice}
+                onChange={setLaborPrice}
+                aria-label="Labor price"
+                className="min-h-11"
+              />
+            </div>
+            <div>
+              <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
+                Total
+              </span>
+              <span
+                className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${
+                  total > 0 ? "text-sev-1" : "text-amstar-ink-faint"
+                }`}
+              >
+                {money(total)}
+              </span>
+            </div>
           </div>
           <button
             onClick={handleSave}
             disabled={isSaving}
             className={`${PRIMARY_BUTTON_STYLE} min-h-11 px-8 text-xs`}
           >
-            {isSaving ? "Saving..." : "Save parts"}
+            {isSaving ? "Saving..." : "Save pricing"}
           </button>
         </div>
       </div>

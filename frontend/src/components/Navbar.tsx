@@ -62,19 +62,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           <NavLink to="/queue" className={linkClass} draggable={false}>
             <Label full="Queue" short="Queue" />
           </NavLink>
+          {/* Invoices is the owner's alone. Everything else the shop can see,
+              the bookkeeper can see. */}
           {isAdmin && (
-            <>
-              <NavLink to="/invoices" className={linkClass} draggable={false}>
-                <Label full="Invoices" short="Invoices" />
-              </NavLink>
-              <NavLink to="/history" className={linkClass} draggable={false}>
-                <Label full="History" short="History" />
-              </NavLink>
-              <NavLink to="/roster" className={linkClass} draggable={false}>
-                Roster
-              </NavLink>
-            </>
+            <NavLink to="/invoices" className={linkClass} draggable={false}>
+              <Label full="Invoices" short="Invoices" />
+            </NavLink>
           )}
+          <NavLink to="/history" className={linkClass} draggable={false}>
+            <Label full="History" short="History" />
+          </NavLink>
+          <NavLink to="/roster" className={linkClass} draggable={false}>
+            Roster
+          </NavLink>
         </nav>
 
         {/* User Account / Logout */}

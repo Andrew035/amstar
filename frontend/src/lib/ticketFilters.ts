@@ -118,7 +118,23 @@ export const invoiceTotal = (r: VehicleRepair): number =>
     : (r.includeRetail ? r.retailPrice || 0 : 0) +
       (r.includeLabor ? r.laborPrice || 0 : 0);
 
-export const isActive = (r: VehicleRepair) => r.status !== "COMPLETED";
+/**
+ * The repair is finished. Covers the invoiced cars and the ones still waiting on
+ * paperwork alike: actualCompletionDate is stamped at READY_FOR_INVOICE, so both
+ * carry a date and neither needs any more work in the shop.
+ */
+export const isFinished = (r: VehicleRepair) =>
+  r.status === "COMPLETED" || r.status === "READY_FOR_INVOICE";
+
+/**
+ * There is still work to do on this car.
+ *
+ * A car marked ready for invoice is deliberately NOT active: the repair is done,
+ * nothing the shop does moves it along, and it must not read as overdue, due
+ * today, or unassigned. It stays visible in the queue regardless - ActiveQueue
+ * filters on COMPLETED directly, because the car may well still be on the lot.
+ */
+export const isActive = (r: VehicleRepair) => !isFinished(r);
 
 /**
  * The work is done and the invoice is not written yet. This is the bookkeeper's

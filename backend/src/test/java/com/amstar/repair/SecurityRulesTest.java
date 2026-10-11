@@ -91,46 +91,75 @@ public class SecurityRulesTest extends IntegrationTest {
     assertTrue(get("/api/repairs/queue", bookkeeperToken()).isOk());
   }
 
+  /**
+   * Both roles run the shop floor. This used to assert the opposite for every one
+   * of these paths; the shop decided the bookkeeper does the same work on a
+   * ticket that an owner does, so the assertions are inverted on purpose.
+   */
   @Test
-  void shopViewCannotChangeATicket() {
+  void theBookkeeperHasTheSameAuthorityOverATicketAsAnAdmin() {
     String admin = adminToken();
     long id = createTicket(admin, "Kane", 3, "2026-12-01");
-    String shop = bookkeeperToken();
+    String books = bookkeeperToken();
 
-    assertForbidden(patch("/api/repairs/" + id + "/status", shop, Map.of("status", "COMPLETED")));
-    assertForbidden(patch("/api/repairs/" + id + "/severity", shop, Map.of("severity", 5)));
-    assertForbidden(patch("/api/repairs/" + id + "/assign", shop, Map.of("worker", "Max")));
-    assertForbidden(
-        patch("/api/repairs/" + id + "/due-date", shop, Map.of("dueDate", "2026-12-24")));
-    assertForbidden(patch("/api/repairs/" + id + "/customer", shop, Map.of("customerName", "X")));
-    assertForbidden(patch("/api/repairs/" + id + "/notes", shop, Map.of("notes", "hello")));
-    assertForbidden(patch("/api/repairs/" + id + "/parts", shop, Map.of("parts", "hello")));
-    assertForbidden(patch("/api/repairs/" + id + "/pricing", shop, Map.of("retailPrice", 100)));
-    assertForbidden(delete("/api/repairs/" + id, shop));
+    assertOk(patch("/api/repairs/" + id + "/status", books, Map.of("status", "IN_PROGRESS")));
+    assertOk(patch("/api/repairs/" + id + "/severity", books, Map.of("severity", 5)));
+    assertOk(patch("/api/repairs/" + id + "/assign", books, Map.of("worker", "Max")));
+    assertOk(patch("/api/repairs/" + id + "/due-date", books, Map.of("dueDate", "2026-12-24")));
+    assertOk(patch("/api/repairs/" + id + "/customer", books, Map.of("customerName", "Kane Ruiz")));
+    assertOk(patch("/api/repairs/" + id + "/notes", books, Map.of("notes", "hello")));
+    assertOk(patch("/api/repairs/" + id + "/parts", books, Map.of("parts", "valve body")));
+    // Labor as well as the parts: she prices the whole job from the queue modal.
+    assertOk(patch("/api/repairs/" + id + "/pricing", books, Map.of("laborPrice", 420)));
+    assertOk(
+        patch(
+            "/api/repairs/" + id + "/line-items",
+            books,
+            Map.of(
+                "items",
+                List.of(Map.of("description", "VALVE BODY", "unitPrice", 318.40, "quantity", 1)))));
 
-    assertEquals(
-        "PENDING",
-        ticketById(admin, id).get("status"),
-        "nothing should have changed on the ticket");
+    Map<String, Object> after = ticketById(admin, id);
+    assertEquals("IN_PROGRESS", after.get("status"));
+    assertEquals(5, after.get("severity"));
+    assertEquals("hello", after.get("notes"));
+
+    assertOk(delete("/api/repairs/" + id, books));
   }
 
   @Test
-  void shopViewCannotCreateATicketOrChangeTheRoster() {
-    String shop = bookkeeperToken();
+  void theBookkeeperMayCreateTicketsAndManageTheRoster() {
+    String books = bookkeeperToken();
 
-    assertForbidden(
+    assertOk(
         post(
             "/api/repairs",
-            shop,
+            books,
             Map.of(
-                "customerName", "Nobody",
+                "customerName", "Ingrid Solheim",
                 "vehicle", Map.of("licensePlate", "ZZZ111", "state", "NY"),
                 "serviceType", "OIL CHANGE",
                 "severity", 3,
                 "expectedCompletionDate", "2026-12-01")));
-    assertForbidden(post("/api/technicians", shop, Map.of("fullName", "Sneaky")));
-    assertForbidden(patch("/api/technicians/1", shop, Map.of("isActive", false)));
-    assertForbidden(patch("/api/services/1", shop, Map.of("isActive", false)));
+    assertOk(post("/api/technicians", books, Map.of("fullName", "Rosalind Okafor")));
+  }
+
+  /**
+   * The one thing she cannot do. Scoped to the Invoices page's own action, which
+   * she has no UI for. Not a hard boundary - /status reaches COMPLETED too - so
+   * this pins the rule, not a security guarantee.
+   */
+  @Test
+  void onlyAnAdminMayMarkATicketInvoiced() {
+    String admin = adminToken();
+    long id = createTicket(admin, "Dalisay", 3, "2026-12-01");
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE")));
+
+    assertForbidden(patch("/api/repairs/" + id + "/invoiced", bookkeeperToken(), null));
+    assertEquals("READY_FOR_INVOICE", ticketById(admin, id).get("status"));
+
+    assertOk(patch("/api/repairs/" + id + "/invoiced", admin, null));
+    assertEquals("COMPLETED", ticketById(admin, id).get("status"));
   }
 
   @Test
@@ -232,12 +261,12 @@ public class SecurityRulesTest extends IntegrationTest {
     String newToken = (String) login.asMap().get("token");
 
     assertEquals("BOOKKEEPER", roleIn(newToken));
-    assertForbidden(patch("/api/repairs/" + id + "/severity", newToken, Map.of("severity", 5)));
+    assertForbidden(patch("/api/repairs/" + id + "/invoiced", newToken, null));
     assertTrue(get("/api/repairs/queue", newToken).isOk(), "she can still read the queue");
   }
 
   @Test
-  void theBookkeeperMayPricePartsButNothingElse() {
+  void theBookkeeperPricesPartsAndLabor() {
     String admin = adminToken();
     long id = createTicket(admin, "Dalisay", 3, "2026-12-01");
     String books = bookkeeperToken();
@@ -255,14 +284,9 @@ public class SecurityRulesTest extends IntegrationTest {
         "the bookkeeper enters the parts");
     assertEquals(1, ((List<?>) ticketById(admin, id).get("lineItems")).size());
 
-    // Labor is the owner's, and it lives on /pricing. Granting her /pricing to
-    // reach line items would have handed her labor as well.
-    assertForbidden(patch("/api/repairs/" + id + "/pricing", books, Map.of("laborPrice", 500)));
-
-    // Invoicing is the owner's too, from a page she cannot reach.
-    assertForbidden(patch("/api/repairs/" + id + "/invoiced", books, null));
-    assertForbidden(patch("/api/repairs/" + id + "/status", books, Map.of("status", "COMPLETED")));
-    assertEquals("PENDING", ticketById(admin, id).get("status"));
+    // Labor too: the modal on the queue prices the whole job.
+    assertOk(patch("/api/repairs/" + id + "/pricing", books, Map.of("laborPrice", 500)));
+    assertEquals(818.40, ticketById(admin, id).get("invoiceTotal"));
   }
 
   // --- helpers ------------------------------------------------------------
@@ -274,10 +298,15 @@ public class SecurityRulesTest extends IntegrationTest {
     return matcher.find() ? matcher.group(1) : null;
   }
 
+  private void assertOk(ApiResponse response) {
+    assertTrue(
+        response.isOk(), "expected this to be allowed, got " + response.status() + " " + response.body());
+  }
+
   private void assertForbidden(ApiResponse response) {
     assertEquals(
         403,
         response.status(),
-        "a shop-floor account must not be able to make this change: " + response.body());
+        "this must be refused for a bookkeeper account: " + response.body());
   }
 }

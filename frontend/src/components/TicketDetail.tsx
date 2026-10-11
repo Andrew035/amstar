@@ -87,7 +87,7 @@ export const TicketDetail: React.FC<{
   onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
   onSaveComeback: (id: number, isComeback: boolean) => void;
-  canSeeBilling: boolean;
+  canEdit: boolean;
   onOpenPricing: (repair: VehicleRepair) => void;
   className?: string;
 }> = ({
@@ -105,7 +105,7 @@ export const TicketDetail: React.FC<{
   onSaveParts,
   onDeleteClick,
   onSaveComeback,
-  canSeeBilling,
+  canEdit,
   onOpenPricing,
   className = "",
 }) => {
@@ -200,7 +200,7 @@ export const TicketDetail: React.FC<{
              * control rather than behind the Invoices page she cannot reach. It
              * writes PATCH /line-items only; labor stays on the invoice.
              */}
-            {canSeeBilling && (
+            {canEdit && (
               <button
                 type="button"
                 onClick={() => onOpenPricing(repair)}
@@ -274,9 +274,11 @@ export const TicketDetail: React.FC<{
           </div>
         </div>
 
-        {/* Manager-only. The API also withholds these fields from a shop-floor
-            account, so this hides a panel rather than being the boundary. */}
-        {isAdmin && (
+        {/* The bookkeeper reads these to write the invoice, so she sees them;
+            TicketNotes renders a disabled pad without isAdmin. The API sends the
+            fields to both roles, so this hides a panel rather than being the
+            boundary. */}
+        {canEdit && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
             <TicketNotes
               repairId={id}

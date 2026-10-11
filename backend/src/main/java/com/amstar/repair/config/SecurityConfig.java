@@ -66,24 +66,24 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/technicians", "/api/services")
                     .authenticated()
-                    // The bookkeeper prices the parts, from the modal on the
-                    // queue. Must precede the /api/repairs/** ADMIN rule below:
-                    // first match wins, so order is the rule.
+                    // Both roles run the shop floor and have the same authority
+                    // over a ticket, the roster and the service catalog. The one
+                    // thing the role decides is the Invoices page.
                     //
-                    // Scoped to this one path deliberately. laborPrice lives on
-                    // /pricing, which stays ADMIN-only because labor is the
-                    // owner's to set; granting /pricing here would hand it to
-                    // her, and hiding the input in React is not a boundary.
-                    // /line-items carries a cost per part and nothing else.
-                    .requestMatchers(HttpMethod.PATCH, "/api/repairs/*/line-items")
-                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
-                    // Writes: managers only. Enforced here, not just in the UI.
+                    // /invoiced is left to ADMIN because it is that page's
+                    // action and the bookkeeper has no UI for it. Be honest
+                    // about what that is worth: she also has /status, so she
+                    // could reach COMPLETED anyway. The split is organizational,
+                    // not a defence. Must precede the rule below - the first
+                    // matching rule wins, so the order is the rule.
+                    .requestMatchers(HttpMethod.PATCH, "/api/repairs/*/invoiced")
+                    .hasRole("ADMIN")
                     .requestMatchers("/api/repairs/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     .requestMatchers("/api/technicians/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     .requestMatchers("/api/services/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     .anyRequest()
                     .authenticated())
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

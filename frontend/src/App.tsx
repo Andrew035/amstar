@@ -60,7 +60,13 @@ export const App: React.FC = () => {
   // rename, or anything invented - lands on neither flag and gets the least
   // privilege the UI can offer. SecurityConfig is the actual boundary.
   const isAdmin = currentRole === "ADMIN";
-  const canSeeBilling = isAdmin || currentRole === "BOOKKEEPER";
+  /**
+   * Both roles run the shop floor, so this is simply "signed in". The role
+   * decides one thing: the Invoices page, and PATCH /invoiced which lives there.
+   * The `isAdmin` prop on the queue, dashboard and vehicle modal means "may
+   * edit", so it is handed this rather than isAdmin.
+   */
+  const canEdit = Boolean(currentUser);
 
   // Centralized Authentication Check
   const authenticateUser = useCallback(() => {
@@ -114,7 +120,7 @@ export const App: React.FC = () => {
   };
 
   const handleSaveNotes = async (id: number, notes: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     await apiFetch(`/api/repairs/${id}/notes`, {
       method: "PATCH",
       body: JSON.stringify({ notes }),
@@ -123,7 +129,7 @@ export const App: React.FC = () => {
   };
 
   const handleSaveComeback = async (id: number, isComeback: boolean) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/comeback`, {
         method: "PATCH",
@@ -136,7 +142,7 @@ export const App: React.FC = () => {
   };
 
   const handleSaveParts = async (id: number, parts: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     await apiFetch(`/api/repairs/${id}/parts`, {
       method: "PATCH",
       body: JSON.stringify({ parts }),
@@ -182,7 +188,7 @@ export const App: React.FC = () => {
   };
 
   const handleStatusChange = async (id: number, newStatus: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/status`, {
         method: "PATCH",
@@ -200,7 +206,7 @@ export const App: React.FC = () => {
    * and no other, and the guard here mirrors that.
    */
   const handleMarkInvoiced = async (id: number) => {
-    if (!canSeeBilling) return;
+    if (!isAdmin) return;
     try {
       await apiFetch(`/api/repairs/${id}/invoiced`, { method: "PATCH" });
       showToast("Invoice marked complete.", "success");
@@ -211,7 +217,7 @@ export const App: React.FC = () => {
   };
 
   const handleSeverityChange = async (id: number, severity: number) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/severity`, {
         method: "PATCH",
@@ -225,7 +231,7 @@ export const App: React.FC = () => {
   };
 
   const handleCustomerNameChange = async (id: number, name: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/customer`, {
         method: "PATCH",
@@ -238,7 +244,7 @@ export const App: React.FC = () => {
   };
 
   const handleDueDateChange = async (id: number, dueDate: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/due-date`, {
         method: "PATCH",
@@ -252,7 +258,7 @@ export const App: React.FC = () => {
   };
 
   const handleAssignWorker = async (id: number, workerUsername: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/assign`, {
         method: "PATCH",
@@ -265,7 +271,7 @@ export const App: React.FC = () => {
   };
 
   const handleServiceChange = async (id: number, newService: string) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/service`, {
         method: "PATCH",
@@ -291,6 +297,7 @@ export const App: React.FC = () => {
       parts: string;
     },
   ) => {
+    if (!isAdmin) return;
     try {
       await apiFetch(`/api/repairs/${id}/line-items`, {
         method: "PATCH",
@@ -322,26 +329,34 @@ export const App: React.FC = () => {
   };
 
   /**
-   * Parts only, for the modal on the queue. Separate from handleSaveInvoice,
-   * which also PATCHes /pricing for labor - that call is ADMIN-only and would
-   * 403 for the bookkeeper, losing her parts with it.
+   * Parts and labor, for the modal on the queue. Separate from
+   * handleSaveInvoice, which also writes notes and the parts pad from the
+   * Invoices page; this one touches only what the modal shows.
    */
-  const handleSaveLineItems = async (id: number, lineItems: LineItem[]) => {
-    if (!canSeeBilling) return;
+  const handleSavePricing = async (
+    id: number,
+    lineItems: LineItem[],
+    laborPrice: number,
+  ) => {
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/repairs/${id}/line-items`, {
         method: "PATCH",
         body: JSON.stringify({ items: lineItems }),
       });
-      showToast("Parts updated.", "success");
+      await apiFetch(`/api/repairs/${id}/pricing`, {
+        method: "PATCH",
+        body: JSON.stringify({ laborPrice, includeLabor: true }),
+      });
+      showToast("Pricing updated.", "success");
       fetchQueue();
     } catch (error) {
-      toastError(error, "Could not save the parts.");
+      toastError(error, "Could not save the pricing.");
     }
   };
 
   const handleAddTechnician = async (fullName: string): Promise<boolean> => {
-    if (!isAdmin) return false;
+    if (!canEdit) return false;
     try {
       await apiFetch("/api/technicians", {
         method: "POST",
@@ -360,7 +375,7 @@ export const App: React.FC = () => {
     id: number,
     fullName: string,
   ): Promise<boolean> => {
-    if (!isAdmin) return false;
+    if (!canEdit) return false;
     try {
       await apiFetch(`/api/technicians/${id}`, {
         method: "PATCH",
@@ -377,7 +392,7 @@ export const App: React.FC = () => {
   };
 
   const handleSetTechnicianActive = async (id: number, active: boolean) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     try {
       await apiFetch(`/api/technicians/${id}`, {
         method: "PATCH",
@@ -394,7 +409,7 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteClick = (id: number) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     setRepairToDelete(id);
     setIsDeleteModalOpen(true);
   };
@@ -513,7 +528,7 @@ export const App: React.FC = () => {
                     repairs={repairs}
                     technicianNames={technicianNames}
                     activity={activity}
-                    isAdmin={isAdmin}
+                    isAdmin={canEdit}
                   />
                 ) : (
                   <Navigate to="/login" replace />
@@ -528,7 +543,7 @@ export const App: React.FC = () => {
                 currentUser ? (
                   <ActiveQueue
                     repairs={repairs}
-                    isAdmin={isAdmin}
+                    isAdmin={canEdit}
                     currentUser={currentUser}
                     historicalServiceMap={historicalServiceMap}
                     technicianNames={technicianNames}
@@ -543,7 +558,7 @@ export const App: React.FC = () => {
                     onSaveNotes={handleSaveNotes}
                     onSaveParts={handleSaveParts}
                     onSaveComeback={handleSaveComeback}
-                    canSeeBilling={canSeeBilling}
+                    canEdit={canEdit}
                     onOpenPricing={setPricedRepair}
                   />
                 ) : (
@@ -577,7 +592,7 @@ export const App: React.FC = () => {
             <Route
               path="/history"
               element={
-                currentUser && isAdmin ? (
+                currentUser ? (
                   <HistoryPage
                     repairs={repairs}
                     historicalServiceMap={historicalServiceMap}
@@ -599,7 +614,7 @@ export const App: React.FC = () => {
             <Route
               path="/roster"
               element={
-                currentUser && isAdmin ? (
+                currentUser ? (
                   <Roster
                     technicians={technicians}
                     repairs={repairs}
@@ -622,7 +637,7 @@ export const App: React.FC = () => {
       {viewedRepair && (
         <VehicleModal
           repair={viewedRepair}
-          isAdmin={isAdmin}
+          isAdmin={canEdit}
           onClose={() => setViewedRepair(null)}
           onSaveNotes={handleSaveNotes}
           onSaveParts={handleSaveParts}
@@ -634,7 +649,7 @@ export const App: React.FC = () => {
         <PricingModal
           repair={pricedRepair}
           onClose={() => setPricedRepair(null)}
-          onSave={handleSaveLineItems}
+          onSave={handleSavePricing}
         />
       )}
 

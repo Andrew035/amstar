@@ -132,7 +132,7 @@ export const HistoryPage: React.FC<{
                 <th
                   className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[14%] xl:w-[12%]`}
                 >
-                  Completed
+                  Repair Done
                 </th>
                 <th
                   className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[17%] xl:w-[15%]`}

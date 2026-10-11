@@ -1,6 +1,7 @@
 import type { VehicleRepair } from "../types/repair";
 import {
   isActive,
+  isFinished,
   isComeback,
   isOverdue,
   isUnassigned,
@@ -33,8 +34,10 @@ export const shopVitals = (
   today = localISODate(),
 ): ShopVitals => {
   const active = repairs.filter(isActive);
+  // Finished, not invoiced: on-time rate and turnaround are about the repair,
+  // so a car waiting on paperwork counts the moment the work is done.
   const closed = repairs.filter(
-    (r) => r.status === "COMPLETED" && r.actualCompletionDate && r.entryDate,
+    (r) => isFinished(r) && r.actualCompletionDate && r.entryDate,
   );
 
   const onTime = closed.filter(
@@ -132,7 +135,7 @@ export const targetRows = (
 ): TargetRow[] => {
   const active = repairs.filter(isActive);
   const closed = repairs.filter(
-    (r) => r.status === "COMPLETED" && r.actualCompletionDate,
+    (r) => isFinished(r) && r.actualCompletionDate,
   );
   const pct = (n: number, d: number) => (d ? (n / d) * 100 : 0);
 
@@ -213,7 +216,8 @@ export const throughput = (
 
   const counts = new Map<string, number>();
   repairs.forEach((r) => {
-    if (r.status !== "COMPLETED" || !r.actualCompletionDate) return;
+    // Throughput counts cars fixed in a month, not invoices written in it.
+    if (!isFinished(r) || !r.actualCompletionDate) return;
     const key = monthKey(r.actualCompletionDate);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   });

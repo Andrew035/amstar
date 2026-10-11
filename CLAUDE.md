@@ -46,14 +46,14 @@ docker compose up postgres-db backend     # API only; run the frontend with npm 
 - `AMSTAR_JWT_SECRET`, at least 32 bytes, checked at startup by `JwtKeyProvider`
 - `AMSTAR_SMTP_USER`, `AMSTAR_SMTP_PASSWORD`, Gmail App Password, used for password reset emails
 
-Optional, with localhost defaults: `AMSTAR_CORS_ORIGIN`, `AMSTAR_APP_URL` (where reset links point), `AMSTAR_SMTP_HOST`, `AMSTAR_SMTP_PORT`.
+Optional: `AMSTAR_BOOKKEEPER_EMAILS` (empty means nobody can register as a bookkeeper; deliberately not required, so a deploy with no bookkeeper still starts). Optional with localhost defaults: `AMSTAR_CORS_ORIGIN`, `AMSTAR_APP_URL` (where reset links point), `AMSTAR_SMTP_HOST`, `AMSTAR_SMTP_PORT`.
 
 The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the host cannot reach it. Either run the backend in Docker too, or add a port in a local `docker-compose.override.yml` (gitignored).
 
 ## Architecture
 
 ### Schema is owned by Flyway
-`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V7__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
+`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V18__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
 
 | Migration | Adds |
 |---|---|
@@ -63,8 +63,19 @@ The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the
 | V4 | password_reset_tokens |
 | V5 | `service_tickets.notes` |
 | V6 | ticket_activity (dashboard feed) |
+| V7 | `service_tickets.parts` |
+| V8 | due-date activity action |
+| V9 | customer activity action |
+| V10 | `users.token_version` (sign out everywhere) |
+| V11 | ticket_line_items, `billing_type` |
+| V12 | `vehicles.is_comeback`, COMEBACK activity action |
+| V13 | activity label separator |
+| V14 | `SHOP_VIEW` → `BOOKKEEPER`, role default dropped, every `token_version` bumped |
+| V15 | `READY_FOR_INVOICE` status, INVOICED activity action |
+| V16 | dropped `lease_price` / `include_lease` |
+| V17 | `actual_completion_date` now means the repair finished |
 
-Many rules are enforced twice, once in Java for a readable 400, once as a database CHECK as the backstop (severity 1–5, status values, non-negative prices, notes ≤ 5000, uppercase service names, completion date ⇔ COMPLETED). Keep the pair in sync when changing one.
+Many rules are enforced twice, once in Java for a readable 400, once as a database CHECK as the backstop (severity 1–5, status values, non-negative prices, notes ≤ 5000, uppercase service names, a completion date on exactly the two finished statuses). Keep the pair in sync when changing one.
 
 ### One endpoint feeds the ticket views
 `GET /api/repairs/queue` returns **all** tickets (`repository.findAll()`), including `COMPLETED` ones, each with a freshly computed `priorityScore`, sorted descending. `App.tsx` fetches it once and every page filters locally, `Dashboard` and `ActiveQueue` use non-completed tickets, `History` uses completed. Don't add per-page ticket fetches; extend this list or filter it client-side.
@@ -89,9 +100,19 @@ On the frontend, anything that reads these strings does `.split(',').map(s => s.
 ### Every mutation lives in App.tsx and PriorityQueueService
 Frontend: `App.tsx` owns `repairs`, `technicians`, `serviceCatalog`, `activity`, the current user/role, the toast, and the two global modals (delete confirm, vehicle "deep dive"). Mutation handlers (`handleStatusChange`, `handleSeverityChange`, `handleAssignWorker`, `handleServiceChange`, `handleSaveNotes`, `handleSavePricing`, `confirmDelete`) PATCH/DELETE through `apiFetch` and then call `fetchQueue()`. Pages under `src/pages/` are presentational and receive data plus callbacks as props. There is no state or data-fetching library, adding a mutation means a handler in `App.tsx` threaded down as a prop.
 
-Backend: each write is a `@Transactional` method on `PriorityQueueService` that also calls `ActivityService.record(...)` when something actually changed, so an activity row exists only if its change was committed. `ticket_activity.ticket_label` is a snapshot ("2010 FORD E-250, Kane") so deleted tickets still read correctly. Pricing events deliberately carry no amount, because shop-view users can read the feed. New actions must also be added to the `activity_action_valid` CHECK (via a new migration).
+Backend: each write is a `@Transactional` method on `PriorityQueueService` that also calls `ActivityService.record(...)` when something actually changed, so an activity row exists only if its change was committed. `ticket_activity.ticket_label` is a snapshot ("2010 FORD E-250, Kane") so deleted tickets still read correctly. Pricing events deliberately carry no amount, because every signed-in account can read the feed. New actions must also be added to the `activity_action_valid` CHECK (via a new migration).
 
-Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}/status|severity|assign|service|notes|pricing`, `DELETE /{id}`.
+Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}/status|severity|assign|service|notes|parts|pricing|line-items|due-date|customer|comeback|invoiced`, `DELETE /{id}`.
+
+### Pricing is split from invoicing
+"Completed" used to mean two different things to the two people using it: the car has left the shop, or the invoice can be written. `READY_FOR_INVOICE` (V15) is the second one.
+
+- The shop marks a car **ready for invoice** from the queue. That stamps `actual_completion_date`, which since V17 means **when the repair finished**, not when the invoice was written. `tickets_completion_matches_status` is `(status in ('READY_FOR_INVOICE','COMPLETED')) = (actual_completion_date is not null)`. Invoice completion is not tracked and no column records it.
+- Pricing happens in `PricingModal`, opened from a button under the status control in `TicketDetail` and reachable by both roles. It prices the whole job - parts with a cost each, plus labor - via `handleSavePricing`, which writes `PATCH /line-items` then `PATCH /pricing`.
+- The **owner** reviews it all and adds the notes and the parts pad on the admin-only Invoices page (`src/pages/Pricing.tsx`), whose top section is the cars needing invoicing. `handleSaveInvoice` writes four endpoints in sequence (`/line-items`, `/pricing`, `/notes`, `/parts`); each is idempotent, so a partial failure settles on the next save.
+- `markInvoiced` (`PATCH /{id}/invoiced`, ADMIN) flips `READY_FOR_INVOICE` → `COMPLETED`, refuses every other source status, and deliberately does **not** touch `actual_completion_date`.
+- `PartsEditor` is the one parts table, shared by the modal and the Invoices accordion. Controlled: the caller owns the draft and the save.
+- `isFinished` in `ticketFilters.ts` is `COMPLETED || READY_FOR_INVOICE`, and `isActive` is `!isFinished`. A car waiting on paperwork is not overdue, not due today and not unassigned, and it counts toward on-time rate, turnaround and monthly throughput the moment the work is done. It still appears in the queue, which filters on `COMPLETED` directly, because the car may well still be on the lot.
 
 ### API client
 `src/api.ts` `apiFetch<T>(path, init)` is the one way to call the API: it attaches the bearer token, sets JSON headers, forces a logout on 401, turns 403/429 into friendly messages, surfaces the backend's `{"error": "..."}` text as `ApiError.message`, and tolerates empty 200 bodies. Show failures with `toastError(error, fallback)`. (`RepairForm`'s ticket POST still uses raw `fetch`, migrate it rather than copying it.)
@@ -99,10 +120,13 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 `src/config.ts` `API_BASE` is `VITE_API_URL`, defaulting to `http://localhost:8080` in dev. `frontend/.env.production` sets it empty, so production calls are same-origin `/api/...` through Caddy and CORS never applies.
 
 ### Auth and roles
-- Register requires the shared `AMSTAR_SIGNUP_CODE`. An email listed in `amstar.auth.admin-emails` (`application.properties`) gets role `ADMIN`; everyone else gets `SHOP_VIEW`. The role is assigned **only at registration**.
-- Login issues a 10-hour HS256 JWT (subject = email local part, plus `role` and `email` claims) signed with `AMSTAR_JWT_SECRET` via `JwtKeyProvider`. Inactive users (`users.is_active = false`) cannot log in.
-- **Roles are enforced on the server** in `SecurityConfig`: any signed-in user may `GET` tickets, technicians, services, and activity; every write under `/api/repairs/**`, `/api/technicians/**`, `/api/services/**` requires `ADMIN`. `/api/auth/**` is public.
-- The frontend stores the token in `localStorage` as `amstar_token` and decodes the payload for username and role. `isAdmin` in `App.tsx` only hides UI (pricing, history, editing, the new-ticket form), it is not the security boundary.
+- Two roles, `ADMIN` and `BOOKKEEPER` (`users_role_valid`, V14). Registration needs the shared `AMSTAR_SIGNUP_CODE` **and** an address on one of two allowlists: `amstar.auth.admin-emails` grants ADMIN, `amstar.auth.bookkeeper-emails` grants BOOKKEEPER, and anything else is refused with the byte-identical message a bad signup code gets, so it cannot be used to discover which addresses are authorized. Admin is checked first, so a typo in the bookkeeper list cannot demote an owner. The role is written **only at registration**.
+- **Changing someone's role is a SQL update plus a `token_version` bump, in one transaction.** Moving an address between allowlists does nothing by itself. Without the bump the account keeps its old authority until the token expires, up to ten hours later.
+- Login issues a 10-hour HS256 JWT (subject = email local part, plus `role`, `email` and `tv` claims) signed with `AMSTAR_JWT_SECRET` via `JwtKeyProvider`. `JwtAuthenticationFilter` loads the account on **every** request and 401s if `is_active` is false or the `tv` claim no longer matches `users.token_version`. Authority comes from the token's `role` claim, not from the row.
+- **Both roles have the same shop-floor authority.** Tickets, pricing, the roster and the service catalog are open to ADMIN and BOOKKEEPER alike. The role decides exactly one thing: the Invoices page, plus `PATCH /api/repairs/*/invoiced`, which is that page's own action. Be honest about what that scoping is worth - a bookkeeper also has `/status`, so she could reach `COMPLETED` anyway. **The split is organizational, not a defence.** Enforced in `SecurityConfig`, where the first matching rule wins, so the order *is* the rule. `/api/auth/**` is public.
+- **The bookkeeper uses every page except Invoices, with the same powers as an owner.** `canEdit` in `App.tsx` is simply "signed in", and it is what gets handed to the `isAdmin` prop on `Dashboard`, `ActiveQueue` and `VehicleModal` - that prop means "may edit", which both roles may. Only `/invoices` and `handleMarkInvoiced` check `isAdmin` itself. The prop name is a leftover from when the two roles differed; it means may-edit, not is-an-admin.
+- The frontend stores the token in `localStorage` as `amstar_token` and decodes the payload for username and role. `isAdmin` and `canSeeBilling` in `App.tsx` only hide UI; neither is the security boundary.
+- `GET /api/repairs/queue` nulls `notes`, `parts`, `lineItems` and the prices for any role outside `BILLING_AUTHORITIES`. Both current roles are inside it and the CHECK permits no third role, so that branch is unreachable today. It is kept so the migration that adds a read-only floor role has to decide about it rather than inherit full pricing by default.
 - Password reset: `PasswordResetService` stores only a SHA-256 hash of a single-use token that expires in 30 min, and `/forgot-password` always returns 200 so it can't be used to discover accounts.
 
 ### Errors
@@ -130,6 +154,17 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 
 ## Tests and CI
 
-Backend tests (`PriorityQueueServiceTest`, `AssignWorkerTest`) are plain JUnit + Mockito with no Spring context or database. `PriorityQueueService` takes five constructor arguments (`VehicleRepairRepository`, `VehicleLookupService`, `TicketAssemblyService`, `ActivityService`, `VehicleRepository`), mock all five when constructing it.
+Six backend test classes plus a harness:
+
+- `support/IntegrationTest` runs the **whole app against a real PostgreSQL** (Testcontainers, `postgres:15-alpine`), so Flyway applies every migration and `ddl-auto=validate` then checks the entities against the result. Requests go over real HTTP with real tokens. `adminToken()` / `bookkeeperToken()` register and sign in the addresses in `application-test.properties`; `resetDatabase()` truncates between tests but leaves the seeded roster and catalog. **Docker must be running.**
+- `SchemaTest` - every migration file actually ran, applied cleanly, and is numbered 1..n with no gaps; every table exists; reference data was seeded.
+- `SecurityRulesTest` - who may do what, called directly the way anyone with a browser console could.
+- `TicketLifecycleTest` - a ticket from intake to deletion, exercising every activity action, so forgetting to add one to `activity_action_valid` fails the build.
+- `BadInputTest` - every validation path, including the statuses the shop does and does not use.
+- `PriorityQueueServiceTest`, `AssignWorkerTest`, `RegistrationRoleTest` - plain JUnit + Mockito, no Spring context or database. `PriorityQueueService` takes five constructor arguments (`VehicleRepairRepository`, `VehicleLookupService`, `TicketAssemblyService`, `ActivityService`, `VehicleRepository`); mock all five.
+
+**Run `./mvnw clean test` after deleting any Java method.** Your IDE compiles into the same `target/classes` Maven reads, and a JDT error stub with a fresh timestamp makes Maven skip compilation entirely, turning a one-line `cannot find symbol` into mysterious runtime 500s.
+
+When restating a CHECK constraint in a migration, take the list from the migration that last touched it, or from `select pg_get_constraintdef(oid) from pg_constraint where conname = '<name>'`. Postgres cannot append to a CHECK, and copying an older migration's list silently revokes everything added since.
 
 `.github/workflows/ci.yml` runs `mvn clean test` in `backend/` and `npm install && npm run build` in `frontend/` on pushes and PRs to `main`. Type errors fail the frontend job (`build` runs `tsc -b` first). CI does not run `npm run lint`, run it locally.
