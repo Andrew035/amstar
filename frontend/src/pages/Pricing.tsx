@@ -20,6 +20,7 @@ import {
 } from "../lib/ticketFilters";
 import { FilterBanner } from "../components/FilterBanner";
 import { PlateChip } from "../components/PlateChip";
+import { InvoiceWorklist } from "../components/InvoiceWorklist";
 
 /** One labelled fact in the expanded editor. */
 const Fact: React.FC<{
@@ -275,7 +276,8 @@ const PricingRow: React.FC<{
   onToggle: () => void;
   onSaveInvoice: SaveInvoice;
   index: number;
-}> = ({ item, isOpen, onToggle, onSaveInvoice, index }) => {
+  isAdmin: boolean;
+}> = ({ item, isOpen, onToggle, onSaveInvoice, index, isAdmin }) => {
   const total = invoiceTotal(item);
   const needsPricing = isUnbilled(item);
 
@@ -289,11 +291,20 @@ const PricingRow: React.FC<{
       style={{ animationDelay: `${Math.min(index, 10) * 25}ms` }}
       className={`anim-row ${PANEL_STYLE} overflow-hidden`}
     >
+      {/*
+       * Only a manager can price a job, so only a manager gets a row that
+       * opens. For the bookkeeper this is a summary she can search: disabled
+       * keeps it out of the tab order and drops the hover affordance, rather
+       * than offering a toggle that reveals an editor whose Save returns 403.
+       */}
       <button
         type="button"
         onClick={onToggle}
-        aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER}`}
+        disabled={!isAdmin}
+        aria-expanded={isAdmin ? isOpen : undefined}
+        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left ${
+          isAdmin ? `hover:bg-amstar-surface ${HOVER}` : "cursor-default"
+        }`}
       >
         <PlateChip vehicle={item.vehicle} className="shrink-0" />
         <span className="flex-1 min-w-0 truncate font-cond text-sm font-bold uppercase tracking-wide text-amstar-ink">
@@ -305,7 +316,7 @@ const PricingRow: React.FC<{
         <span
           className={`hidden sm:block shrink-0 px-2 py-0.5 rounded-sm border text-[9px] font-bold uppercase ${getStatusStyle(item.status)}`}
         >
-          {item.status.replace("_", " ")}
+          {item.status.replace(/_/g, " ")}
         </span>
         <span
           className={`w-24 shrink-0 text-right font-mono tabular-nums text-sm font-bold ${
@@ -314,25 +325,31 @@ const PricingRow: React.FC<{
         >
           ${total.toFixed(2)}
         </span>
-        <span
-          aria-hidden="true"
-          className={`w-4 shrink-0 text-center text-xs text-amstar-ink-faint transition-transform duration-200 ease-out ${
-            isOpen ? "rotate-90" : ""
-          }`}
-        >
-          ▸
-        </span>
+        {isAdmin && (
+          <span
+            aria-hidden="true"
+            className={`w-4 shrink-0 text-center text-xs text-amstar-ink-faint transition-transform duration-200 ease-out ${
+              isOpen ? "rotate-90" : ""
+            }`}
+          >
+            ▸
+          </span>
+        )}
       </button>
 
-      {isOpen && <InvoiceEditor item={item} onSaveInvoice={onSaveInvoice} />}
+      {isOpen && isAdmin && (
+        <InvoiceEditor item={item} onSaveInvoice={onSaveInvoice} />
+      )}
     </div>
   );
 };
 
 export const PricingPage: React.FC<{
   repairs: VehicleRepair[];
+  isAdmin: boolean;
   onSaveInvoice: SaveInvoice;
-}> = ({ repairs, onSaveInvoice }) => {
+  onMarkInvoiced: (id: number) => void;
+}> = ({ repairs, isAdmin, onSaveInvoice, onMarkInvoiced }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -367,6 +384,7 @@ export const PricingPage: React.FC<{
           isOpen={openId === item.id}
           onToggle={() => toggle(item.id)}
           onSaveInvoice={onSaveInvoice}
+          isAdmin={isAdmin}
         />
       ))}
     </div>
@@ -376,7 +394,7 @@ export const PricingPage: React.FC<{
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-2 border-amstar-red pb-2 gap-4">
         <h2 className="font-cond text-2xl font-black uppercase tracking-wider text-amstar-ink">
-          Pricing &amp; Invoice Calculator
+          Invoices
         </h2>
         <input
           type="text"
@@ -394,6 +412,8 @@ export const PricingPage: React.FC<{
           onClear={() => setSearchParams({})}
         />
       )}
+
+      <InvoiceWorklist repairs={repairs} onMarkInvoiced={onMarkInvoiced} />
 
       {visible.length === 0 ? (
         <div

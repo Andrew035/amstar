@@ -370,7 +370,7 @@ export const Dashboard: React.FC<{
           today={today}
           onOpenFilter={(f) =>
             f === "unbilled" && isAdmin
-              ? navigate("/pricing?filter=unbilled")
+              ? navigate("/invoices?filter=unbilled")
               : openQueue(f)
           }
         />

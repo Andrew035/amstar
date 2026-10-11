@@ -5,12 +5,14 @@ import { HOVER } from "../styles/controls";
 
 interface NavbarProps {
   isAdmin: boolean;
+  canSeeBilling: boolean;
   currentUser: string;
   onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   isAdmin,
+  canSeeBilling,
   currentUser,
   onLogout,
 }) => {
@@ -62,11 +64,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           <NavLink to="/queue" className={linkClass} draggable={false}>
             <Label full="Queue" short="Queue" />
           </NavLink>
+          {canSeeBilling && (
+            <NavLink to="/invoices" className={linkClass} draggable={false}>
+              <Label full="Invoices" short="Invoices" />
+            </NavLink>
+          )}
           {isAdmin && (
             <>
-              <NavLink to="/pricing" className={linkClass} draggable={false}>
-                <Label full="Pricing" short="Pricing" />
-              </NavLink>
               <NavLink to="/history" className={linkClass} draggable={false}>
                 <Label full="History" short="History" />
               </NavLink>
@@ -80,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* User Account / Logout */}
         <div className="flex items-center gap-4 select-none">
           <span className="font-cond text-[11px] uppercase tracking-widest bg-amstar-raised border border-amstar-line px-3 py-1.5 rounded-sm text-amstar-ink-dim">
-            {isAdmin ? `Admin: ${currentUser}` : `Viewer: ${currentUser}`}
+            {isAdmin ? `Admin: ${currentUser}` : `Books: ${currentUser}`}
           </span>
           <button
             onClick={onLogout}

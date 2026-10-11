@@ -54,7 +54,11 @@ export const App: React.FC = () => {
   const toastError = (error: unknown, fallback: string) =>
     showToast(error instanceof ApiError ? error.message : fallback, "error");
 
+  // Exact matches only. An unrecognized role - a stale token issued before the
+  // rename, or anything invented - lands on neither flag and gets the least
+  // privilege the UI can offer. SecurityConfig is the actual boundary.
   const isAdmin = currentRole === "ADMIN";
+  const canSeeBilling = isAdmin || currentRole === "BOOKKEEPER";
 
   // Centralized Authentication Check
   const authenticateUser = useCallback(() => {
@@ -185,6 +189,22 @@ export const App: React.FC = () => {
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not update status.");
+    }
+  };
+
+  /**
+   * Requirement 0.4. Its own handler rather than handleStatusChange, because it
+   * is its own endpoint: the bookkeeper is authorized for this one transition
+   * and no other, and the guard here mirrors that.
+   */
+  const handleMarkInvoiced = async (id: number) => {
+    if (!canSeeBilling) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/invoiced`, { method: "PATCH" });
+      showToast("Invoice marked complete.", "success");
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not mark this invoice complete.");
     }
   };
 
@@ -406,6 +426,7 @@ export const App: React.FC = () => {
       {currentUser && (
         <Navbar
           isAdmin={isAdmin}
+          canSeeBilling={canSeeBilling}
           currentUser={currentUser}
           onLogout={handleLogout}
         />
@@ -423,135 +444,144 @@ export const App: React.FC = () => {
         className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable] anim-rise"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* React Router DOM Routes */}
-        <Routes>
-          {/* Public Authentication Routes */}
-          <Route
-            path="/login"
-            element={
-              !currentUser ? (
-                <Login onLoginSuccess={handleLoginSuccess} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/register"
-            element={!currentUser ? <Register /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              !currentUser ? <ForgotPassword /> : <Navigate to="/" replace />
-            }
-          />
-          <Route path="reset-password" element={<ResetPassword />} />
+          {/* React Router DOM Routes */}
+          <Routes>
+            {/* Public Authentication Routes */}
+            <Route
+              path="/login"
+              element={
+                !currentUser ? (
+                  <Login onLoginSuccess={handleLoginSuccess} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                !currentUser ? <Register /> : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                !currentUser ? <ForgotPassword /> : <Navigate to="/" replace />
+              }
+            />
+            <Route path="reset-password" element={<ResetPassword />} />
 
-          {/* Shop Overview (Dashboard) */}
-          <Route
-            path="/"
-            element={
-              currentUser ? (
-                <Dashboard
-                  repairs={repairs}
-                  technicianNames={technicianNames}
-                  activity={activity}
-                  isAdmin={isAdmin}
-                />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
+            {/* Shop Overview (Dashboard) */}
+            <Route
+              path="/"
+              element={
+                currentUser ? (
+                  <Dashboard
+                    repairs={repairs}
+                    technicianNames={technicianNames}
+                    activity={activity}
+                    isAdmin={isAdmin}
+                  />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
 
-          {/* Active Queue */}
-          <Route
-            path="/queue"
-            element={
-              currentUser ? (
-                <ActiveQueue
-                  repairs={repairs}
-                  isAdmin={isAdmin}
-                  currentUser={currentUser}
-                  historicalServiceMap={historicalServiceMap}
-                  technicianNames={technicianNames}
-                  onRefresh={fetchQueue}
-                  onStatusChange={handleStatusChange}
-                  onSeverityChange={handleSeverityChange}
-                  onDueDateChange={handleDueDateChange}
-                  onCustomerNameChange={handleCustomerNameChange}
-                  onAssignWorker={handleAssignWorker}
-                  onServiceChange={handleServiceChange}
-                  onDeleteClick={handleDeleteClick}
-                  onSaveNotes={handleSaveNotes}
-                  onSaveParts={handleSaveParts}
-                  onSaveComeback={handleSaveComeback}
-                />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
+            {/* Active Queue */}
+            <Route
+              path="/queue"
+              element={
+                currentUser ? (
+                  <ActiveQueue
+                    repairs={repairs}
+                    isAdmin={isAdmin}
+                    currentUser={currentUser}
+                    historicalServiceMap={historicalServiceMap}
+                    technicianNames={technicianNames}
+                    onRefresh={fetchQueue}
+                    onStatusChange={handleStatusChange}
+                    onSeverityChange={handleSeverityChange}
+                    onDueDateChange={handleDueDateChange}
+                    onCustomerNameChange={handleCustomerNameChange}
+                    onAssignWorker={handleAssignWorker}
+                    onServiceChange={handleServiceChange}
+                    onDeleteClick={handleDeleteClick}
+                    onSaveNotes={handleSaveNotes}
+                    onSaveParts={handleSaveParts}
+                    onSaveComeback={handleSaveComeback}
+                  />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
 
-          {/* Admin Protected: Pricing */}
-          <Route
-            path="/pricing"
-            element={
-              currentUser && isAdmin ? (
-                <PricingPage
-                  repairs={repairs}
-                  onSaveInvoice={handleSaveInvoice}
-                />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+            {/* Invoices: the owner prices, the bookkeeper invoices. */}
+            <Route
+              path="/invoices"
+              element={
+                currentUser && canSeeBilling ? (
+                  <PricingPage
+                    repairs={repairs}
+                    isAdmin={isAdmin}
+                    onSaveInvoice={handleSaveInvoice}
+                    onMarkInvoiced={handleMarkInvoiced}
+                  />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            {/* Dashboard.tsx:373 and any bookmark still say /pricing. */}
+            <Route
+              path="/pricing"
+              element={<Navigate to="/invoices" replace />}
+            />
 
-          {/* Admin Protected: History */}
-          <Route
-            path="/history"
-            element={
-              currentUser && isAdmin ? (
-                <HistoryPage
-                  repairs={repairs}
-                  historicalServiceMap={historicalServiceMap}
-                  technicianNames={technicianNames}
-                  onStatusChange={handleStatusChange}
-                  onAssignWorker={handleAssignWorker}
-                  onServiceChange={handleServiceChange}
-                  onViewDeepDive={setViewedRepair}
-                  onDeleteClick={handleDeleteClick}
-                  viewedRepairId={viewedRepair?.id}
-                />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+            {/* Admin Protected: History */}
+            <Route
+              path="/history"
+              element={
+                currentUser && isAdmin ? (
+                  <HistoryPage
+                    repairs={repairs}
+                    historicalServiceMap={historicalServiceMap}
+                    technicianNames={technicianNames}
+                    onStatusChange={handleStatusChange}
+                    onAssignWorker={handleAssignWorker}
+                    onServiceChange={handleServiceChange}
+                    onViewDeepDive={setViewedRepair}
+                    onDeleteClick={handleDeleteClick}
+                    viewedRepairId={viewedRepair?.id}
+                  />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
-          {/* Admin Protected: Roster */}
-          <Route
-            path="/roster"
-            element={
-              currentUser && isAdmin ? (
-                <Roster
-                  technicians={technicians}
-                  repairs={repairs}
-                  onAddTechnician={handleAddTechnician}
-                  onRenameTechnician={handleRenameTechnician}
-                  onSetTechnicianActive={handleSetTechnicianActive}
-                />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+            {/* Admin Protected: Roster */}
+            <Route
+              path="/roster"
+              element={
+                currentUser && isAdmin ? (
+                  <Roster
+                    technicians={technicians}
+                    repairs={repairs}
+                    onAddTechnician={handleAddTechnician}
+                    onRenameTechnician={handleRenameTechnician}
+                    onSetTechnicianActive={handleSetTechnicianActive}
+                  />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
       </main>
 
