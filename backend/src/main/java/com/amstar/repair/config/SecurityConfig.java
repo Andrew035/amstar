@@ -1,5 +1,6 @@
 package com.amstar.repair.config;
 
+import com.amstar.repair.model.UserRole;
 import com.amstar.repair.security.JwtAuthenticationFilter;
 import java.util.Arrays;
 import java.util.List;
@@ -65,6 +66,13 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/technicians", "/api/services")
                     .authenticated()
+                    // The bookkeeper's single write. Must precede the
+                    // /api/repairs/** ADMIN rule below: first match wins, so
+                    // order is the rule. Scoped to one path and one verb, so
+                    // the general status endpoint stays ADMIN and a bookkeeper
+                    // cannot move a ticket anywhere else.
+                    .requestMatchers(HttpMethod.PATCH, "/api/repairs/*/invoiced")
+                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     // Writes: managers only. Enforced here, not just in the UI.
                     .requestMatchers("/api/repairs/**")
                     .hasRole("ADMIN")

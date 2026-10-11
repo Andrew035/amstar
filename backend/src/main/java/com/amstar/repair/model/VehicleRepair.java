@@ -354,8 +354,17 @@ public class VehicleRepair {
           .reduce(BigDecimal.ZERO, BigDecimal::add)
           .add(laborPrice == null ? BigDecimal.ZERO : laborPrice);
     }
-    return (Boolean.TRUE.equals(includeRetail) ? retailPrice : BigDecimal.ZERO)
-        .add(Boolean.TRUE.equals(includeLease) ? leasePrice : BigDecimal.ZERO)
-        .add(Boolean.TRUE.equals(includeLabor) ? laborPrice : BigDecimal.ZERO);
+    // Null-safe because the queue endpoint nulls these out for any role not
+    // entitled to money, and Jackson still calls this getter afterwards. Without
+    // it, a nulled retailPrice on a pre-line-item ticket is null.add(...) - an
+    // NPE inside serialization, which surfaces as an opaque 500 on the whole
+    // queue read rather than as a redacted field.
+    return zeroIfNull(Boolean.TRUE.equals(includeRetail) ? retailPrice : BigDecimal.ZERO)
+        .add(zeroIfNull(Boolean.TRUE.equals(includeLease) ? leasePrice : BigDecimal.ZERO))
+        .add(zeroIfNull(Boolean.TRUE.equals(includeLabor) ? laborPrice : BigDecimal.ZERO));
+  }
+
+  private static BigDecimal zeroIfNull(BigDecimal value) {
+    return value == null ? BigDecimal.ZERO : value;
   }
 }

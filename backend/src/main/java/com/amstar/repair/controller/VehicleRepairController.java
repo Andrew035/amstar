@@ -2,12 +2,14 @@ package com.amstar.repair.controller;
 
 import com.amstar.repair.model.TicketLineItem;
 import com.amstar.repair.model.TicketStatus;
+import com.amstar.repair.model.UserRole;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.service.PriorityQueueService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -25,25 +27,39 @@ public class VehicleRepairController {
   public List<VehicleRepair> getPriorityQueue(Authentication authentication) {
     List<VehicleRepair> queue = priorityQueueService.getPrioritizedQueue();
 
-    // Notes and parts are manager-only. Hiding the panels in React is not
-    // privacy - a shop-floor account can read them straight off this JSON.
+    // Billing detail is manager-and-bookkeeper only. Hiding the panels in React
+    // is not privacy - any account can read them straight off this JSON.
     // Safe to null them here: spring.jpa.open-in-view is false and this path is
     // not transactional, so these entities are detached and nothing can flush
     // the nulls back to the table.
-    if (!isAdmin(authentication)) {
+    //
+    // Prices are nulled alongside the rest. Be clear about what this is: both
+    // current roles may see money, and users_role_valid (V14) permits no third
+    // role, so this branch cannot be reached today and no test can cover it
+    // through the API. It is here because the migration that adds a read-only
+    // floor role is the natural place to revisit it, and omitting prices now is
+    // the asymmetry that would ship them to that role by default.
+    if (!canSeeBilling(authentication)) {
       for (VehicleRepair repair : queue) {
         repair.setNotes(null);
         repair.setParts(null);
         repair.setLineItems(null);
+        repair.setRetailPrice(null);
+        repair.setLeasePrice(null);
+        repair.setLaborPrice(null);
       }
     }
     return queue;
   }
 
-  private static boolean isAdmin(Authentication authentication) {
+  /** Roles entitled to read notes, parts, line items and prices. */
+  private static final Set<String> BILLING_AUTHORITIES =
+      Set.of("ROLE_" + UserRole.ADMIN, "ROLE_" + UserRole.BOOKKEEPER);
+
+  private static boolean canSeeBilling(Authentication authentication) {
     return authentication != null
         && authentication.getAuthorities().stream()
-            .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
+            .anyMatch(granted -> BILLING_AUTHORITIES.contains(granted.getAuthority()));
   }
 
   @PostMapping
@@ -67,6 +83,21 @@ public class VehicleRepairController {
     } else {
       return ResponseEntity.notFound().build();
     }
+  }
+
+  /**
+   * The bookkeeper clears a ticket once the invoice is written.
+   *
+   * <p>Separate from PATCH /{id}/status because SecurityConfig grants this path to BOOKKEEPER and
+   * that one to ADMIN only. A single endpoint taking a status would mean granting every transition.
+   * An out-of-order call raises IllegalArgumentException, which GlobalExceptionHandler maps to a
+   * 400 with a readable message.
+   */
+  @PatchMapping("/{id}/invoiced")
+  public ResponseEntity<?> markInvoiced(@PathVariable Long id) {
+    return priorityQueueService.markInvoiced(id)
+        ? ResponseEntity.ok().build()
+        : ResponseEntity.notFound().build();
   }
 
   @PatchMapping("/{id}/assign")

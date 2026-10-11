@@ -1,6 +1,7 @@
 package com.amstar.repair.service;
 
 import com.amstar.repair.model.TicketLineItem;
+import com.amstar.repair.model.TicketStatus;
 import com.amstar.repair.model.Vehicle;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
@@ -103,6 +104,36 @@ public class PriorityQueueService {
                 activity.record(
                     repair, "STATUS", readable(oldStatus) + " → " + readable(newStatus));
               }
+              return true;
+            })
+        .orElse(false);
+  }
+
+  /**
+   * The bookkeeper's one write: READY_FOR_INVOICE becomes COMPLETED once the invoice exists.
+   *
+   * <p>Deliberately not a parameter on updateRepairStatus. That method accepts any status, and this
+   * account is entitled to exactly one transition; refusing every other source status is what keeps
+   * the narrow endpoint narrow. Without the check, a bookkeeper could complete a car still on the
+   * lift.
+   */
+  @Transactional
+  public boolean markInvoiced(Long id) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              if (!TicketStatus.READY_FOR_INVOICE.equals(repair.getStatus())) {
+                throw new IllegalArgumentException(
+                    "Only a ticket marked Ready for invoice can be invoiced. This one is "
+                        + readable(repair.getStatus())
+                        + ".");
+              }
+              repair.setStatus(TicketStatus.COMPLETED);
+              repair.setActualCompletionDate(LocalDate.now());
+              repository.save(repair);
+              // No amount: every signed-in account can read this feed.
+              activity.record(repair, "INVOICED", "Invoice completed");
               return true;
             })
         .orElse(false);

@@ -2,7 +2,6 @@ package com.amstar.repair;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amstar.repair.support.IntegrationTest;
@@ -193,10 +192,16 @@ public class SecurityRulesTest extends IntegrationTest {
 
     assertEquals("manager only", ticketById(admin, id).get("notes"), "a manager still sees them");
 
-    Map<String, Object> asShopFloor = ticketById(bookkeeperToken(), id);
-    assertNull(asShopFloor.get("notes"), "notes must not reach a shop-floor account");
-    assertNull(asShopFloor.get("parts"), "parts must not reach a shop-floor account");
-    assertNull(asShopFloor.get("lineItems"), "part prices must not reach a shop-floor account");
+    // This assertion is the inverse of what it was before the role rename. She
+    // cannot write the invoice without the breakdown, so the bookkeeper sits
+    // inside the billing boundary rather than outside it.
+    Map<String, Object> asBookkeeper = ticketById(bookkeeperToken(), id);
+    assertEquals("manager only", asBookkeeper.get("notes"), "she writes the invoice from these");
+    assertEquals("valve body VB-9912", asBookkeeper.get("parts"));
+    assertEquals(
+        1,
+        ((List<?>) asBookkeeper.get("lineItems")).size(),
+        "line items are the invoice; she has to see them");
   }
 
   /**
@@ -229,6 +234,36 @@ public class SecurityRulesTest extends IntegrationTest {
     assertEquals("BOOKKEEPER", roleIn(newToken));
     assertForbidden(patch("/api/repairs/" + id + "/severity", newToken, Map.of("severity", 5)));
     assertTrue(get("/api/repairs/queue", newToken).isOk(), "she can still read the queue");
+  }
+
+  @Test
+  void theBookkeeperMayInvoiceButMayNotSetAnyStatus() {
+    String admin = adminToken();
+    long id = createTicket(admin, "Dalisay", 3, "2026-12-01");
+    String books = bookkeeperToken();
+
+    // The general status endpoint stays ADMIN-only. That is the whole reason
+    // /invoiced exists as a path of its own.
+    assertForbidden(patch("/api/repairs/" + id + "/status", books, Map.of("status", "COMPLETED")));
+    assertEquals("PENDING", ticketById(admin, id).get("status"));
+
+    // Not ready yet: a 400, and nothing moves.
+    assertEquals(400, patch("/api/repairs/" + id + "/invoiced", books, null).status());
+    assertEquals("PENDING", ticketById(admin, id).get("status"));
+
+    assertTrue(
+        patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE"))
+            .isOk());
+    assertTrue(patch("/api/repairs/" + id + "/invoiced", books, null).isOk());
+
+    Map<String, Object> done = ticketById(admin, id);
+    assertEquals("COMPLETED", done.get("status"));
+    assertTrue(done.get("actualCompletionDate") != null, "COMPLETED must stamp the date");
+
+    // Also proves INVOICED is in the activity_action_valid CHECK. Without it the
+    // write above would have come back a 409 instead.
+    assertTrue(
+        activityActions(admin).contains("INVOICED"), "the invoice event must reach the feed");
   }
 
   // --- helpers ------------------------------------------------------------
