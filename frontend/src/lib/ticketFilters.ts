@@ -120,6 +120,13 @@ export const invoiceTotal = (r: VehicleRepair): number =>
 
 export const isActive = (r: VehicleRepair) => r.status !== "COMPLETED";
 
+/**
+ * The work is done and the invoice is not written yet. This is the bookkeeper's
+ * whole worklist, and the reason the shop stopped needing a verbal handoff.
+ */
+export const isReadyForInvoice = (r: VehicleRepair) =>
+  r.status === "READY_FOR_INVOICE";
+
 export const isOverdue = (r: VehicleRepair, today = localISODate()) =>
   isActive(r) && !!r.expectedCompletionDate && r.expectedCompletionDate < today;
 
@@ -217,6 +224,8 @@ export const parseTicketFilter = (
         label: "In progress",
         matches: (r) => r.status === "IN_PROGRESS",
       };
+    case "ready-for-invoice":
+      return { label: "Ready for invoice", matches: isReadyForInvoice };
     case "unbilled":
       return { label: "Completed but not billed", matches: isUnbilled };
     case "comeback":

@@ -188,7 +188,7 @@ export const TicketDetail: React.FC<{
               />
             ) : (
               <span className="block text-sm font-bold text-amstar-ink">
-                {repair.status?.replace("_", " ")}
+                {repair.status?.replace(/_/g, " ")}
               </span>
             )}
           </div>

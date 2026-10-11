@@ -52,7 +52,7 @@ export interface VehicleRepair {
   severity: number;
   entryDate: string;
   expectedCompletionDate: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+  status: "PENDING" | "IN_PROGRESS" | "READY_FOR_INVOICE" | "COMPLETED";
   assignedWorker: string;
   actualCompletionDate: string;
   priorityScore?: number;

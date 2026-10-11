@@ -130,6 +130,12 @@ export const getStatusStyle = (status?: string): string => {
       return `bg-sev-3 text-black border-sev-3 ${CHIP_HOVER}`;
     case "IN_PROGRESS":
       return `bg-sev-2 text-black border-sev-2 ${CHIP_HOVER}`;
+    case "READY_FOR_INVOICE":
+      // The one status that is a request aimed at a person rather than a state
+      // of the car, so it reads as an outline instead of a fill. red-edge
+      // clears 3.55:1 as a border and red-ink is the matching text weight on a
+      // dark ground; filling with red-edge would put text on it at ~2.3:1.
+      return `bg-transparent text-amstar-red-ink border-amstar-red-edge ${CHIP_HOVER}`;
     default:
       return `bg-sev-1 text-black border-sev-1 ${CHIP_HOVER}`;
   }

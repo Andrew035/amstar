@@ -19,19 +19,25 @@ export const StatusDropdown: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
+  // COMPLETED stays reachable so an admin can correct a mistake, but the
+  // everyday path out of the shop is TO INVOICE - the bookkeeper is the one who
+  // completes a ticket, from the Invoices page. The label is short because the
+  // status column is w-40 and "READY FOR INVOICE" truncates there; the stored
+  // value is READY_FOR_INVOICE everywhere else.
   const options = [
     { val: "PENDING", label: "PENDING" },
     { val: "IN_PROGRESS", label: "IN PROGRESS" },
+    { val: "READY_FOR_INVOICE", label: "TO INVOICE" },
     { val: "COMPLETED", label: "COMPLETED" },
   ];
 
   const currentLabel =
-    options.find((o) => o.val === value)?.label || value?.replace("_", " ");
+    options.find((o) => o.val === value)?.label || value?.replace(/_/g, " ");
 
   const openDropdown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    setCoords(panelCoords(rect, 3 * 38, 130));
+    setCoords(panelCoords(rect, options.length * 38, 130));
     setIsOpen(true);
   };
 
