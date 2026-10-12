@@ -201,10 +201,24 @@ belongs in `.env` instead.
 ### 7. Never edit a migration that has run
 
 Flyway checksums every `V*.sql`. Change one that has been applied anywhere and
-the backend refuses to start. Fix forward with a new file, `V10__…` next.
+the backend refuses to start. Fix forward with a new file, `V20__…` next.
+
+**The comments count too.** The checksum covers the whole file, so correcting a
+typo in a comment in an applied migration breaks startup exactly as changing the
+SQL would. V16 is live; if one of these needs explaining after the fact, explain
+it in `CLAUDE.md` instead of editing the file.
 
 Filenames need a **capital V**. A lowercase `v9__…` is silently ignored, which
 once shipped a missing CHECK constraint to production.
+
+Restating a CHECK re-derives it from scratch, because Postgres cannot append to
+one. Take the list from the live database, never from an older migration, or you
+silently revoke everything added since:
+
+```bash
+docker exec amstar_postgres psql -U amstar_user -d amstar_db \
+  -c "select pg_get_constraintdef(oid) from pg_constraint where conname = 'activity_action_valid';"
+```
 
 ### 8. Cron needs its own `PATH`
 
@@ -234,6 +248,35 @@ your own cache.
 A flex item will not shrink below its content width, so the truncation silently
 does nothing and the text overflows into its neighbour. This is the single most
 common styling bug in this codebase.
+
+### 13. iCloud duplicates break the Java build
+
+This repo lives under `~/Documents`, which iCloud syncs. It periodically leaves
+` 2.java` / ` 2.sql` / ` 2.tsx` copies next to the originals, and the backend
+then fails to compile with `duplicate class`. They are untracked, so git looks
+clean:
+
+```bash
+find . -name '* 2.*' -not -path './node_modules/*' -not -path './target/*'
+```
+
+**Diff before deleting.** Twelve turned up at once and eleven were byte-identical,
+but the twelfth held an edit that only existed in the duplicate.
+
+`pwd -P` and `ls -l` both look normal whether or not a directory is synced,
+because macOS uses APFS firmlinks for Desktop & Documents. The decisive test is
+the same device and inode showing up under both paths:
+
+```bash
+stat -f '%d:%i' . "$HOME/Library/Mobile Documents/com~apple~CloudDocs/Documents"
+```
+
+### 14. Tailwind token changes need a dev-server restart
+
+Editing `tailwind.config.js` while `npm run dev` is running produces classes
+that resolve to nothing, so a new token renders transparent. This looked like a
+code bug in the toast colours for a while. Restart the dev server after touching
+the config.
 
 ---
 

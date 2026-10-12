@@ -363,7 +363,8 @@ docker compose logs backend | grep "Failed to send password reset email"
 |---|---|
 | UI loads but all data blank | `frontend/dist` stale or missing, rebuild the frontend |
 | A UI change never appeared | `npm run build` skipped |
-| "You do not have permission to make that change" | Account is `SHOP_VIEW`, not `ADMIN`, see "Add a manager" in section 8 |
+| Invoices page missing, or a 403 marking a repair invoiced | Account is `BOOKKEEPER`, not `ADMIN`; that page is the only thing the role gates, see "Add a manager" in section 8 |
+| A role change had no effect | The `token_version` was not bumped, so the old token keeps its old authority for up to 10 hours; see section 8 |
 | Kicked back to the login page | Token expired (10 hours) or the JWT secret was rotated, sign in again |
 | Backend won't start: `Could not resolve placeholder` | A variable missing from `.env` |
 | Backend won't start: `must be at least 32 bytes` | `AMSTAR_JWT_SECRET` too short |

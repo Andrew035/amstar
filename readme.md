@@ -46,21 +46,25 @@ then by plate and state, so a returning car keeps its history.
 status, severity, due date, technicians, services, notes and parts all in one
 pane. No modals stacked on modals.
 
-**Pricing and history.** Retail, lease and labor per ticket, each independently
-included or excluded from the invoice. Completed work is a searchable ledger
-grouped by month, where any row opens to show what was actually done.
+**Pricing, then invoicing.** These used to be one step called "completed", a
+word that meant *the car has left* to the shop and *the invoice can be written*
+to the owner, so nobody could tell what was owed. They are now separate steps:
+the shop prices the job and marks it ready for invoice, and the owner reviews it
+on a page only they can reach. Completed work is a searchable ledger grouped by
+month, where any row opens to show what was actually done.
 
-**Two kinds of account.** Managers get everything. A shared shop-floor login is
-read-only, and read-only on the server, in `SecurityConfig`, not merely hidden
-in the UI.
+**Two kinds of account.** Owners and the bookkeeper share the same authority on
+the shop floor, deliberately, because they do the same work there. The role
+decides one thing: who writes the invoice. That rule is enforced in
+`SecurityConfig`, not merely hidden in the UI.
 
 ## Built with
 
 | Layer | |
 |---|---|
-| Frontend | React 19, TypeScript, Vite 8, Tailwind 3, 5,800 lines |
-| Backend | Spring Boot 4.1 on Java 17, Spring Security + JWT, JPA, 2,400 lines |
-| Database | PostgreSQL 15, schema owned by Flyway (9 migrations) |
+| Frontend | React 19, TypeScript, Vite 8, Tailwind 3, 7,900 lines |
+| Backend | Spring Boot 4.1 on Java 17, Spring Security + JWT, JPA, 3,000 lines |
+| Database | PostgreSQL 15, schema owned by Flyway (19 migrations) |
 | Hosting | AWS EC2, Docker Compose, Caddy for automatic HTTPS |
 | Backups | Hourly `pg_dump`, offsite to Backblaze B2, dead-man's switch |
 
@@ -70,8 +74,8 @@ Some deliberate choices worth knowing about:
   changes a table, it only checks the entities still match. Every change is a
   new migration file.
 - **Rules are enforced twice.** Severity 1–5, valid statuses, non-negative
-  prices, completion date implies completed, once in Java for a readable 400,
-  once as a database CHECK as the backstop.
+  prices, a completion date on exactly the finished statuses, once in Java for
+  a readable 400, once as a database CHECK as the backstop.
 - **The controls are hand-rolled.** Native `<select>` and `<input type="date">`
   were replaced because they are unusable on an iPad in a shop.
 - **No state library.** One endpoint returns every ticket with a fresh priority
@@ -83,10 +87,11 @@ Some deliberate choices worth knowing about:
 cd backend && ./mvnw test
 ```
 
-Unit tests for the priority scoring and worker assignment, plus integration
-tests that stand up a real PostgreSQL with Testcontainers and run every Flyway
-migration against it. Those cover the schema, the security rules (a shop-floor
-account must never be able to write), the full ticket lifecycle, and refusing
+Unit tests for the priority scoring, worker assignment and the registration
+role rules, plus integration tests that stand up a real PostgreSQL with
+Testcontainers and run every Flyway migration against it. Those cover the
+schema, the security rules called the way anyone with a browser console could
+call them, the full ticket lifecycle through every activity action, and refusing
 bad input with a 4xx rather than a 500.
 
 The frontend is type-checked by `npm run build` and linted with oxlint. CI runs

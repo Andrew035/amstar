@@ -172,7 +172,7 @@ Two details that are easy to undo by accident: the SVG is stretched with `preser
 
 ## Tests and CI
 
-Six backend test classes plus a harness:
+Seven backend test classes plus a harness:
 
 - `support/IntegrationTest` runs the **whole app against a real PostgreSQL** (Testcontainers, `postgres:15-alpine`), so Flyway applies every migration and `ddl-auto=validate` then checks the entities against the result. Requests go over real HTTP with real tokens. `adminToken()` / `bookkeeperToken()` register and sign in the addresses in `application-test.properties`; `resetDatabase()` truncates between tests but leaves the seeded roster and catalog. **Docker must be running.**
 - `SchemaTest` - every migration file actually ran, applied cleanly, and is numbered 1..n with no gaps; every table exists; reference data was seeded.
