@@ -5,12 +5,23 @@ import { Panel } from "./Panel";
 
 const VIEW_W = 220;
 const VIEW_H = 50;
+/** Headroom for the top of the plot, so a peak never touches the frame. */
+const PAD_TOP = 10;
+const PAD_BOTTOM = 4;
 
 /**
- * Completed per month. Complete months only: a partial month plots low and
- * reads as a collapse when it just started. The current month is reported as
- * a number instead, and the line is hidden entirely below three months of
- * history, where a trend would imply a slope that is not there.
+ * Cars completed per month, over three months ending with the one in progress.
+ *
+ * <p>The month in progress is **dashed** everywhere it appears - the last line
+ * segment, its bar, its label. A partial month always plots low, so a solid mark
+ * would read as a collapse rather than as a month that is not over.
+ *
+ * <p>Three points make a line; one or two get bars, because a line between two
+ * points draws a slope that is not in the data.
+ *
+ * <p>Colour comes from the sev tokens via `currentColor`, since an SVG `stroke`
+ * cannot take a Tailwind class. The chart previously hardcoded #38bdf8 and
+ * #10b981, which are those two tokens' values copied by hand.
  */
 export const ThroughputPanel: React.FC<{
   repairs: VehicleRepair[];
@@ -19,17 +30,48 @@ export const ThroughputPanel: React.FC<{
 }> = ({ repairs, onOpenHistory, className }) => {
   const t = throughput(repairs);
   const peak = Math.max(1, ...t.months.map((m) => m.count));
+  const span = VIEW_H - PAD_TOP - PAD_BOTTOM;
 
-  const points = t.months
-    .map((m, i) => {
-      const x = (i / Math.max(1, t.months.length - 1)) * VIEW_W;
-      const y = VIEW_H - 4 - (m.count / peak) * (VIEW_H - 14);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const xy = t.months.map((m, i) => ({
+    x: (i / Math.max(1, t.months.length - 1)) * VIEW_W,
+    y: VIEW_H - PAD_BOTTOM - (m.count / peak) * span,
+  }));
+  const at = (p: { x: number; y: number }) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
 
-  const last = t.months[t.months.length - 1];
-  const lastY = VIEW_H - 4 - ((last?.count ?? 0) / peak) * (VIEW_H - 14);
+  // Split so the leg into the unfinished month can be dashed on its own.
+  const solid = xy.slice(0, -1).map(at).join(" ");
+  const dashed = xy.slice(-2).map(at).join(" ");
+
+  const label = `Completed per month: ${t.months
+    .map((m) => `${m.label} ${m.count}${m.partial ? " so far" : ""}`)
+    .join(", ")}`;
+
+  /*
+   * Line mode anchors its end points at 0% and 100% of the width, so the
+   * captions are edge-anchored to match. Bars occupy equal columns instead, so
+   * theirs are centred. Using one row for both left the first and last caption
+   * a sixth of the width away from the point they named.
+   */
+  const captions = (kind: "line" | "bars") => (
+    <div className={`mt-0.5 flex ${kind === "line" ? "justify-between" : ""}`}>
+      {t.months.map((m, i) => (
+        <span
+          key={m.key}
+          className={`font-mono text-[10px] ${
+            kind === "bars" ? "flex-1 text-center" : ""
+          } ${
+            i === 0 && kind === "line"
+              ? "text-left"
+              : i === t.months.length - 1 && kind === "line"
+                ? "text-right"
+                : "text-center"
+          } ${m.partial ? "text-sev-1" : "text-amstar-ink-faint"}`}
+        >
+          {m.label}
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <Panel className={className} title="Throughput" onOpen={onOpenHistory}>
@@ -51,68 +93,88 @@ export const ThroughputPanel: React.FC<{
 
         <div>
           {t.chart === "line" && (
-            <svg
-              viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-              className="w-full h-11"
-              preserveAspectRatio="none"
-              role="img"
-              aria-label={`Completed per month over ${t.months.length} months`}
-            >
-              <polyline
-                points={`${points} ${VIEW_W},${VIEW_H} 0,${VIEW_H}`}
-                fill="rgb(56 189 248 / 0.14)"
-                stroke="none"
-              />
-              <polyline
-                points={points}
-                fill="none"
-                stroke="#38bdf8"
-                strokeWidth="2"
-                vectorEffect="non-scaling-stroke"
-              />
-              <circle cx={VIEW_W} cy={lastY} r="3.5" fill="#10b981" />
-            </svg>
+            <>
+              {/* Values live in HTML, not SVG text: the plot is stretched with
+                  preserveAspectRatio="none", which would squash any glyph. */}
+              <div className="flex justify-between">
+                {t.months.map((m, i) => (
+                  <span
+                    key={m.key}
+                    className={`font-mono text-[10px] tabular-nums ${
+                      i === 0
+                        ? "text-left"
+                        : i === t.months.length - 1
+                          ? "text-right"
+                          : "text-center"
+                    } ${m.partial ? "text-sev-1" : "text-amstar-ink-dim"}`}
+                  >
+                    {m.count}
+                  </span>
+                ))}
+              </div>
+              <svg
+                viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+                className="w-full h-11 text-sev-2"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label={label}
+              >
+                <polyline
+                  points={`${xy.map(at).join(" ")} ${VIEW_W},${VIEW_H} 0,${VIEW_H}`}
+                  fill="currentColor"
+                  fillOpacity="0.14"
+                  stroke="none"
+                />
+                <polyline
+                  points={solid}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <polyline
+                  points={dashed}
+                  fill="none"
+                  className="text-sev-1"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray="4 3"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              {captions("line")}
+            </>
           )}
 
           {t.chart === "bars" && (
-            <div
-              className="flex items-end gap-2 h-11"
-              role="img"
-              aria-label={`Completed per month over ${t.months.length} months`}
-            >
-              {t.months.map((m, i) => (
-                <span
-                  key={m.key}
-                  className={`flex-1 rounded-sm ${
-                    i === t.months.length - 1 ? "bg-sev-1" : "bg-sev-2"
-                  }`}
-                  style={{ height: `${Math.max(8, (m.count / peak) * 100)}%` }}
-                />
-              ))}
-            </div>
+            <>
+              <div
+                className="flex items-end gap-2 h-11"
+                role="img"
+                aria-label={label}
+              >
+                {t.months.map((m) => (
+                  <span
+                    key={m.key}
+                    // The month in progress is an outline, not a fill: it says
+                    // "as far as it has got" rather than stating a total.
+                    className={`flex-1 rounded-sm ${
+                      m.partial
+                        ? "border-2 border-dashed border-sev-1 bg-sev-1/20"
+                        : "bg-sev-2"
+                    }`}
+                    style={{ height: `${Math.max(8, (m.count / peak) * 100)}%` }}
+                  />
+                ))}
+              </div>
+              {captions("bars")}
+            </>
           )}
 
           {t.chart === "none" && (
             <p className="text-xs text-amstar-ink-faint">
               No completed jobs yet. The trend starts with the first one.
             </p>
-          )}
-
-          {t.chart !== "none" && (
-            <div className="flex mt-0.5">
-              {t.months.map((m, i) => (
-                <span
-                  key={m.key}
-                  className={`flex-1 text-center font-mono text-[10px] ${
-                    i === t.months.length - 1
-                      ? "text-sev-1"
-                      : "text-amstar-ink-faint"
-                  }`}
-                >
-                  {m.label}
-                </span>
-              ))}
-            </div>
           )}
         </div>
 
