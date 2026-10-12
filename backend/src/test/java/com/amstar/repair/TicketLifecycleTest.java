@@ -103,6 +103,24 @@ public class TicketLifecycleTest extends IntegrationTest {
         null,
         ticketById(admin, id).get("actualCompletionDate"),
         "reopening a ticket must clear the completion date");
+
+    // actual_completion_date records when the REPAIR finished, so it is stamped
+    // at READY_FOR_INVOICE and has to survive being invoiced afterwards.
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "READY_FOR_INVOICE")));
+    Map<String, Object> ready = ticketById(admin, id);
+    assertEquals("READY_FOR_INVOICE", ready.get("status"));
+    Object repairFinished = ready.get("actualCompletionDate");
+    assertTrue(repairFinished != null, "the repair is done, so the date is stamped here");
+
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "COMPLETED")));
+    assertEquals(
+        repairFinished,
+        ticketById(admin, id).get("actualCompletionDate"),
+        "invoicing must not rewrite when the repair finished");
+
+    // Back to open work: the repair turns out not to be finished after all.
+    assertOk(patch("/api/repairs/" + id + "/status", admin, Map.of("status", "IN_PROGRESS")));
+    assertEquals(null, ticketById(admin, id).get("actualCompletionDate"));
   }
 
   @Test
@@ -307,6 +325,61 @@ public class TicketLifecycleTest extends IntegrationTest {
   // --- helpers ------------------------------------------------------------
 
   /** Creates a ticket against a specific vehicle payload and returns its id. */
+  /** Both fields are optional, and mileage is the latest reading, not the first. */
+  @Test
+  void aPhoneNumberAndMileageRoundTripAndAreOptional() {
+    String admin = adminToken();
+
+    ApiResponse created =
+        post(
+            "/api/repairs",
+            admin,
+            Map.of(
+                "customerName", "Rosalind Okafor",
+                "customerPhone", "(301) 555-0142",
+                "serviceType", "OIL CHANGE",
+                "severity", 2,
+                "expectedCompletionDate", "2026-12-01",
+                "vehicle",
+                    Map.of(
+                        "licensePlate", "MIL1001",
+                        "state", "MD",
+                        "make", "FORD",
+                        "model", "F-150",
+                        "year", 2016,
+                        "mileage", 128450)));
+    assertOk(created);
+    long id = ((Number) created.asMap().get("id")).longValue();
+
+    Map<String, Object> ticket = ticketById(admin, id);
+    assertEquals("(301) 555-0142", ticket.get("customerPhone"));
+    assertEquals(128450, ((Map<?, ?>) ticket.get("vehicle")).get("mileage"));
+
+    // Neither is required: a ticket without them is accepted and reads back null.
+    long bare = createTicket(admin, "Tobias Lindqvist", 3, "2026-12-02");
+    assertEquals(null, ticketById(admin, bare).get("customerPhone"));
+    assertEquals(null, ((Map<?, ?>) ticketById(admin, bare).get("vehicle")).get("mileage"));
+
+    // The same car back in later: the odometer has moved on, and the newer
+    // reading wins rather than the blank-filling rule the other fields use.
+    assertOk(
+        post(
+            "/api/repairs",
+            admin,
+            Map.of(
+                "customerName", "Rosalind Okafor",
+                "serviceType", "TIRE ROTATION",
+                "severity", 1,
+                "expectedCompletionDate", "2026-12-20",
+                "vehicle",
+                    Map.of("licensePlate", "MIL1001", "state", "MD", "mileage", 131900))));
+    assertEquals(131900, ((Map<?, ?>) ticketById(admin, id).get("vehicle")).get("mileage"));
+
+    // A blank number must not wipe one already on file.
+    assertOk(patch("/api/repairs/" + id + "/customer", admin, Map.of("customerName", "Rosalind Okafor")));
+    assertEquals("(301) 555-0142", ticketById(admin, id).get("customerPhone"));
+  }
+
   private long ticketFor(String token, Map<String, Object> vehicle) {
     ApiResponse created =
         post(

@@ -39,6 +39,9 @@ public class Vehicle {
   @Column(name = "model_year")
   private Integer year;
 
+  /** Most recent odometer reading. Optional; mirrors vehicles_mileage_sane in V18. */
+  @Column private Integer mileage;
+
   @Column(name = "car_image_url", length = 2000)
   @Pattern(regexp = "^$|^https://.*", message = "Car image URL must be https")
   private String carImageUrl;
@@ -50,6 +53,14 @@ public class Vehicle {
   public Vehicle() {}
 
   // Getters and Setters
+
+  public Integer getMileage() {
+    return mileage;
+  }
+
+  public void setMileage(Integer mileage) {
+    this.mileage = mileage;
+  }
 
   public Long getId() {
     return id;

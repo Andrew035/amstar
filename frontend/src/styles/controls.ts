@@ -34,6 +34,12 @@ export const HOVER_LIFT =
   "transition-[transform,background-color,border-color,color] duration-150 ease-out hover:-translate-y-px active:translate-y-0";
 
 /** The push a button gives back when it is pressed. */
+/**
+ * The press nudge. Every control that can be clicked gets it, so pressing one
+ * feels the same wherever you are: triggers, option rows, panel rows and
+ * buttons. It is baked into the shared strings below rather than repeated at
+ * call sites, which is how half the app ended up without it.
+ */
 export const PRESS = "active:translate-y-px";
 
 /**
@@ -50,7 +56,7 @@ export const SEARCH_INPUT_STYLE = `w-full sm:w-80 px-4 py-2.5 bg-amstar-field bo
 
 export const NUMBER_INPUT_STYLE = `w-20 px-2 py-1.5 bg-amstar-field border border-amstar-line rounded font-mono text-sm font-bold text-amstar-ink tabular-nums shadow-inner transition-[border-color,box-shadow] duration-150 ease-out text-right ${FOCUS} disabled:opacity-40 disabled:bg-amstar-surface disabled:cursor-not-allowed`;
 
-export const TABLE_DROPDOWN_STYLE = `px-3 py-1.5 bg-amstar-field border border-amstar-line rounded text-xs font-bold text-amstar-ink shadow-inner cursor-pointer ${HOVER} hover:border-amstar-red ${FOCUS}`;
+export const TABLE_DROPDOWN_STYLE = `px-3 py-1.5 bg-amstar-field border border-amstar-line rounded text-xs font-bold text-amstar-ink shadow-inner cursor-pointer ${HOVER} hover:border-amstar-red ${PRESS} ${FOCUS}`;
 
 /**
  * A control that opens a panel instead of accepting typing: the service,
@@ -58,10 +64,10 @@ export const TABLE_DROPDOWN_STYLE = `px-3 py-1.5 bg-amstar-field border border-a
  * the hover the table dropdowns already had - anything clickable should react
  * to the pointer, or it reads as a disabled field.
  */
-export const SELECT_TRIGGER_STYLE = `${SHARED_INPUT_STYLE} cursor-pointer hover:border-amstar-red`;
+export const SELECT_TRIGGER_STYLE = `${SHARED_INPUT_STYLE} cursor-pointer hover:border-amstar-red ${PRESS}`;
 
 /** One row inside a dropdown panel. Sized for a fingertip on an iPad. */
-export const OPTION_ROW_STYLE = `w-full min-h-10 flex items-center gap-3 px-3 py-2 rounded-sm text-left ${HOVER}`;
+export const OPTION_ROW_STYLE = `w-full min-h-10 flex items-center gap-3 px-3 py-2 rounded-sm text-left ${HOVER} ${PRESS}`;
 
 /**
  * The red action button: submit, save, done. Call sites add their own padding
@@ -89,7 +95,7 @@ export const LABEL_STYLE =
 export const FLOATING_PANEL_STYLE =
   "fixed bg-amstar-raised border border-amstar-line shadow-2xl rounded z-[101] overflow-hidden anim-pop";
 
-export const PANEL_ROW_STYLE = `px-4 py-2.5 text-sm font-bold text-amstar-ink hover:bg-amstar-surface cursor-pointer border-b border-amstar-line-soft last:border-0 ${HOVER}`;
+export const PANEL_ROW_STYLE = `px-4 py-2.5 text-sm font-bold text-amstar-ink hover:bg-amstar-surface cursor-pointer border-b border-amstar-line-soft last:border-0 ${HOVER} ${PRESS}`;
 
 // Severity ramp. Level 2 moved from blue to cyan because blue-500 is invisible
 // against the navy ground. Keys map to COMPLETE literal class strings: Tailwind
@@ -130,6 +136,12 @@ export const getStatusStyle = (status?: string): string => {
       return `bg-sev-3 text-black border-sev-3 ${CHIP_HOVER}`;
     case "IN_PROGRESS":
       return `bg-sev-2 text-black border-sev-2 ${CHIP_HOVER}`;
+    case "READY_FOR_INVOICE":
+      // The one status that is a request aimed at a person rather than a state
+      // of the car, so it reads as an outline instead of a fill. red-edge
+      // clears 3.55:1 as a border and red-ink is the matching text weight on a
+      // dark ground; filling with red-edge would put text on it at ~2.3:1.
+      return `bg-transparent text-amstar-red-ink border-amstar-red-edge ${CHIP_HOVER}`;
     default:
       return `bg-sev-1 text-black border-sev-1 ${CHIP_HOVER}`;
   }

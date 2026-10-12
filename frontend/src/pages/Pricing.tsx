@@ -4,77 +4,61 @@ import {
   SEARCH_INPUT_STYLE,
   PANEL_STYLE,
   PRIMARY_BUTTON_STYLE,
-  NUMBER_INPUT_STYLE,
   HOVER,
   getStatusStyle,
 } from "../styles/controls";
-import { Truncated } from "../components/Truncated";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { useSearchParams } from "react-router-dom";
 import {
   invoiceTotal,
-  isUnbilled,
+  isReadyForInvoice,
   matchesSearch,
+  miles,
+  money,
+  phone,
   parseTicketFilter,
+  technicianList,
+  usDate,
   vehicleLabel,
 } from "../lib/ticketFilters";
 import { FilterBanner } from "../components/FilterBanner";
 import { PlateChip } from "../components/PlateChip";
+import { Fact } from "../components/Fact";
+import { PartsEditor } from "../components/PartsEditor";
 
-/** One labelled fact in the expanded editor. */
-const Fact: React.FC<{
-  label: string;
-  value?: string | null;
-  fallback?: string;
-  mono?: boolean;
-  /** Renders instead of `value`, for a fact that is a component rather than text. */
-  children?: React.ReactNode;
-}> = ({ label, value, fallback = "N/A", mono = false, children }) => (
-  <div className="min-w-0">
-    <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-      {label}
-    </span>
-    {children ?? (
-      <Truncated
-        value={value || fallback}
-        className={`block px-2 py-1 bg-amstar-field border border-amstar-line rounded-sm text-[11px] font-bold text-amstar-ink ${
-          mono ? "font-mono tabular-nums" : ""
-        }`}
-      />
-    )}
-  </div>
-);
+const PAD_LABEL =
+  "block font-cond text-[10px] font-bold uppercase tracking-[0.2em] text-amstar-ink-dim";
+
+const PAD_INPUT =
+  "mt-2 w-full min-h-24 px-3 py-2 bg-amstar-ground border border-amstar-line rounded-sm text-xs font-medium text-amstar-ink placeholder:text-amstar-ink-faint transition-[border-color] duration-150 ease-out focus:border-amstar-red-edge focus:outline-none";
 
 /** What the Save button sends. Shared so the page and the row cannot drift. */
 export type InvoicePayload = {
   lineItems: LineItem[];
   laborPrice: number;
+  notes: string;
+  parts: string;
 };
 
 export type SaveInvoice = (id: number, payload: InvoicePayload) => void;
 
-const blankLine = (): LineItem => ({
-  description: "",
-  unitPrice: 0,
-  quantity: 1,
-  vendor: "",
-});
-
-const ROW_INPUT =
-  "w-full min-h-11 px-3 bg-amstar-ground border border-amstar-line rounded-sm text-xs font-bold text-amstar-ink uppercase placeholder:text-amstar-ink-faint placeholder:normal-case transition-[border-color] duration-150 ease-out focus:border-amstar-red-edge focus:outline-none";
-
-const PARTS_GRID = "grid grid-cols-[1fr_3.5rem_8rem_7rem_2.5rem] gap-1.5";
-
 /**
- * The parts editor for one ticket. Lives inside an expanded row, so it gets the
- * full page width and the parts table never has to squeeze.
+ * Everything needed to write one invoice, in the expanded row.
+ *
+ * <p>The parts and their costs usually arrive from the bookkeeper, who entered
+ * them from the modal on the queue; this is where the owner checks them, adds
+ * labor, and writes down anything the invoice needs to say. Labor lives here and
+ * not in that modal because PATCH /pricing is ADMIN-only.
  */
 const InvoiceEditor: React.FC<{
   item: VehicleRepair;
   onSaveInvoice: SaveInvoice;
-}> = ({ item, onSaveInvoice }) => {
+  onMarkInvoiced: (id: number) => void;
+}> = ({ item, onSaveInvoice, onMarkInvoiced }) => {
   const [lines, setLines] = useState<LineItem[]>(item.lineItems ?? []);
   const [laborPrice, setLaborPrice] = useState<number>(item.laborPrice || 0);
+  const [notes, setNotes] = useState<string>(item.notes ?? "");
+  const [parts, setParts] = useState<string>(item.parts ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
   const partsTotal = lines.reduce(
@@ -82,12 +66,7 @@ const InvoiceEditor: React.FC<{
     0,
   );
   const currentTotal = partsTotal + laborPrice;
-
-  const patchLine = (index: number, patch: Partial<LineItem>) =>
-    setLines(lines.map((l, i) => (i === index ? { ...l, ...patch } : l)));
-
-  const removeLine = (index: number) =>
-    setLines(lines.filter((_, i) => i !== index));
+  const technicians = technicianList(item);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -99,6 +78,8 @@ const InvoiceEditor: React.FC<{
         .filter((l) => l.description.trim())
         .map((l) => ({ ...l, quantity: l.quantity || 1 })),
       laborPrice,
+      notes,
+      parts,
     });
     setTimeout(() => setIsSaving(false), 400);
   };
@@ -106,136 +87,72 @@ const InvoiceEditor: React.FC<{
   return (
     <div className="anim-rise border-t border-amstar-line-soft bg-amstar-field p-4 sm:p-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-        <Fact label="VIN" value={item.vehicle?.vin} mono />
+        <Fact label="Customer" value={item.customerName} />
+        <Fact label="Phone" value={phone(item.customerPhone)} fallback="-" />
         <Fact label="Plate">
           <PlateChip vehicle={item.vehicle} />
         </Fact>
+        <Fact label="Vehicle" value={vehicleLabel(item)} />
+        <Fact label="VIN" value={item.vehicle?.vin} mono />
+        <Fact
+          label="Mileage"
+          value={miles(item.vehicle?.mileage)}
+          fallback="-"
+          mono
+        />
         <Fact label="Service" value={item.serviceType} />
         <Fact
           label="Technician(s)"
-          value={item.assignedWorker}
+          value={technicians.join(", ")}
           fallback="Unassigned"
+        />
+        <Fact label="In" value={usDate(item.entryDate)} mono />
+        {/* The repair finished, not the invoice. Nothing records the latter. */}
+        <Fact
+          label="Repair done"
+          value={usDate(item.actualCompletionDate)}
+          fallback="Not yet"
+          mono
         />
       </div>
 
-      <span className="block font-cond text-[10px] font-bold uppercase tracking-[0.2em] text-amstar-ink-dim">
-        Parts
-      </span>
+      <PartsEditor lines={lines} onChange={setLines} />
 
-      <div className="mt-2.5 flex flex-col gap-1.5">
-        {lines.length === 0 && (
-          <p className="py-3 text-xs text-amstar-ink-faint">
-            No parts yet. Add the first one below.
-          </p>
-        )}
-
-        {lines.length > 0 && (
-          <div className={`${PARTS_GRID} px-1 pb-1`}>
-            <span className="font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint">
-              Part
-            </span>
-            <span className="font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint text-center">
-              Qty
-            </span>
-            <span className="font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint text-right">
-              Price
-            </span>
-            <span className="font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint">
-              Vendor
-            </span>
-            <span />
-          </div>
-        )}
-
-        {lines.map((line, i) => (
-          /*
-           * `anim-row` runs on mount, so expanding a ticket deals the existing
-           * parts out in order and "+ Add part" slides in only the new line.
-           * Editing a line does not remount it, so nothing re-animates while
-           * somebody is typing in it.
-           */
-          <div
-            key={i}
-            style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
-            className={`anim-row ${PARTS_GRID} items-center`}
-          >
-            <input
-              value={line.description}
-              onChange={(e) =>
-                patchLine(i, { description: e.target.value.toUpperCase() })
-              }
-              placeholder="FRONT BRAKE PADS"
-              maxLength={200}
-              aria-label={`Part ${i + 1} name`}
-              className={ROW_INPUT}
-            />
-            <input
-              type="text"
-              inputMode="numeric"
-              // 0 is the "empty while typing" state so the field can actually be
-              // cleared; onBlur settles it back to 1.
-              value={line.quantity === 0 ? "" : line.quantity}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
-                patchLine(i, { quantity: digits ? parseInt(digits, 10) : 0 });
-              }}
-              onFocus={(e) => e.target.select()}
-              onBlur={() => {
-                if (!line.quantity) patchLine(i, { quantity: 1 });
-              }}
-              aria-label={`Part ${i + 1} quantity`}
-              className={`${NUMBER_INPUT_STYLE} w-full min-h-11 text-center`}
-            />
-            <CurrencyInput
-              value={line.unitPrice}
-              onChange={(unitPrice) => patchLine(i, { unitPrice })}
-              aria-label={`Part ${i + 1} price`}
-              className="w-full min-h-11"
-            />
-            <input
-              value={line.vendor ?? ""}
-              onChange={(e) =>
-                patchLine(i, { vendor: e.target.value.toUpperCase() })
-              }
-              placeholder="PA"
-              maxLength={60}
-              aria-label={`Part ${i + 1} vendor`}
-              className={ROW_INPUT}
-            />
-            <button
-              type="button"
-              onClick={() => removeLine(i)}
-              aria-label={`Remove ${line.description || `part ${i + 1}`}`}
-              className={`min-h-11 w-full grid place-items-center rounded-sm text-amstar-ink-faint hover:text-white hover:bg-amstar-red active:translate-y-px text-lg leading-none ${HOVER}`}
-            >
-              &times;
-            </button>
-          </div>
-        ))}
-
-        <button
-          type="button"
-          onClick={() => setLines([...lines, blankLine()])}
-          className={`mt-1 min-h-11 px-3 rounded-sm border border-dashed border-amstar-line text-left font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink active:translate-y-px ${HOVER}`}
-        >
-          + Add part
-        </button>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div>
+          <span className={PAD_LABEL}>Notes</span>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            maxLength={5000}
+            placeholder="Anything the invoice needs to say."
+            aria-label="Invoice notes"
+            className={PAD_INPUT}
+          />
+        </div>
+        <div>
+          <span className={PAD_LABEL}>Parts notes</span>
+          <textarea
+            value={parts}
+            onChange={(e) => setParts(e.target.value)}
+            maxLength={2000}
+            placeholder="Where the parts came from, order numbers, anything loose."
+            aria-label="Parts notes"
+            className={PAD_INPUT}
+          />
+        </div>
       </div>
 
       <div className="mt-4 pt-4 border-t border-amstar-line-soft flex flex-wrap items-end justify-between gap-4">
-        <div className="flex items-end gap-6">
+        <div className="flex items-start gap-6">
           <div>
-            <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-              Parts
-            </span>
-            <span className="font-mono tabular-nums text-sm text-amstar-ink">
-              ${partsTotal.toFixed(2)}
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Parts</span>
+            <span className="flex min-h-11 items-center font-mono text-sm tabular-nums text-amstar-ink">
+              {money(partsTotal)}
             </span>
           </div>
           <div>
-            <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-              Labor
-            </span>
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Labor</span>
             <CurrencyInput
               value={laborPrice}
               onChange={setLaborPrice}
@@ -244,26 +161,46 @@ const InvoiceEditor: React.FC<{
             />
           </div>
           <div>
-            <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-              Total
-            </span>
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Total</span>
             <span
-              className={`font-mono tabular-nums text-2xl font-bold tracking-tight ${
+              className={`flex min-h-11 items-center font-mono text-2xl font-bold tracking-tight tabular-nums ${
                 currentTotal > 0 ? "text-sev-1" : "text-amstar-ink-faint"
               }`}
             >
-              ${currentTotal.toFixed(2)}
+              {money(currentTotal)}
             </span>
           </div>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`${PRIMARY_BUTTON_STYLE} min-h-11 px-8 text-xs`}
-        >
-          {isSaving ? "Saving..." : "Save Pricing"}
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`${PRIMARY_BUTTON_STYLE} min-h-11 px-8 text-xs`}
+          >
+            {isSaving ? "Saving..." : "Save invoice"}
+          </button>
+          {/*
+           * The only way a car leaves this page. Offered once the shop has said
+           * the work is done; completing it is what moves the ticket to History.
+           */}
+          {isReadyForInvoice(item) && (
+            <button
+              type="button"
+              onClick={() => item.id && onMarkInvoiced(item.id)}
+              className={`min-h-11 px-5 rounded-sm border border-amstar-red-edge bg-transparent font-cond text-xs font-bold uppercase tracking-widest text-amstar-red-ink hover:bg-amstar-red hover:text-white active:translate-y-px transition-[color,background-color,transform] duration-150 ease-out`}
+            >
+              Invoiced
+            </button>
+          )}
+        </div>
       </div>
+
+      {currentTotal === 0 && (
+        <p className="mt-3 text-sm font-medium text-amstar-red-ink">
+          Nothing priced yet. Check the parts with the shop before invoicing.
+        </p>
+      )}
     </div>
   );
 };
@@ -274,10 +211,10 @@ const PricingRow: React.FC<{
   isOpen: boolean;
   onToggle: () => void;
   onSaveInvoice: SaveInvoice;
+  onMarkInvoiced: (id: number) => void;
   index: number;
-}> = ({ item, isOpen, onToggle, onSaveInvoice, index }) => {
+}> = ({ item, isOpen, onToggle, onSaveInvoice, onMarkInvoiced, index }) => {
   const total = invoiceTotal(item);
-  const needsPricing = isUnbilled(item);
 
   return (
     /*
@@ -293,7 +230,7 @@ const PricingRow: React.FC<{
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER}`}
+        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER} active:translate-y-px`}
       >
         <PlateChip vehicle={item.vehicle} className="shrink-0" />
         <span className="flex-1 min-w-0 truncate font-cond text-sm font-bold uppercase tracking-wide text-amstar-ink">
@@ -302,17 +239,20 @@ const PricingRow: React.FC<{
         <span className="hidden md:block w-32 shrink-0 truncate text-xs text-amstar-ink-dim">
           {item.customerName}
         </span>
+        <span className="hidden xl:block w-24 shrink-0 truncate text-xs text-amstar-ink-faint">
+          {technicianList(item).join(", ") || "Unassigned"}
+        </span>
         <span
           className={`hidden sm:block shrink-0 px-2 py-0.5 rounded-sm border text-[9px] font-bold uppercase ${getStatusStyle(item.status)}`}
         >
-          {item.status.replace("_", " ")}
+          {item.status.replace(/_/g, " ")}
         </span>
         <span
           className={`w-24 shrink-0 text-right font-mono tabular-nums text-sm font-bold ${
-            needsPricing ? "text-amstar-red-ink" : "text-amstar-ink"
+            total === 0 ? "text-amstar-red-ink" : "text-amstar-ink"
           }`}
         >
-          ${total.toFixed(2)}
+          {money(total)}
         </span>
         <span
           aria-hidden="true"
@@ -324,15 +264,26 @@ const PricingRow: React.FC<{
         </span>
       </button>
 
-      {isOpen && <InvoiceEditor item={item} onSaveInvoice={onSaveInvoice} />}
+      {isOpen && (
+        <InvoiceEditor
+          item={item}
+          onSaveInvoice={onSaveInvoice}
+          onMarkInvoiced={onMarkInvoiced}
+        />
+      )}
     </div>
   );
 };
 
+/**
+ * The Invoices page. Admin only - the route and the nav link both check it, and
+ * every write it makes (/pricing, /notes, /parts) is ADMIN-only on the server.
+ */
 export const PricingPage: React.FC<{
   repairs: VehicleRepair[];
   onSaveInvoice: SaveInvoice;
-}> = ({ repairs, onSaveInvoice }) => {
+  onMarkInvoiced: (id: number) => void;
+}> = ({ repairs, onSaveInvoice, onMarkInvoiced }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -347,12 +298,12 @@ export const PricingPage: React.FC<{
     .sort(sortNewestFirst);
 
   // Searching is a lookup, so it gets one flat list. Otherwise the page leads
-  // with the jobs that actually need work and keeps the rest as an archive.
+  // with the cars waiting on an invoice and keeps the rest as an archive.
   const isLookup = Boolean(searchTerm || ticketFilter);
-  const needsPricing = isLookup ? [] : visible.filter(isUnbilled);
+  const needsInvoicing = isLookup ? [] : visible.filter(isReadyForInvoice);
   const everythingElse = isLookup
     ? visible
-    : visible.filter((r) => !isUnbilled(r));
+    : visible.filter((r) => !isReadyForInvoice(r));
 
   const toggle = (id?: number) =>
     setOpenId((current) => (current === id ? null : (id ?? null)));
@@ -367,6 +318,7 @@ export const PricingPage: React.FC<{
           isOpen={openId === item.id}
           onToggle={() => toggle(item.id)}
           onSaveInvoice={onSaveInvoice}
+          onMarkInvoiced={onMarkInvoiced}
         />
       ))}
     </div>
@@ -376,7 +328,7 @@ export const PricingPage: React.FC<{
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-2 border-amstar-red pb-2 gap-4">
         <h2 className="font-cond text-2xl font-black uppercase tracking-wider text-amstar-ink">
-          Pricing &amp; Invoice Calculator
+          Invoices
         </h2>
         <input
           type="text"
@@ -401,16 +353,16 @@ export const PricingPage: React.FC<{
         >
           {isLookup
             ? "No vehicles match your search."
-            : "No vehicles in the system to price."}
+            : "No vehicles in the system to invoice."}
         </div>
       ) : (
         <>
-          {needsPricing.length > 0 && (
+          {needsInvoicing.length > 0 && (
             <section>
               <h3 className="mb-2 font-cond text-xs font-bold uppercase tracking-[0.2em] text-amstar-red-ink">
-                Needs Pricing ({needsPricing.length})
+                Needs Invoicing ({needsInvoicing.length})
               </h3>
-              {list(needsPricing)}
+              {list(needsInvoicing)}
             </section>
           )}
 

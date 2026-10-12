@@ -57,7 +57,8 @@ public abstract class IntegrationTest {
   /** An email on the admin allowlist in application.properties. */
   protected static final String ADMIN_EMAIL = "admin@amstar-test.com";
 
-  protected static final String SHOP_EMAIL = "floor@amstar-test.com";
+  /** An email on the bookkeeper allowlist in application-test.properties. */
+  protected static final String BOOKKEEPER_EMAIL = "floor@amstar-test.com";
 
   private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -158,8 +159,8 @@ public abstract class IntegrationTest {
     return tokenFor(ADMIN_EMAIL);
   }
 
-  protected String shopViewToken() {
-    return tokenFor(SHOP_EMAIL);
+  protected String bookkeeperToken() {
+    return tokenFor(BOOKKEEPER_EMAIL);
   }
 
   private String tokenFor(String email) {

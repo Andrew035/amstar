@@ -1,6 +1,7 @@
 import type { VehicleRepair } from "../types/repair";
 import {
   isActive,
+  isFinished,
   isComeback,
   isOverdue,
   isUnassigned,
@@ -33,8 +34,10 @@ export const shopVitals = (
   today = localISODate(),
 ): ShopVitals => {
   const active = repairs.filter(isActive);
+  // Finished, not invoiced: on-time rate and turnaround are about the repair,
+  // so a car waiting on paperwork counts the moment the work is done.
   const closed = repairs.filter(
-    (r) => r.status === "COMPLETED" && r.actualCompletionDate && r.entryDate,
+    (r) => isFinished(r) && r.actualCompletionDate && r.entryDate,
   );
 
   const onTime = closed.filter(
@@ -132,7 +135,7 @@ export const targetRows = (
 ): TargetRow[] => {
   const active = repairs.filter(isActive);
   const closed = repairs.filter(
-    (r) => r.status === "COMPLETED" && r.actualCompletionDate,
+    (r) => isFinished(r) && r.actualCompletionDate,
   );
   const pct = (n: number, d: number) => (d ? (n / d) * 100 : 0);
 
@@ -189,7 +192,13 @@ export const targetRows = (
 };
 
 export type Throughput = {
-  months: Array<{ key: string; label: string; count: number }>;
+  months: Array<{
+    key: string;
+    label: string;
+    count: number;
+    /** The month in progress. Drawn dashed, and left out of best/average. */
+    partial: boolean;
+  }>;
   thisMonthLabel: string;
   thisMonthCount: number;
   stillOpen: number;
@@ -199,53 +208,62 @@ export type Throughput = {
   chart: "line" | "bars" | "none";
 };
 
+/** Three months at most, ending with the one in progress. */
+const WINDOW_MONTHS = 3;
+
 /**
- * Completed per month, complete months only. A partial month plots low and
- * reads as a collapse, so the current month is excluded from the line and
- * reported separately.
+ * Completed per month over the last three months, including the one in
+ * progress.
+ *
+ * <p>A partial month plots low and reads as a collapse, which is why it used to
+ * be left out entirely. Drawing it dashed says "not finished yet" instead, so it
+ * can be shown without lying about the trend - but it is still excluded from
+ * best and average, where a short month would simply be wrong.
  */
 export const throughput = (
   repairs: VehicleRepair[],
-  monthsBack = 5,
   now = new Date(),
 ): Throughput => {
-  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
   const counts = new Map<string, number>();
   repairs.forEach((r) => {
-    if (r.status !== "COMPLETED" || !r.actualCompletionDate) return;
+    // Throughput counts cars fixed in a month, not invoices written in it.
+    if (!isFinished(r) || !r.actualCompletionDate) return;
     const key = monthKey(r.actualCompletionDate);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   });
 
-  const months: Throughput["months"] = [];
-  for (let back = monthsBack; back >= 1; back--) {
+  const window: Throughput["months"] = [];
+  for (let back = WINDOW_MONTHS - 1; back >= 0; back--) {
     const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    months.push({
+    window.push({
       key,
       label: d.toLocaleString("en-US", { month: "short" }),
       count: counts.get(key) ?? 0,
+      partial: back === 0,
     });
   }
 
   // Drop leading empty months: a flat run of zeros before the shop started
-  // using the app is not history, it just squashes the real values.
-  const firstWithData = months.findIndex((m) => m.count > 0);
-  const plotted = firstWithData === -1 ? [] : months.slice(firstWithData);
+  // using the app is not history, it just squashes the real values. A shop two
+  // months old therefore gets two bars rather than a line with a dead leg.
+  const firstWithData = window.findIndex((m) => m.count > 0);
+  const plotted = firstWithData === -1 ? [] : window.slice(firstWithData);
 
-  const best = plotted.length
-    ? plotted.reduce((a, b) => (b.count > a.count ? b : a))
+  const complete = plotted.filter((m) => !m.partial);
+  const best = complete.length
+    ? complete.reduce((a, b) => (b.count > a.count ? b : a))
     : null;
+  const current = window[window.length - 1];
 
   return {
     months: plotted,
-    thisMonthLabel: now.toLocaleString("en-US", { month: "short" }),
-    thisMonthCount: counts.get(currentKey) ?? 0,
+    thisMonthLabel: current.label,
+    thisMonthCount: current.count,
     stillOpen: repairs.filter(isActive).length,
     bestMonth: best ? { label: best.label, count: best.count } : null,
-    average: plotted.length
-      ? plotted.reduce((s, m) => s + m.count, 0) / plotted.length
+    average: complete.length
+      ? complete.reduce((sum, m) => sum + m.count, 0) / complete.length
       : null,
     // A line between two points draws a slope that is not in the data. Bars
     // state each month on its own, so they are honest from the first one.

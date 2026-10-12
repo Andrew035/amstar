@@ -108,14 +108,14 @@ export const Roster: React.FC<{
             type="button"
             onClick={() => saveEdit(tech)}
             disabled={!editName.trim() || saving}
-            className={`${ACTION_BUTTON} border-amstar-red bg-amstar-red text-white hover:bg-red-700 disabled:opacity-40`}
+            className={`${ACTION_BUTTON} border-amstar-red bg-amstar-red text-white hover:bg-red-700 disabled:opacity-40 active:translate-y-px`}
           >
             Save
           </button>
           <button
             type="button"
             onClick={cancelEdit}
-            className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink`}
+            className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink active:translate-y-px`}
           >
             Cancel
           </button>
@@ -137,7 +137,7 @@ export const Roster: React.FC<{
         <button
           type="button"
           onClick={() => startEdit(tech)}
-          className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink`}
+          className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink active:translate-y-px`}
         >
           Rename
         </button>
@@ -148,7 +148,7 @@ export const Roster: React.FC<{
             tech.isActive
               ? "border-amstar-red text-amstar-red-ink hover:bg-amstar-red hover:text-white"
               : "border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink"
-          }`}
+          } active:translate-y-px`}
         >
           {tech.isActive ? "Remove" : "Bring back"}
         </button>
@@ -181,7 +181,7 @@ export const Roster: React.FC<{
         <button
           type="submit"
           disabled={!newName.trim() || saving}
-          className="shrink-0 min-h-11 px-5 bg-amstar-red hover:bg-red-700 disabled:opacity-40 disabled:hover:bg-amstar-red text-white rounded-sm font-cond uppercase tracking-widest text-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-colors"
+          className="shrink-0 min-h-11 px-5 bg-amstar-red hover:bg-red-700 disabled:opacity-40 disabled:hover:bg-amstar-red text-white rounded-sm font-cond uppercase tracking-widest text-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-colors active:translate-y-px"
         >
           Add
         </button>

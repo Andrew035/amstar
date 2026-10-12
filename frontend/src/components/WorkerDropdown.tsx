@@ -8,6 +8,7 @@ import {
   OPTION_ROW_STYLE,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
+import { DropdownArrow } from "./DropdownArrow";
 import { Truncated } from "./Truncated";
 
 /**
@@ -82,13 +83,12 @@ export const MultiWorkerDropdown: React.FC<{
           className="flex-1"
           tapToReveal={false}
         />
-        <span
-          className={`text-[10px] ml-2 text-amstar-ink-faint shrink-0 ${
+        <DropdownArrow
+          isOpen={isOpen}
+          className={`ml-2 ${
             inline ? "opacity-0 group-hover:opacity-100 transition-opacity" : ""
           }`}
-        >
-          ▼
-        </span>
+        />
       </div>
       {isOpen && (
         <>

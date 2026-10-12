@@ -6,7 +6,7 @@ import {
   SHARED_INPUT_STYLE,
   TABLE_DROPDOWN_STYLE,
 } from "../styles/controls";
-import { isComeback, usDate, vehicleLabel } from "../lib/ticketFilters";
+import { isComeback, phone, usDate, vehicleLabel } from "../lib/ticketFilters";
 import { SeverityDropdown } from "./SeverityDropdown";
 import { StatusDropdown } from "./StatusDropdown";
 import { CustomDatePicker } from "./CustomDatePicker";
@@ -87,6 +87,8 @@ export const TicketDetail: React.FC<{
   onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
   onSaveComeback: (id: number, isComeback: boolean) => void;
+  canEdit: boolean;
+  onOpenPricing: (repair: VehicleRepair) => void;
   className?: string;
 }> = ({
   repair,
@@ -103,6 +105,8 @@ export const TicketDetail: React.FC<{
   onSaveParts,
   onDeleteClick,
   onSaveComeback,
+  canEdit,
+  onOpenPricing,
   className = "",
 }) => {
   if (!repair) {
@@ -164,7 +168,7 @@ export const TicketDetail: React.FC<{
                     isComeback(repair)
                       ? "bg-amstar-red border-amstar-red text-white hover:bg-red-700 hover:border-red-700"
                       : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
-                  }`}
+                  } active:translate-y-px`}
                 >
                   Comeback
                 </button>
@@ -188,8 +192,22 @@ export const TicketDetail: React.FC<{
               />
             ) : (
               <span className="block text-sm font-bold text-amstar-ink">
-                {repair.status?.replace("_", " ")}
+                {repair.status?.replace(/_/g, " ")}
               </span>
+            )}
+            {/*
+             * Parts are the bookkeeper's to enter, so this sits under the status
+             * control rather than behind the Invoices page she cannot reach. It
+             * writes PATCH /line-items only; labor stays on the invoice.
+             */}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => onOpenPricing(repair)}
+                className="mt-2 w-full min-h-11 px-3 rounded-sm border border-amstar-line bg-amstar-field font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink active:translate-y-px transition-[color,border-color,transform] duration-150 ease-out"
+              >
+                Parts &amp; Pricing
+              </button>
             )}
           </div>
         </div>
@@ -240,6 +258,26 @@ export const TicketDetail: React.FC<{
               </span>
             )}
           </div>
+
+          {/*
+           * Both optional, and read-only here: they are captured on the intake
+           * form. Mileage is the latest reading on the car, not a per-visit
+           * figure, so it belongs to the vehicle rather than this ticket.
+           */}
+          <div>
+            <span className={LABEL_STYLE}>Phone</span>
+            <span className="block text-sm font-bold text-amstar-ink tabular-nums">
+              {phone(repair.customerPhone) || "-"}
+            </span>
+          </div>
+          <div>
+            <span className={LABEL_STYLE}>Mileage</span>
+            <span className="block font-mono text-sm font-bold text-amstar-ink tabular-nums">
+              {repair.vehicle?.mileage != null
+                ? repair.vehicle.mileage.toLocaleString()
+                : "-"}
+            </span>
+          </div>
         </div>
 
         <div>
@@ -256,9 +294,11 @@ export const TicketDetail: React.FC<{
           </div>
         </div>
 
-        {/* Manager-only. The API also withholds these fields from a shop-floor
-            account, so this hides a panel rather than being the boundary. */}
-        {isAdmin && (
+        {/* The bookkeeper reads these to write the invoice, so she sees them;
+            TicketNotes renders a disabled pad without isAdmin. The API sends the
+            fields to both roles, so this hides a panel rather than being the
+            boundary. */}
+        {canEdit && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
             <TicketNotes
               repairId={id}
@@ -297,7 +337,7 @@ export const TicketDetail: React.FC<{
             onClick={() => onDeleteClick(id)}
             className="ml-auto px-5 min-h-11 bg-transparent border border-amstar-red text-amstar-red-ink
             hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs
-            transition-colors"
+            transition-colors active:translate-y-px"
           >
             Delete Ticket
           </button>

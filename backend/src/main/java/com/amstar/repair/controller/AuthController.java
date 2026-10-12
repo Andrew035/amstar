@@ -1,6 +1,7 @@
 package com.amstar.repair.controller;
 
 import com.amstar.repair.model.User;
+import com.amstar.repair.model.UserRole;
 import com.amstar.repair.repository.UserRepository;
 import com.amstar.repair.security.JwtKeyProvider;
 import com.amstar.repair.service.PasswordResetService;
@@ -28,6 +29,9 @@ public class AuthController {
   /** Emails granted ADMIN at registration. Not secret, so they live in properties. */
   private final List<String> adminEmails;
 
+  /** Emails granted BOOKKEEPER at registration. Same reasoning as adminEmails. */
+  private final List<String> bookkeeperEmails;
+
   /** Shared shop signup code. From the environment - never committed. */
   private final String signupCode;
 
@@ -42,6 +46,7 @@ public class AuthController {
       JwtKeyProvider jwtKeyProvider,
       PasswordResetService passwordResets,
       @Value("${amstar.auth.admin-emails:}") List<String> adminEmails,
+      @Value("${amstar.auth.bookkeeper-emails:}") List<String> bookkeeperEmails,
       @Value("${amstar.auth.signup-code}") String signupCode) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
@@ -49,6 +54,11 @@ public class AuthController {
     this.passwordResets = passwordResets;
     this.adminEmails =
         adminEmails.stream().map(e -> e.trim().toLowerCase()).filter(e -> !e.isEmpty()).toList();
+    this.bookkeeperEmails =
+        bookkeeperEmails.stream()
+            .map(e -> e.trim().toLowerCase())
+            .filter(e -> !e.isEmpty())
+            .toList();
     this.signupCode = signupCode;
   }
 
@@ -67,6 +77,19 @@ public class AuthController {
     if (email == null || !email.matches(EMAIL_PATTERN)) {
       return ResponseEntity.badRequest().body(Map.of("error", "A valid email address is required"));
     }
+    // Who you are is decided by the allowlists, not by holding the signup code.
+    // An unlisted email is refused outright: the code is shared, so a default
+    // role would hand an account to anyone who learned it.
+    //
+    // Checked here rather than at the role assignment below so an unlisted
+    // address never reaches the BCrypt hash on line 81 - that call is slow by
+    // design and would otherwise be free work an outsider could trigger.
+    String role = UserRole.forEmail(email, adminEmails, bookkeeperEmails);
+    if (role == null) {
+      // Byte-identical to the bad-signup-code message on line 65, so this
+      // cannot be used to enumerate which addresses the shop has authorized.
+      return ResponseEntity.badRequest().body(Map.of("error", "Invalid signup code"));
+    }
     if (password == null || password.length() < 8) {
       return ResponseEntity.badRequest()
           .body(Map.of("error", "Password must be at least 8 characters"));
@@ -79,8 +102,7 @@ public class AuthController {
     user.setEmail(email);
     user.setUsername(usernameFromEmail(email));
     user.setPasswordHash(passwordEncoder.encode(password));
-    // The whole point: managers are recognized by their email at signup.
-    user.setRole(adminEmails.contains(email) ? "ADMIN" : "SHOP_VIEW");
+    user.setRole(role);
 
     userRepository.save(user);
     return ResponseEntity.ok(Map.of("message", "User registered successfully"));

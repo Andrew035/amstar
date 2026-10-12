@@ -1,5 +1,6 @@
 package com.amstar.repair.config;
 
+import com.amstar.repair.model.UserRole;
 import com.amstar.repair.security.JwtAuthenticationFilter;
 import java.util.Arrays;
 import java.util.List;
@@ -65,13 +66,24 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/technicians", "/api/services")
                     .authenticated()
-                    // Writes: managers only. Enforced here, not just in the UI.
+                    // Both roles run the shop floor and have the same authority
+                    // over a ticket, the roster and the service catalog. The one
+                    // thing the role decides is the Invoices page.
+                    //
+                    // /invoiced is left to ADMIN because it is that page's
+                    // action and the bookkeeper has no UI for it. Be honest
+                    // about what that is worth: she also has /status, so she
+                    // could reach COMPLETED anyway. The split is organizational,
+                    // not a defence. Must precede the rule below - the first
+                    // matching rule wins, so the order is the rule.
+                    .requestMatchers(HttpMethod.PATCH, "/api/repairs/*/invoiced")
+                    .hasRole("ADMIN")
                     .requestMatchers("/api/repairs/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     .requestMatchers("/api/technicians/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     .requestMatchers("/api/services/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole(UserRole.ADMIN, UserRole.BOOKKEEPER)
                     .anyRequest()
                     .authenticated())
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

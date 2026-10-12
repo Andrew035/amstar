@@ -104,7 +104,7 @@ export const Login: React.FC<{ onLoginSuccess: () => void }> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition disabled:opacity-70"
+            className="w-full py-3 bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition disabled:opacity-70 active:translate-y-px"
           >
             {isSubmitting ? "Authenticating..." : "Sign In"}
           </button>

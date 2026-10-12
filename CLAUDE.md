@@ -46,14 +46,14 @@ docker compose up postgres-db backend     # API only; run the frontend with npm 
 - `AMSTAR_JWT_SECRET`, at least 32 bytes, checked at startup by `JwtKeyProvider`
 - `AMSTAR_SMTP_USER`, `AMSTAR_SMTP_PASSWORD`, Gmail App Password, used for password reset emails
 
-Optional, with localhost defaults: `AMSTAR_CORS_ORIGIN`, `AMSTAR_APP_URL` (where reset links point), `AMSTAR_SMTP_HOST`, `AMSTAR_SMTP_PORT`.
+Optional: `AMSTAR_BOOKKEEPER_EMAILS` (empty means nobody can register as a bookkeeper; deliberately not required, so a deploy with no bookkeeper still starts). Optional with localhost defaults: `AMSTAR_CORS_ORIGIN`, `AMSTAR_APP_URL` (where reset links point), `AMSTAR_SMTP_HOST`, `AMSTAR_SMTP_PORT`.
 
 The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the host cannot reach it. Either run the backend in Docker too, or add a port in a local `docker-compose.override.yml` (gitignored).
 
 ## Architecture
 
 ### Schema is owned by Flyway
-`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V7__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
+`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V19__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
 
 | Migration | Adds |
 |---|---|
@@ -63,8 +63,20 @@ The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the
 | V4 | password_reset_tokens |
 | V5 | `service_tickets.notes` |
 | V6 | ticket_activity (dashboard feed) |
+| V7 | `service_tickets.parts` |
+| V8 | due-date activity action |
+| V9 | customer activity action |
+| V10 | `users.token_version` (sign out everywhere) |
+| V11 | ticket_line_items, `billing_type` |
+| V12 | `vehicles.is_comeback`, COMEBACK activity action |
+| V13 | activity label separator |
+| V14 | `SHOP_VIEW` → `BOOKKEEPER`, role default dropped, every `token_version` bumped |
+| V15 | `READY_FOR_INVOICE` status, INVOICED activity action |
+| V16 | dropped `lease_price` / `include_lease` |
+| V17 | `actual_completion_date` now means the repair finished |
+| V18 | `vehicles.mileage` (optional, latest reading) |
 
-Many rules are enforced twice, once in Java for a readable 400, once as a database CHECK as the backstop (severity 1–5, status values, non-negative prices, notes ≤ 5000, uppercase service names, completion date ⇔ COMPLETED). Keep the pair in sync when changing one.
+Many rules are enforced twice, once in Java for a readable 400, once as a database CHECK as the backstop (severity 1–5, status values, non-negative prices, notes ≤ 5000, uppercase service names, a completion date on exactly the two finished statuses). Keep the pair in sync when changing one.
 
 ### One endpoint feeds the ticket views
 `GET /api/repairs/queue` returns **all** tickets (`repository.findAll()`), including `COMPLETED` ones, each with a freshly computed `priorityScore`, sorted descending. `App.tsx` fetches it once and every page filters locally, `Dashboard` and `ActiveQueue` use non-completed tickets, `History` uses completed. Don't add per-page ticket fetches; extend this list or filter it client-side.
@@ -80,7 +92,8 @@ In the database a ticket links to real rows: `vehicles`, `customers`, and the `t
 
 `TicketAssemblyService` converts between the two, and every ticket write goes through it:
 - **Vehicles are deduplicated**, matched by 17-char VIN, then by plate + state, otherwise inserted. A known car only has blank fields filled in.
-- **Customers** are matched by name (case-insensitive) or created.
+- **Customers** are matched by name (case-insensitive) or created. An optional `customerPhone` on a ticket write is set whenever a non-blank value arrives, so a changed number is not ignored, but a blank never wipes the number on file. The customer PATCH carries only a name and passes null, leaving any number alone.
+- **Mileage is the exception to fill-the-blanks.** `vehicles.mileage` (V18, optional) holds the **most recent** reading, not a history, and the assembly takes whatever was entered rather than only filling a blank: unlike make or VIN it is not a fact about the car, it is a reading taken today, and it only goes up. A per-visit record would belong on `service_tickets`.
 - **Services** are uppercased; an unknown name joins the catalog with the ticket's severity as its default. Names over 80 chars are rejected.
 - **Technicians** must already exist on the roster. Unknown names are silently dropped, the roster is managed data, not something a ticket write can invent.
 
@@ -89,9 +102,20 @@ On the frontend, anything that reads these strings does `.split(',').map(s => s.
 ### Every mutation lives in App.tsx and PriorityQueueService
 Frontend: `App.tsx` owns `repairs`, `technicians`, `serviceCatalog`, `activity`, the current user/role, the toast, and the two global modals (delete confirm, vehicle "deep dive"). Mutation handlers (`handleStatusChange`, `handleSeverityChange`, `handleAssignWorker`, `handleServiceChange`, `handleSaveNotes`, `handleSavePricing`, `confirmDelete`) PATCH/DELETE through `apiFetch` and then call `fetchQueue()`. Pages under `src/pages/` are presentational and receive data plus callbacks as props. There is no state or data-fetching library, adding a mutation means a handler in `App.tsx` threaded down as a prop.
 
-Backend: each write is a `@Transactional` method on `PriorityQueueService` that also calls `ActivityService.record(...)` when something actually changed, so an activity row exists only if its change was committed. `ticket_activity.ticket_label` is a snapshot ("2010 FORD E-250, Kane") so deleted tickets still read correctly. Pricing events deliberately carry no amount, because shop-view users can read the feed. New actions must also be added to the `activity_action_valid` CHECK (via a new migration).
+Backend: each write is a `@Transactional` method on `PriorityQueueService` that also calls `ActivityService.record(...)` when something actually changed, so an activity row exists only if its change was committed. `ticket_activity.ticket_label` is a snapshot ("2010 FORD E-250, Kane") so deleted tickets still read correctly. Pricing events deliberately carry no amount, because every signed-in account can read the feed. New actions must also be added to the `activity_action_valid` CHECK (via a new migration).
 
-Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}/status|severity|assign|service|notes|pricing`, `DELETE /{id}`.
+Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}/status|severity|assign|service|notes|parts|pricing|line-items|due-date|customer|comeback|invoiced`, `DELETE /{id}`.
+
+### Pricing is split from invoicing
+"Completed" used to mean two different things to the two people using it: the car has left the shop, or the invoice can be written. `READY_FOR_INVOICE` (V15) is the second one.
+
+- The shop marks a car **ready for invoice** from the queue. That stamps `actual_completion_date`, which since V17 means **when the repair finished**, not when the invoice was written. `tickets_completion_matches_status` is `(status in ('READY_FOR_INVOICE','COMPLETED')) = (actual_completion_date is not null)`. Invoice completion is not tracked and no column records it.
+- Pricing happens in `PricingModal`, opened from a button under the status control in `TicketDetail` and reachable by both roles. It prices the whole job - parts with a cost each, plus labor - via `handleSavePricing`, which writes `PATCH /line-items` then `PATCH /pricing`.
+- The **owner** reviews it all and adds the notes and the parts pad on the admin-only Invoices page (`src/pages/Pricing.tsx`), whose top section is the cars needing invoicing. `handleSaveInvoice` writes four endpoints in sequence (`/line-items`, `/pricing`, `/notes`, `/parts`); each is idempotent, so a partial failure settles on the next save.
+- `markInvoiced` (`PATCH /{id}/invoiced`, ADMIN) flips `READY_FOR_INVOICE` → `COMPLETED`, refuses every other source status, and deliberately does **not** touch `actual_completion_date`.
+- **`COMPLETED` is not an option in `StatusDropdown`.** Marking a repair invoiced is what completes it and moves it into History, so there is one way in and the shop cannot put a car there by picking a status - which is how "completed" came to mean two things in the first place. Don't add it back. `PATCH /status` still accepts it, so a correction is possible over the API, and `TicketLifecycleTest` relies on that.
+- `PartsEditor` is the one parts table, shared by the modal and the Invoices accordion. Controlled: the caller owns the draft and the save.
+- `isFinished` in `ticketFilters.ts` is `COMPLETED || READY_FOR_INVOICE`, and `isActive` is `!isFinished`. A car waiting on paperwork is not overdue, not due today and not unassigned, and it counts toward on-time rate, turnaround and monthly throughput the moment the work is done. It still appears in the queue, which filters on `COMPLETED` directly, because the car may well still be on the lot.
 
 ### API client
 `src/api.ts` `apiFetch<T>(path, init)` is the one way to call the API: it attaches the bearer token, sets JSON headers, forces a logout on 401, turns 403/429 into friendly messages, surfaces the backend's `{"error": "..."}` text as `ApiError.message`, and tolerates empty 200 bodies. Show failures with `toastError(error, fallback)`. (`RepairForm`'s ticket POST still uses raw `fetch`, migrate it rather than copying it.)
@@ -99,10 +123,13 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 `src/config.ts` `API_BASE` is `VITE_API_URL`, defaulting to `http://localhost:8080` in dev. `frontend/.env.production` sets it empty, so production calls are same-origin `/api/...` through Caddy and CORS never applies.
 
 ### Auth and roles
-- Register requires the shared `AMSTAR_SIGNUP_CODE`. An email listed in `amstar.auth.admin-emails` (`application.properties`) gets role `ADMIN`; everyone else gets `SHOP_VIEW`. The role is assigned **only at registration**.
-- Login issues a 10-hour HS256 JWT (subject = email local part, plus `role` and `email` claims) signed with `AMSTAR_JWT_SECRET` via `JwtKeyProvider`. Inactive users (`users.is_active = false`) cannot log in.
-- **Roles are enforced on the server** in `SecurityConfig`: any signed-in user may `GET` tickets, technicians, services, and activity; every write under `/api/repairs/**`, `/api/technicians/**`, `/api/services/**` requires `ADMIN`. `/api/auth/**` is public.
-- The frontend stores the token in `localStorage` as `amstar_token` and decodes the payload for username and role. `isAdmin` in `App.tsx` only hides UI (pricing, history, editing, the new-ticket form), it is not the security boundary.
+- Two roles, `ADMIN` and `BOOKKEEPER` (`users_role_valid`, V14). Registration needs the shared `AMSTAR_SIGNUP_CODE` **and** an address on one of two allowlists: `amstar.auth.admin-emails` grants ADMIN, `amstar.auth.bookkeeper-emails` grants BOOKKEEPER, and anything else is refused with the byte-identical message a bad signup code gets, so it cannot be used to discover which addresses are authorized. Admin is checked first, so a typo in the bookkeeper list cannot demote an owner. The role is written **only at registration**.
+- **Changing someone's role is a SQL update plus a `token_version` bump, in one transaction.** Moving an address between allowlists does nothing by itself. Without the bump the account keeps its old authority until the token expires, up to ten hours later.
+- Login issues a 10-hour HS256 JWT (subject = email local part, plus `role`, `email` and `tv` claims) signed with `AMSTAR_JWT_SECRET` via `JwtKeyProvider`. `JwtAuthenticationFilter` loads the account on **every** request and 401s if `is_active` is false or the `tv` claim no longer matches `users.token_version`. Authority comes from the token's `role` claim, not from the row.
+- **Both roles have the same shop-floor authority.** Tickets, pricing, the roster and the service catalog are open to ADMIN and BOOKKEEPER alike. The role decides exactly one thing: the Invoices page, plus `PATCH /api/repairs/*/invoiced`, which is that page's own action. Be honest about what that scoping is worth - a bookkeeper also has `/status`, so she could reach `COMPLETED` anyway. **The split is organizational, not a defence.** Enforced in `SecurityConfig`, where the first matching rule wins, so the order *is* the rule. `/api/auth/**` is public.
+- **The bookkeeper uses every page except Invoices, with the same powers as an owner.** `canEdit` in `App.tsx` is simply "signed in", and it is what gets handed to the `isAdmin` prop on `Dashboard`, `ActiveQueue` and `VehicleModal` - that prop means "may edit", which both roles may. Only `/invoices` and `handleMarkInvoiced` check `isAdmin` itself. The prop name is a leftover from when the two roles differed; it means may-edit, not is-an-admin.
+- The frontend stores the token in `localStorage` as `amstar_token` and decodes the payload for username and role. `isAdmin` and `canSeeBilling` in `App.tsx` only hide UI; neither is the security boundary.
+- `GET /api/repairs/queue` nulls `notes`, `parts`, `lineItems` and the prices for any role outside `BILLING_AUTHORITIES`. Both current roles are inside it and the CHECK permits no third role, so that branch is unreachable today. It is kept so the migration that adds a read-only floor role has to decide about it rather than inherit full pricing by default.
 - Password reset: `PasswordResetService` stores only a SHA-256 hash of a single-use token that expires in 30 min, and `/forgot-password` always returns 200 so it can't be used to discover accounts.
 
 ### Errors
@@ -113,6 +140,10 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 
 ### Dashboard
 `src/pages/Dashboard.tsx` is built to fit one screen with no page scroll (`sm:h-[calc(100dvh-129px)]`): a strip of `StatTile`s over a grid of `Panel`s whose bodies scroll internally. Tiles and panel headings link to `/queue?filter=...` (or `/pricing?filter=unbilled`). `parseTicketFilter` in `src/lib/ticketFilters.ts` turns that param into a predicate plus banner label (`tech:<name>`, `overdue`, `due-today`, `due-tomorrow`, `due-soon`, `unassigned`, `pending`, `in-progress`, `unbilled`, `critical`); `ActiveQueue` and `Pricing` show a `FilterBanner` and hide the new-ticket form while filtered. Put new ticket predicates in `ticketFilters.ts`, not inline in a page.
+
+**Throughput** (`components/dashboard/ThroughputPanel.tsx` + `throughput()` in `shopStats.ts`) shows the last **three** months, ending with the one in progress. Three months of data draws a **line**; one or two draw **bars**, because a line between two points implies a slope that is not in the data. The month in progress is **dashed** everywhere - the final line segment, its bar, its caption - since a partial month always plots low and a solid mark would read as a collapse. It is excluded from best month and the average for the same reason. Leading empty months are dropped, so a shop two months old gets two bars rather than a line with a dead leg.
+
+Two details that are easy to undo by accident: the SVG is stretched with `preserveAspectRatio="none"`, so **values and captions are HTML, not SVG text** (a glyph would squash), and in line mode they are **edge-anchored** because the end points sit at 0% and 100% while bars occupy centred columns. Colour comes from the `sev` tokens through `currentColor`, since an SVG `stroke` cannot take a Tailwind class; it used to hardcode `#38bdf8` and `#10b981`, which are those tokens' values copied by hand.
 
 `/queue` reads two params. `filter` is a `parseTicketFilter` key; `ticket` is an id, and that id **is** the selection, `ActiveQueue` holds no `selectedId` state, so a link can point at one car and `QueueList` scrolls that row into view. A panel heading or a stat tile links to the group (`filter`); a row in "Needs attention" links to the car (`ticket`, no filter, since a ticket outside the filtered set would fall back to the top of the list). Both go through `setParam` in `ActiveQueue`, which rewrites one param and preserves the other; passing a whole object to `setSearchParams` drops whichever one the call is not setting.
 
@@ -125,11 +156,29 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 - **Severity colors** come from `getSeverityColor(severity)`, backed by the `sev-1`…`sev-5` tokens. Tailwind purges interpolated class names, so the helper maps to complete literal strings; never build `` `bg-sev-${n}` ``. Severity chips pair the background with `SEVERITY_TEXT` (`text-black`), never `text-white`. Don't use a `sev-*` token as text over a translucent tint of itself (e.g. `text-sev-1` on `bg-sev-1/20`): it fails AA.
 - **Motion lives in `index.css`,** not in a library: `.anim-rise` (page and panel entry), `.anim-row` (list rows, with an inline `animationDelay` for the stagger), `.anim-fade` (scrims, table rows), `.anim-pop` (floating panels, baked into `FLOATING_PANEL_STYLE`), `.anim-slide-up` (the toast). All of them animate only `transform` and `opacity`, and a global `prefers-reduced-motion` block collapses every animation and transition in the app. Two traps, both about `position: fixed` descendants. **Every animation uses `animation-fill-mode: backwards`**, a filling animation keeps supplying its value, and a filled `transform: none` computes to an identity matrix, which is still a containing block; with `both` on `<main>` every dropdown in the app positioned itself against `<main>` instead of the viewport. And never put `anim-pop` or `anim-rise` on an element that *contains* a fixed dropdown, which is why `NewTicketModal`'s panel fades instead.
 - **Money.** Prices are `numeric(10,2)` / `BigDecimal` on the backend. Enter them with `CurrencyInput`, and total them with `invoiceTotal` from `ticketFilters.ts`, which honors the `include*` flags.
+- **`phone` and `miles` in `ticketFilters.ts` format as you type.** Both take whatever they are given, strip to digits, and rebuild - so they are idempotent, and the input, the POST payload and the display can all call them without caring which form they were handed. The pattern for both fields is the same: **state holds the digits, the field shows the formatted value.** `phone` builds progressively (`(301)-123-1234`) so a partial number still reads correctly mid-entry. The value stored in `customers.phone` is the formatted one; `varchar(20)` has room for it.
 - **Fonts** are self-hosted via `@fontsource` (imported in `main.tsx`): `font-cond` (Oswald) for headings and labels, `font-mono` (Roboto Mono) for numbers.
-- **No `alert()` / `confirm()`.** Use `showToast(message, 'success' | 'error')` / `toastError` from `App.tsx`, a modal, or inline `error` state in forms.
+- **Status labels use `replace(/_/g, " ")`, never `replace("_", " ")`.** JavaScript's string-argument `replace` substitutes only the **first** match, so `READY_FOR_INVOICE` renders as "READY FOR_INVOICE". This shipped four separate times, in `TicketDetail`, `StatusDropdown`, `Pricing` and `QueueList`. Java's `replace(char, char)` is replace-all, so `PriorityQueueService.readable` is fine as written.
+- **One labelled fact.** `Fact` (`src/components/Fact.tsx`) renders a label over a value, boxed when given `value` or freeform when given `children`. Used by the Invoices accordion, History's expanded row and `VehicleModal`. It existed three separate times with three different label spellings before being pulled out; don't add a fourth.
+- **One disclosure arrow, one direction.** `DropdownArrow` (`src/components/DropdownArrow.tsx`) is the only caret in the app: it points right when shut and rotates a quarter turn down when open. Every dropdown trigger and expandable row uses it. The queue previously had a `▼` that flipped down-to-up while the Invoices and History rows turned right-to-down, which read as two different controls doing the same job.
+- **`PRESS` is baked into the shared control strings**, not repeated at call sites - that is how half the app ended up without a press nudge. Any new clickable thing should take `PRIMARY_BUTTON_STYLE`, `TABLE_DROPDOWN_STYLE`, `OPTION_ROW_STYLE` or `PANEL_ROW_STYLE` and get it for free; a hand-rolled button has to add `${PRESS}` itself. **The exception is a trigger that is borderless until hover** (`INLINE_INPUT_STYLE`, and the `ServicesCell` trigger): nudging those drags the hairline border down with the content and reads as a glitch. `PRESS` is for controls with a surface of their own.
+- **No `alert()` / `confirm()`.** Use `showToast(message, 'success' | 'error')` / `toastError` from `App.tsx`, a modal, or inline `error` state in forms. `Toast` sits in the **bottom-right corner**, enters on `.anim-slide-up`, and **owns its own lifetime** - 3.4s for a confirmation, 4.2s for a deletion, 6s for a warning. It is **deliberately not interactive**: no dismiss gesture, and `pointer-events-none` so it can never swallow a click underneath. It was briefly top-centre and draggable; that version sat on the navbar and its fixed band ate clicks on the nav links, which is the reason for the `pointer-events-none`. `showToast` carries an incrementing id so a second toast remounts the component instead of inheriting the first one's running timer. **Three tones, by what the shop did rather than how alarming it is:** `success` is green (`amstar-notice`, something added or changed), `deleted` is red (`amstar-removed`, something is gone), `error` is amber (`amstar-alert`, it did not happen). `ToastType` → `ToastTone` goes through `TOAST_TONE` in `App.tsx`.
+
+  Those three tokens exist because a toast lands *on* the navbar and is measured against `#0b3068`, where `amstar-raised` managed 1.23:1 and read as part of the bar. All three clear ~7:1 there with black text at ~11.5:1, so colour does the separating and no outline is needed. They are bright, so they take `SEVERITY_TEXT`; white on any of them is under 2:1. `amstar-removed` is a light coral rather than a true red for that reason: `sev-5` manages only 3.64:1 on the navbar, `red-edge` 4.36:1, `amstar-red` 2.15:1, and a pure red bright enough to clear 7:1 lands near `#ffb8c6`, which reads pink.
 
 ## Tests and CI
 
-Backend tests (`PriorityQueueServiceTest`, `AssignWorkerTest`) are plain JUnit + Mockito with no Spring context or database. `PriorityQueueService` takes five constructor arguments (`VehicleRepairRepository`, `VehicleLookupService`, `TicketAssemblyService`, `ActivityService`, `VehicleRepository`), mock all five when constructing it.
+Six backend test classes plus a harness:
+
+- `support/IntegrationTest` runs the **whole app against a real PostgreSQL** (Testcontainers, `postgres:15-alpine`), so Flyway applies every migration and `ddl-auto=validate` then checks the entities against the result. Requests go over real HTTP with real tokens. `adminToken()` / `bookkeeperToken()` register and sign in the addresses in `application-test.properties`; `resetDatabase()` truncates between tests but leaves the seeded roster and catalog. **Docker must be running.**
+- `SchemaTest` - every migration file actually ran, applied cleanly, and is numbered 1..n with no gaps; every table exists; reference data was seeded.
+- `SecurityRulesTest` - who may do what, called directly the way anyone with a browser console could.
+- `TicketLifecycleTest` - a ticket from intake to deletion, exercising every activity action, so forgetting to add one to `activity_action_valid` fails the build.
+- `BadInputTest` - every validation path, including the statuses the shop does and does not use.
+- `PriorityQueueServiceTest`, `AssignWorkerTest`, `RegistrationRoleTest` - plain JUnit + Mockito, no Spring context or database. `PriorityQueueService` takes five constructor arguments (`VehicleRepairRepository`, `VehicleLookupService`, `TicketAssemblyService`, `ActivityService`, `VehicleRepository`); mock all five.
+
+**Run `./mvnw clean test` after deleting any Java method.** Your IDE compiles into the same `target/classes` Maven reads, and a JDT error stub with a fresh timestamp makes Maven skip compilation entirely, turning a one-line `cannot find symbol` into mysterious runtime 500s.
+
+When restating a CHECK constraint in a migration, take the list from the migration that last touched it, or from `select pg_get_constraintdef(oid) from pg_constraint where conname = '<name>'`. Postgres cannot append to a CHECK, and copying an older migration's list silently revokes everything added since.
 
 `.github/workflows/ci.yml` runs `mvn clean test` in `backend/` and `npm install && npm run build` in `frontend/` on pushes and PRs to `main`. Type errors fail the frontend job (`build` runs `tsc -b` first). CI does not run `npm run lint`, run it locally.

@@ -52,17 +52,11 @@ public class VehicleRepair {
   @Column(name = "retail_price", nullable = false, precision = 10, scale = 2)
   private BigDecimal retailPrice = BigDecimal.ZERO;
 
-  @Column(name = "lease_price", nullable = false, precision = 10, scale = 2)
-  private BigDecimal leasePrice = BigDecimal.ZERO;
-
   @Column(name = "labor_price", nullable = false, precision = 10, scale = 2)
   private BigDecimal laborPrice = BigDecimal.ZERO;
 
   @Column(name = "include_retail", nullable = false)
   private Boolean includeRetail = false;
-
-  @Column(name = "include_lease", nullable = false)
-  private Boolean includeLease = false;
 
   @Column(name = "include_labor", nullable = false)
   private Boolean includeLabor = false;
@@ -113,6 +107,11 @@ public class VehicleRepair {
   @Size(max = 120, message = "Customer name must be 120 characters or fewer")
   private String customerNameInput;
 
+  /** Optional. The column is varchar(20), so the limit is the column's. */
+  @Transient
+  @Size(max = 20, message = "Phone number must be 20 characters or fewer")
+  private String customerPhoneInput;
+
   public VehicleRepair() {}
 
   // Legacy JSON compatibility
@@ -151,6 +150,16 @@ public class VehicleRepair {
     this.customerNameInput = customerName;
   }
 
+  @JsonProperty("customerPhone")
+  public String getCustomerPhone() {
+    return customer == null ? null : customer.getPhone();
+  }
+
+  @JsonProperty("customerPhone")
+  public void setCustomerPhone(String customerPhone) {
+    this.customerPhoneInput = customerPhone;
+  }
+
   @JsonIgnore
   public String getServiceTypeInput() {
     return serviceTypeInput;
@@ -164,6 +173,11 @@ public class VehicleRepair {
   @JsonIgnore
   public String getCustomerNameInput() {
     return customerNameInput;
+  }
+
+  @JsonIgnore
+  public String getCustomerPhoneInput() {
+    return customerPhoneInput;
   }
 
   // Standard accessors
@@ -240,14 +254,6 @@ public class VehicleRepair {
     this.retailPrice = retailPrice;
   }
 
-  public BigDecimal getLeasePrice() {
-    return leasePrice;
-  }
-
-  public void setLeasePrice(BigDecimal leasePrice) {
-    this.leasePrice = leasePrice;
-  }
-
   public BigDecimal getLaborPrice() {
     return laborPrice;
   }
@@ -262,14 +268,6 @@ public class VehicleRepair {
 
   public void setIncludeRetail(Boolean includeRetail) {
     this.includeRetail = includeRetail;
-  }
-
-  public Boolean getIncludeLease() {
-    return includeLease;
-  }
-
-  public void setIncludeLease(Boolean includeLease) {
-    this.includeLease = includeLease;
   }
 
   public Boolean getIncludeLabor() {
@@ -354,8 +352,16 @@ public class VehicleRepair {
           .reduce(BigDecimal.ZERO, BigDecimal::add)
           .add(laborPrice == null ? BigDecimal.ZERO : laborPrice);
     }
-    return (Boolean.TRUE.equals(includeRetail) ? retailPrice : BigDecimal.ZERO)
-        .add(Boolean.TRUE.equals(includeLease) ? leasePrice : BigDecimal.ZERO)
-        .add(Boolean.TRUE.equals(includeLabor) ? laborPrice : BigDecimal.ZERO);
+    // Null-safe because the queue endpoint nulls these out for any role not
+    // entitled to money, and Jackson still calls this getter afterwards. Without
+    // it, a nulled retailPrice on a pre-line-item ticket is null.add(...) - an
+    // NPE inside serialization, which surfaces as an opaque 500 on the whole
+    // queue read rather than as a redacted field.
+    return zeroIfNull(Boolean.TRUE.equals(includeRetail) ? retailPrice : BigDecimal.ZERO)
+        .add(zeroIfNull(Boolean.TRUE.equals(includeLabor) ? laborPrice : BigDecimal.ZERO));
+  }
+
+  private static BigDecimal zeroIfNull(BigDecimal value) {
+    return value == null ? BigDecimal.ZERO : value;
   }
 }

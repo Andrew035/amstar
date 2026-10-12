@@ -7,6 +7,8 @@ export interface Vehicle {
   model?: string;
   year?: number;
   carImageUrl?: string;
+  /** Most recent odometer reading. Optional. */
+  mileage?: number;
   customer?: Customer;
   isComeback?: boolean;
 }
@@ -47,12 +49,14 @@ export interface LineItem {
 export interface VehicleRepair {
   id?: number;
   customerName: string;
+  /** The customer's number, optional. Lives on the customer, not the ticket. */
+  customerPhone?: string;
   vehicle?: Vehicle;
   serviceType: string;
   severity: number;
   entryDate: string;
   expectedCompletionDate: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+  status: "PENDING" | "IN_PROGRESS" | "READY_FOR_INVOICE" | "COMPLETED";
   assignedWorker: string;
   actualCompletionDate: string;
   priorityScore?: number;
@@ -68,10 +72,8 @@ export interface VehicleRepair {
   // Legacy pricing. Kept so tickets written before line items still total
   // correctly; nothing new should write these.
   retailPrice?: number;
-  leasePrice?: number;
   laborPrice?: number;
   includeRetail?: boolean;
-  includeLease?: boolean;
   includeLabor?: boolean;
 
   // Normalized data the backend now also sends. Nothing reads these yet -

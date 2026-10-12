@@ -100,7 +100,7 @@ export const TicketNotes: React.FC<{
             disabled={!isDirty || isSaving}
             className="px-4 py-1.5 bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest
             text-xs rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition disabled:opacity-40
-            disabled:cursor-not-allowed"
+            disabled:cursor-not-allowed active:translate-y-px"
           >
             {saveLabel}
           </button>

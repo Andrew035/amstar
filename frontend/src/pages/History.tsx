@@ -5,6 +5,9 @@ import {
   PANEL_STYLE,
   PANEL_HEADING_STYLE,
   HOVER,
+  SEVERITY_LABELS,
+  SEVERITY_TEXT,
+  getSeverityColor,
 } from "../styles/controls";
 import { ServicesCell } from "../components/ServicesCell";
 import { MultiWorkerDropdown } from "../components/WorkerDropdown";
@@ -12,12 +15,15 @@ import { StatusDropdown } from "../components/StatusDropdown";
 import {
   invoiceTotal,
   matchesSearch,
+  miles,
   monthLabel,
   partsSubtotal,
+  phone,
   usDate,
   vehicleLabel,
   isComeback,
 } from "../lib/ticketFilters";
+import { Fact } from "../components/Fact";
 import { PlateChip } from "../components/PlateChip";
 
 /** The date a repair closed on - the real one when we have it. */
@@ -38,20 +44,6 @@ const daysInShop = (r: VehicleRepair): string => {
 const money = (n?: number) => (n ? `$${n.toFixed(2)}` : "-");
 
 /** One labelled fact inside an opened row. */
-const Fact: React.FC<{ label: string; children: React.ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <div className="min-w-0">
-    <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-      {label}
-    </span>
-    <span className="block text-xs text-amstar-ink-dim truncate">
-      {children}
-    </span>
-  </div>
-);
-
 export const HistoryPage: React.FC<{
   repairs: VehicleRepair[];
   historicalServiceMap: Record<string, number>;
@@ -132,7 +124,7 @@ export const HistoryPage: React.FC<{
                 <th
                   className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[14%] xl:w-[12%]`}
                 >
-                  Completed
+                  Repair Done
                 </th>
                 <th
                   className={`${PANEL_HEADING_STYLE} p-2 xl:p-3 w-[17%] xl:w-[15%]`}
@@ -223,7 +215,7 @@ export const HistoryPage: React.FC<{
                           }}
                           aria-expanded={isOpen}
                           aria-label={`Details for ${vehicleLabel(item)}`}
-                          className="flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink"
+                          className="flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink active:translate-y-px"
                         >
                           {/*
                             One glyph that turns, not two that swap. Same
@@ -236,7 +228,7 @@ export const HistoryPage: React.FC<{
                               isOpen ? "rotate-90" : ""
                             }`}
                           >
-                            ▶
+                            ▸
                           </span>
                           <span className="truncate">
                             {usDate(closedOn(item))}
@@ -305,26 +297,56 @@ export const HistoryPage: React.FC<{
                             )}
 
                             <div className="flex-1 min-w-0 flex flex-col gap-4">
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <Fact label="Vehicle">
-                                  {vehicleLabel(item)}
-                                </Fact>
-                                <Fact label="VIN">
-                                  <span className="font-mono">
-                                    {item.vehicle?.vin || "N/A"}
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <Fact
+                                  label="Vehicle"
+                                  value={vehicleLabel(item)}
+                                />
+                                <Fact
+                                  label="VIN"
+                                  value={item.vehicle?.vin}
+                                  mono
+                                />
+                                <Fact
+                                  label="Phone"
+                                  value={phone(item.customerPhone)}
+                                  fallback="-"
+                                />
+                                <Fact
+                                  label="Mileage"
+                                  value={miles(item.vehicle?.mileage)}
+                                  fallback="-"
+                                  mono
+                                />
+                                <Fact
+                                  label="Due"
+                                  value={usDate(item.expectedCompletionDate)}
+                                  mono
+                                />
+                                <Fact
+                                  label="In the shop"
+                                  value={
+                                    daysInShop(item) == null
+                                      ? null
+                                      : `${daysInShop(item)} days`
+                                  }
+                                  fallback="-"
+                                  mono
+                                />
+                                <Fact label="Severity">
+                                  <span
+                                    className={`inline-block rounded-sm px-2 py-1 font-cond text-[11px] uppercase tracking-widest ${getSeverityColor(
+                                      item.severity,
+                                    )} ${SEVERITY_TEXT}`}
+                                  >
+                                    {SEVERITY_LABELS[item.severity]}
                                   </span>
                                 </Fact>
-                                <Fact label="In the shop">
-                                  <span className="font-mono">
-                                    {daysInShop(item)}
-                                  </span>
-                                </Fact>
-                                <Fact label="Parts / Labor">
-                                  <span className="font-mono">
-                                    {money(partsSubtotal(item))} ·{" "}
-                                    {money(item.laborPrice)}
-                                  </span>
-                                </Fact>
+                                <Fact
+                                  label="Parts / Labor"
+                                  value={`${money(partsSubtotal(item))} · ${money(item.laborPrice)}`}
+                                  mono
+                                />
                               </div>
 
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

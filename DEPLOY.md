@@ -114,9 +114,11 @@ Then set up backups (section 5) and **run one restore drill** (section 7).
 
 ### Register the managers
 
-Each manager visits `https://<domain>/register` with the email listed in
-`amstar.auth.admin-emails` plus the signup code. Verify the roles took, a
-manager who sees no Pricing tab registered with the wrong address:
+Each person visits `https://<domain>/register` with the signup code and an
+address on one of the two allowlists: `AMSTAR_ADMIN_EMAILS` for the owners,
+`AMSTAR_BOOKKEEPER_EMAILS` for the bookkeeper. An address on neither is refused,
+so set both before anyone registers. Verify the roles took, someone who sees no
+Invoices tab registered with the wrong address:
 
 ```bash
 docker exec amstar_postgres psql -U amstar_user -d amstar_db \
@@ -143,6 +145,24 @@ Database migrations run automatically: Flyway applies any new `V*.sql` file when
 the backend starts. Take a manual backup first
 (`/opt/amstar/scripts/backup-db.sh`) so a bad migration can be rolled back, and
 check `docker compose logs backend | grep Migrating` afterwards.
+
+**V14 signs everyone out once**, by bumping `users.token_version` on every row.
+Tokens carry the role as a claim and live ten hours, so without it an account
+would keep presenting a role that no longer exists. A forced re-login right after
+this deploy is expected, not a broken deploy.
+
+**Changing someone's role** is a SQL update plus a `token_version` bump, in one
+transaction. Moving an address between the allowlists does nothing on its own,
+because the role is written only at registration:
+
+```sql
+update users
+   set role = 'BOOKKEEPER', token_version = token_version + 1
+ where email = 'person@example.com' and role = 'ADMIN';
+```
+
+Check at least one active ADMIN remains afterwards. Nothing in the app can
+change a role, so a shop with no admin needs another SQL session to recover.
 
 ---
 

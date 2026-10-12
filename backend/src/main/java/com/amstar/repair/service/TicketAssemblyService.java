@@ -36,7 +36,8 @@ public class TicketAssemblyService {
   /** Full assembly for a newly POSTed ticket. */
   public void assemble(VehicleRepair repair) {
     repair.setVehicle(resolveVehicle(repair.getVehicle()));
-    repair.setCustomer(resolveCustomer(repair.getCustomerNameInput()));
+    repair.setCustomer(
+        resolveCustomer(repair.getCustomerNameInput(), repair.getCustomerPhoneInput()));
 
     // A car with no recorded owner adopts this ticket's customer.
     Vehicle vehicle = repair.getVehicle();
@@ -113,6 +114,12 @@ public class TicketAssemblyService {
     if (isBlank(existing.getVin())) {
       existing.setVin(trimToNull(incoming.getVin()));
     }
+    // Mileage is the exception to fill-the-blanks: it is not a fact about the
+    // car, it is a reading taken today, and it only goes up. Whatever was
+    // entered is newer than what is on file.
+    if (incoming.getMileage() != null) {
+      existing.setMileage(incoming.getMileage());
+    }
     return vehicles.save(existing);
   }
 
@@ -123,17 +130,29 @@ public class TicketAssemblyService {
    * Correcting a typo on one ticket therefore never rewrites the name on anybody else's.
    */
   public void applyCustomer(VehicleRepair repair, String fullName) {
-    repair.setCustomer(resolveCustomer(fullName));
+    // The customer PATCH carries only a name; a phone number arrives with a
+    // ticket write, so null here leaves any number already on file alone.
+    repair.setCustomer(resolveCustomer(fullName, null));
   }
 
-  private Customer resolveCustomer(String fullName) {
+  private Customer resolveCustomer(String fullName, String phone) {
     String name = trimToNull(fullName);
     if (name == null) {
       return null;
     }
-    return customers
-        .findFirstByFullNameIgnoreCase(name)
-        .orElseGet(() -> customers.save(new Customer(name)));
+    String number = trimToNull(phone);
+    Customer customer =
+        customers
+            .findFirstByFullNameIgnoreCase(name)
+            .orElseGet(() -> customers.save(new Customer(name)));
+
+    // Set it whenever one was given, so a number that changed is not silently
+    // ignored, but never let a blank wipe the number already on file.
+    if (number != null && !number.equals(customer.getPhone())) {
+      customer.setPhone(number);
+      return customers.save(customer);
+    }
+    return customer;
   }
 
   // Services

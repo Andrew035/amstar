@@ -50,6 +50,28 @@ export const monthLabel = (iso?: string | null): string => {
 };
 
 /** Money, rendered one way everywhere. Grouped, two decimals, zero is still a number. */
+/**
+ * A phone number as the shop writes it: (301)-123-1234.
+ *
+ * Derived from the digits every time, so it is idempotent - running it over an
+ * already-formatted number gives the same answer, which lets the input, the
+ * payload and the display all call it without caring what they were handed.
+ * Formats progressively so it can be typed into, and keeps whatever partial
+ * number has been entered rather than rejecting it.
+ */
+export const phone = (raw?: string | null): string => {
+  const d = (raw ?? "").replace(/\D/g, "").slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0, 3)})-${d.slice(3)}`;
+  return `(${d.slice(0, 3)})-${d.slice(3, 6)}-${d.slice(6)}`;
+};
+
+/** Thousands separators, for an odometer reading. Blank stays blank. */
+export const miles = (raw?: string | number | null): string => {
+  const d = String(raw ?? "").replace(/\D/g, "");
+  return d ? Number(d).toLocaleString() : "";
+};
+
 export const money = (n?: number | null): string =>
   `$${(n ?? 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -116,10 +138,32 @@ export const invoiceTotal = (r: VehicleRepair): number =>
   (r.lineItems?.length ?? 0) > 0
     ? partsSubtotal(r) + (r.laborPrice || 0)
     : (r.includeRetail ? r.retailPrice || 0 : 0) +
-      (r.includeLease ? r.leasePrice || 0 : 0) +
       (r.includeLabor ? r.laborPrice || 0 : 0);
 
-export const isActive = (r: VehicleRepair) => r.status !== "COMPLETED";
+/**
+ * The repair is finished. Covers the invoiced cars and the ones still waiting on
+ * paperwork alike: actualCompletionDate is stamped at READY_FOR_INVOICE, so both
+ * carry a date and neither needs any more work in the shop.
+ */
+export const isFinished = (r: VehicleRepair) =>
+  r.status === "COMPLETED" || r.status === "READY_FOR_INVOICE";
+
+/**
+ * There is still work to do on this car.
+ *
+ * A car marked ready for invoice is deliberately NOT active: the repair is done,
+ * nothing the shop does moves it along, and it must not read as overdue, due
+ * today, or unassigned. It stays visible in the queue regardless - ActiveQueue
+ * filters on COMPLETED directly, because the car may well still be on the lot.
+ */
+export const isActive = (r: VehicleRepair) => !isFinished(r);
+
+/**
+ * The work is done and the invoice is not written yet. This is the bookkeeper's
+ * whole worklist, and the reason the shop stopped needing a verbal handoff.
+ */
+export const isReadyForInvoice = (r: VehicleRepair) =>
+  r.status === "READY_FOR_INVOICE";
 
 export const isOverdue = (r: VehicleRepair, today = localISODate()) =>
   isActive(r) && !!r.expectedCompletionDate && r.expectedCompletionDate < today;
@@ -218,6 +262,8 @@ export const parseTicketFilter = (
         label: "In progress",
         matches: (r) => r.status === "IN_PROGRESS",
       };
+    case "ready-for-invoice":
+      return { label: "Ready for invoice", matches: isReadyForInvoice };
     case "unbilled":
       return { label: "Completed but not billed", matches: isUnbilled };
     case "comeback":

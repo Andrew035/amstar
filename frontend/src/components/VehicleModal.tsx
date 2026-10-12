@@ -2,14 +2,29 @@ import React from "react";
 
 import type { VehicleRepair } from "../types/repair";
 import { TicketNotes } from "./TicketNotes";
-import { SEVERITY_LABELS } from "../styles/controls";
-import { isComeback, vehicleLabel } from "../lib/ticketFilters";
+import {
+  PRESS,
+  SEVERITY_LABELS,
+  SEVERITY_TEXT,
+  getSeverityColor,
+  getStatusStyle,
+} from "../styles/controls";
+import {
+  miles,
+  phone,
+  technicianList,
+  usDate,
+  vehicleLabel,
+} from "../lib/ticketFilters";
 import { PlateChip } from "./PlateChip";
+import { Fact } from "./Fact";
 
 /**
- * The vehicle snapshot: photo, who owns it, and the notes and parts pads.
- * Lifted out of App.tsx, where 123 lines of modal markup sat between the
- * mutation handlers and the routes.
+ * Everything on file about one car and the job it is in for.
+ *
+ * <p>Uses the shared `Fact`, so a label here looks like a label on the Invoices
+ * page and in History. It previously hand-rolled that markup six times with its
+ * own spelling of the label class.
  */
 export const VehicleModal: React.FC<{
   repair: VehicleRepair;
@@ -17,151 +32,133 @@ export const VehicleModal: React.FC<{
   onClose: () => void;
   onSaveNotes: (id: number, notes: string) => Promise<void>;
   onSaveParts: (id: number, parts: string) => Promise<void>;
-  onSaveComeback: (id: number, isComeback: boolean) => void;
 }> = ({
   repair,
   isAdmin,
   onClose,
   onSaveNotes,
   onSaveParts,
-  onSaveComeback,
-}) => (
-  <div
-    onClick={() => onClose()}
-    className="anim-fade fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-  >
+}) => {
+  const technicians = technicianList(repair);
+
+  return (
     <div
-      onClick={(e) => e.stopPropagation()}
-      className="anim-pop bg-amstar-raised border border-amstar-line rounded p-6 w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl"
+      onClick={() => onClose()}
+      className="anim-fade fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
     >
-      <div className="flex justify-between items-center border-b border-amstar-line pb-3 mb-4">
-        <h3 className="font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink">
-          Vehicle Snapshot
-        </h3>
-        <button
-          onClick={() => onClose()}
-          className="text-amstar-ink-faint hover:text-amstar-ink text-2xl leading-none"
-        >
-          &times;
-        </button>
-      </div>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="anim-pop max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto rounded border border-amstar-line bg-amstar-raised p-6 shadow-2xl"
+      >
+        <div className="mb-5 flex items-start justify-between gap-4 border-b border-amstar-line pb-3">
+          <div className="min-w-0">
+            <h3 className="font-cond text-xl font-bold uppercase tracking-wider text-amstar-ink">
+              Vehicle Record
+            </h3>
+            <p className="mt-0.5 truncate text-sm font-medium text-amstar-ink-dim">
+              {vehicleLabel(repair)} &middot; {repair.customerName}
+            </p>
+          </div>
+          <button
+            onClick={() => onClose()}
+            aria-label="Close"
+            className={`min-h-11 shrink-0 px-2 text-2xl leading-none text-amstar-ink-faint hover:text-amstar-ink ${PRESS}`}
+          >
+            &times;
+          </button>
+        </div>
 
-      {repair.vehicle?.carImageUrl ? (
-        <img
-          src={repair.vehicle.carImageUrl}
-          alt="Vehicle"
-          className="w-full h-64 object-cover rounded mb-4 border border-amstar-line"
-        />
-      ) : (
-        <div className="w-full h-48 bg-amstar-field rounded flex items-center justify-center text-amstar-ink-faint font-cond uppercase tracking-widest text-sm mb-4">
-          No Photo Available
-        </div>
-      )}
+        {/*
+         * One height for both states. The photo used to be h-64 and the
+         * placeholder h-48, so the modal changed size depending on whether a
+         * Wikipedia lookup had found anything.
+         */}
+        {repair.vehicle?.carImageUrl ? (
+          <img
+            src={repair.vehicle.carImageUrl}
+            alt=""
+            className="mb-5 h-56 w-full rounded border border-amstar-line object-cover"
+          />
+        ) : (
+          <div className="mb-5 grid h-56 w-full place-items-center rounded border border-dashed border-amstar-line bg-amstar-field font-cond text-sm uppercase tracking-widest text-amstar-ink-faint">
+            No Photo Available
+          </div>
+        )}
 
-      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-        <div>
-          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-            Customer
-          </span>
-          <span className="font-bold text-amstar-ink">
-            {repair.customerName}
-          </span>
-        </div>
-        <div>
-          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-            Vehicle
-          </span>
-          <span className="font-bold text-amstar-ink">
-            {vehicleLabel(repair)}
-            {repair.vehicle?.model}
-          </span>
-        </div>
-        <div>
-          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-            VIN
-          </span>
-          <span className="font-mono tabular-nums text-xs bg-amstar-field px-2 py-1 rounded text-amstar-ink">
-            {repair.vehicle?.vin || "N/A"}
-          </span>
-        </div>
-        <div>
-          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-            Plate
-          </span>
-          <PlateChip vehicle={repair.vehicle} />
-        </div>
-        <div>
-          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-            Comeback
-          </span>
-          {isAdmin ? (
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isComeback(repair)}
-              onClick={() => onSaveComeback(repair.id!, !isComeback(repair))}
-              className={`min-h-8 px-2.5 rounded-sm border font-cond text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                isComeback(repair)
-                  ? "bg-amstar-red border-amstar-red text-white hover:bg-red-700 hover:border-red-700"
-                  : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
-              }`}
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Fact label="Customer" value={repair.customerName} />
+          <Fact label="Phone" value={phone(repair.customerPhone)} fallback="-" />
+          {/*
+           * vehicleLabel already joins year, make and model. This used to
+           * render it and then append the model again, so a Honda Odyssey read
+           * "2014 HONDA ODYSSEYODYSSEY".
+           */}
+          <Fact label="Vehicle" value={vehicleLabel(repair)} />
+          <Fact label="VIN" value={repair.vehicle?.vin} mono />
+          <Fact label="Plate">
+            <PlateChip vehicle={repair.vehicle} />
+          </Fact>
+          <Fact
+            label="Mileage"
+            value={miles(repair.vehicle?.mileage)}
+            fallback="-"
+            mono
+          />
+          <Fact label="In" value={usDate(repair.entryDate)} mono />
+          <Fact
+            label="Repair done"
+            value={usDate(repair.actualCompletionDate)}
+            fallback="Not yet"
+            mono
+          />
+          <Fact label="Service" value={repair.serviceType} />
+          <Fact
+            label="Technician(s)"
+            value={technicians.join(", ")}
+            fallback="Unassigned"
+          />
+          <Fact label="Severity">
+            <span
+              className={`inline-block rounded-sm px-2 py-1 font-cond text-[11px] uppercase tracking-widest ${getSeverityColor(
+                repair.severity,
+              )} ${SEVERITY_TEXT}`}
             >
-              Comeback
-            </button>
-          ) : (
-            <span className="font-bold text-amstar-ink">
-              {isComeback(repair) ? "Yes" : "No"}
+              {SEVERITY_LABELS[repair.severity]}
             </span>
-          )}
+          </Fact>
+          <Fact label="Status">
+            {/* getStatusStyle, not a hand-picked blue, and /_/g so
+                READY_FOR_INVOICE does not read "READY FOR_INVOICE". */}
+            <span
+              className={`inline-block rounded-sm border px-2 py-1 font-cond text-[11px] font-bold uppercase tracking-widest ${getStatusStyle(
+                repair.status,
+              )}`}
+            >
+              {repair.status?.replace(/_/g, " ")}
+            </span>
+          </Fact>
         </div>
-      </div>
 
-      {/* Notes and parts: the same pad twice, side by side on a wide screen. */}
-      <div className="mt-4 border-t border-amstar-line pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TicketNotes
-          repairId={repair.id!}
-          initialNotes={repair.notes}
-          isAdmin={isAdmin}
-          onSave={onSaveNotes}
-          className=""
-        />
-        <TicketNotes
-          repairId={repair.id!}
-          initialNotes={repair.parts}
-          isAdmin={isAdmin}
-          onSave={onSaveParts}
-          label="Parts"
-          saveLabel="Save Parts"
-          placeholder="Part names, numbers and what they were quoted at..."
-          emptyText="No parts written down for this repair yet."
-          className=""
-        />
-      </div>
-
-      <div className="bg-amstar-surface p-4 rounded border border-amstar-line flex justify-between items-center">
-        <div>
-          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-            Job & Severity
-          </span>
-          <span className="font-bold text-amstar-red-ink text-base">
-            {repair.serviceType}
-          </span>
-          <span className="block mt-1 text-xs font-bold text-amstar-ink-dim">
-            {SEVERITY_LABELS[repair.severity]} Priority
-          </span>
-        </div>
-        <div className="text-right">
-          <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest block">
-            Assigned Tech(s)
-          </span>
-          <span className="font-bold text-amstar-ink text-sm block">
-            {repair.assignedWorker || "Unassigned"}
-          </span>
-          <span className="inline-block mt-1 text-xs font-bold bg-amstar-blue text-white px-2 py-0.5 rounded-sm font-cond uppercase tracking-wider border border-amstar-line">
-            {repair.status}
-          </span>
+        {/* Notes and parts: the same pad twice, side by side on a wide screen. */}
+        <div className="grid grid-cols-1 gap-4 border-t border-amstar-line pt-5 sm:grid-cols-2">
+          <TicketNotes
+            repairId={repair.id!}
+            initialNotes={repair.notes}
+            isAdmin={isAdmin}
+            onSave={onSaveNotes}
+          />
+          <TicketNotes
+            repairId={repair.id!}
+            initialNotes={repair.parts}
+            isAdmin={isAdmin}
+            onSave={onSaveParts}
+            label="Parts"
+            saveLabel="Save Parts"
+            placeholder="Part names, numbers and what they were quoted at..."
+            emptyText="No parts written down for this repair yet."
+          />
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};

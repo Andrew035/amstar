@@ -51,6 +51,32 @@ export default {
           // surface (4.03:1) and raised (3.36:1); #93aed4 clears all five while
           // staying visibly dimmer than ink-dim.
           "ink-faint": "#93aed4",
+          /*
+           * Notification fills. A toast lands ON the navbar, so it is measured
+           * against #0b3068, not against the page. The old pair (sev-5, sev-1)
+           * managed 3.64:1 and 5.06:1 there, which is why the bar kept winning
+           * the eye. These clear 7:1 on the navbar and carry black text at
+           * ~11.5:1, so the colour alone separates the toast and no outline is
+           * needed. Both take black text; white on either is under 2:1.
+           *
+           * The amber sits at hue 38, a deliberate 16deg off the #fbe207
+           * wordmark yellow, so a warning never reads as brand.
+           */
+          notice: "#1bde8d",
+          alert: "#edb75a",
+          /*
+           * The destructive fill, for "this is gone". Same bar as the two
+           * above: 7.09:1 on the navbar, 11.61:1 with black text, which lines
+           * up with alert at 7.04 / 11.52.
+           *
+           * It is a light coral rather than a true red because of that bar. The
+           * reds you would reach for first do not clear it against #0b3068:
+           * sev-5 manages 3.64:1, red-edge 4.36:1, amstar-red 2.15:1. Pushing a
+           * pure red bright enough to clear 7:1 lands around #ffb8c6, which
+           * reads pink. This is the reddest value that still separates from the
+           * bar as strongly as its siblings.
+           */
+          removed: "#ffaaad",
         },
         sev: {
           1: "#10b981",

@@ -39,7 +39,7 @@ export const Panel: React.FC<{
         <button
           type="button"
           onClick={onOpen}
-          className={`${headClass} group text-left hover:bg-amstar-raised ${HOVER}`}
+          className={`${headClass} group text-left hover:bg-amstar-raised ${HOVER} active:translate-y-px`}
         >
           {heading}
         </button>

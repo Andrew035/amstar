@@ -13,7 +13,9 @@ import {
 } from "../styles/controls";
 import { apiFetch, ApiError } from "../api";
 import { panelCoords } from "../lib/floating";
+import { miles, phone } from "../lib/ticketFilters";
 import { CustomDatePicker } from "./CustomDatePicker";
+import { DropdownArrow } from "./DropdownArrow";
 
 const SeveritySegments: React.FC<{
   value: number;
@@ -73,7 +75,7 @@ const SeveritySegments: React.FC<{
               selected
                 ? "text-white border border-amstar-red-edge bg-amstar-red/[0.16]"
                 : "text-amstar-ink-faint border border-amstar-line hover:border-amstar-red/60"
-            }`}
+            } active:translate-y-px`}
           >
             {level}
           </button>
@@ -196,7 +198,7 @@ const ServicePicker: React.FC<{
           </span>
         )}
         */}
-        <span className="text-xs text-amstar-ink-faint shrink-0">▼</span>
+        <DropdownArrow isOpen={isOpen} />
       </div>
 
       {isOpen && (
@@ -254,7 +256,7 @@ const ServicePicker: React.FC<{
                 <button
                   type="button"
                   onClick={addTyped}
-                  className="w-full min-h-10 px-3 py-2 rounded-sm text-left text-xs font-bold text-amstar-red-ink uppercase hover:bg-amstar-surface transition-colors"
+                  className="w-full min-h-10 px-3 py-2 rounded-sm text-left text-xs font-bold text-amstar-red-ink uppercase hover:bg-amstar-surface transition-colors active:translate-y-px"
                 >
                   + Add "{q}"
                 </button>
@@ -509,9 +511,7 @@ const FormWorkerDropdown: React.FC<{
             selectedArray.join(", ")
           )}
         </span>
-        <span className="anim-fade text-xs ml-2 text-amstar-ink-faint shrink-0">
-          ▼
-        </span>
+        <DropdownArrow isOpen={isOpen} className="anim-fade ml-2" />
       </div>
       {isOpen && (
         <>
@@ -583,6 +583,8 @@ export const RepairForm: React.FC<RepairFormProps> = ({
   technicianNames,
 }) => {
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [mileage, setMileage] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [vehicleState, setVehicleState] = useState("MD");
   const [serviceType, setServiceType] = useState("");
@@ -668,6 +670,9 @@ export const RepairForm: React.FC<RepairFormProps> = ({
 
     const payload = {
       customerName,
+      // Both optional: send null rather than "" so a blank never overwrites a
+      // number or a reading already on file.
+      customerPhone: phone(customerPhone) || null,
       serviceType,
       severity,
       expectedCompletionDate,
@@ -681,6 +686,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
         model: finalModel,
         year: finalYear,
         carImageUrl: finalImageUrl,
+        mileage: mileage ? Number(mileage) : null,
       },
     };
 
@@ -690,6 +696,8 @@ export const RepairForm: React.FC<RepairFormProps> = ({
         body: JSON.stringify(payload),
       });
       setCustomerName("");
+      setCustomerPhone("");
+      setMileage("");
       setVin("");
       setLicensePlate("");
       setServiceType("");
@@ -734,6 +742,21 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           />
         </div>
         <div>
+          <label className={LABEL_STYLE}>Phone (optional)</label>
+          <input
+            type="tel"
+            inputMode="tel"
+            // State holds the digits; the field shows them formatted, so the
+            // number takes its shape as it is typed.
+            value={phone(customerPhone)}
+            onChange={(e) =>
+              setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+            }
+            placeholder="e.g. (301)-555-0142"
+            className={`${SHARED_INPUT_STYLE} tabular-nums`}
+          />
+        </div>
+        <div>
           <label className={LABEL_STYLE}>VIN (17-Digits)</label>
           <input
             type="text"
@@ -758,6 +781,21 @@ export const RepairForm: React.FC<RepairFormProps> = ({
             value={vehicleState}
             onChange={setVehicleState}
             className={ringIfMissing("state", vehicleState)}
+          />
+        </div>
+
+        <div>
+          <label className={LABEL_STYLE}>Mileage (optional)</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            // Same shape as the phone field: digits in state, separators on
+            // screen. vehicles_mileage_sane caps it at 3,000,000, so seven
+            // digits is all the column will ever accept.
+            value={miles(mileage)}
+            onChange={(e) => setMileage(e.target.value.replace(/\D/g, "").slice(0, 7))}
+            placeholder="e.g. 128,450"
+            className={`${SHARED_INPUT_STYLE} font-mono tabular-nums`}
           />
         </div>
 
@@ -808,7 +846,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors"
+            className="px-5 py-2.5 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors active:translate-y-px"
           >
             Cancel
           </button>

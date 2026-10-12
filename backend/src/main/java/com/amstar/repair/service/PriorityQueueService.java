@@ -1,6 +1,7 @@
 package com.amstar.repair.service;
 
 import com.amstar.repair.model.TicketLineItem;
+import com.amstar.repair.model.TicketStatus;
 import com.amstar.repair.model.Vehicle;
 import com.amstar.repair.model.VehicleRepair;
 import com.amstar.repair.repository.VehicleRepairRepository;
@@ -90,11 +91,19 @@ public class PriorityQueueService {
               String oldStatus = repair.getStatus();
               repair.setStatus(newStatus);
 
-              // Automatically stamp the date when completed
-              if ("COMPLETED".equals(newStatus)) {
-                repair.setActualCompletionDate(LocalDate.now());
+              // actual_completion_date records when the REPAIR finished, so it is
+              // stamped as soon as the shop says the work is done - at
+              // READY_FOR_INVOICE, not at COMPLETED. Mirrors
+              // tickets_completion_matches_status in V17.
+              if (TicketStatus.COMPLETED.equals(newStatus)
+                  || TicketStatus.READY_FOR_INVOICE.equals(newStatus)) {
+                // Only stamp it once. Moving between the two finished states, or
+                // invoicing a car days later, must not rewrite when it was fixed.
+                if (repair.getActualCompletionDate() == null) {
+                  repair.setActualCompletionDate(LocalDate.now());
+                }
               } else {
-                // Remove the date if accidently marked complete and reverted
+                // Back to open work: the repair is not finished after all.
                 repair.setActualCompletionDate(null);
               }
 
@@ -103,6 +112,38 @@ public class PriorityQueueService {
                 activity.record(
                     repair, "STATUS", readable(oldStatus) + " → " + readable(newStatus));
               }
+              return true;
+            })
+        .orElse(false);
+  }
+
+  /**
+   * READY_FOR_INVOICE becomes COMPLETED once the invoice exists. Admin only, from the Invoices
+   * page.
+   *
+   * <p>Deliberately not a parameter on updateRepairStatus: refusing every other source status means
+   * a car still on the lift cannot be completed by accident.
+   *
+   * <p>Does not touch actual_completion_date. That records when the repair finished, which happened
+   * at READY_FOR_INVOICE; stamping it again here would rewrite history every time an invoice was
+   * written late.
+   */
+  @Transactional
+  public boolean markInvoiced(Long id) {
+    return repository
+        .findById(id)
+        .map(
+            repair -> {
+              if (!TicketStatus.READY_FOR_INVOICE.equals(repair.getStatus())) {
+                throw new IllegalArgumentException(
+                    "Only a ticket marked Ready for invoice can be invoiced. This one is "
+                        + readable(repair.getStatus())
+                        + ".");
+              }
+              repair.setStatus(TicketStatus.COMPLETED);
+              repository.save(repair);
+              // No amount: every signed-in account can read this feed.
+              activity.record(repair, "INVOICED", "Invoice completed");
               return true;
             })
         .orElse(false);
@@ -135,10 +176,8 @@ public class PriorityQueueService {
       VehicleRepair repair = optionalRepair.get();
 
       repair.setRetailPrice(pricingData.getRetailPrice());
-      repair.setLeasePrice(pricingData.getLeasePrice());
       repair.setLaborPrice(pricingData.getLaborPrice());
       repair.setIncludeRetail(pricingData.getIncludeRetail());
-      repair.setIncludeLease(pricingData.getIncludeLease());
       repair.setIncludeLabor(pricingData.getIncludeLabor());
 
       if (pricingData.getBillingType() != null) {

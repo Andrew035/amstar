@@ -49,7 +49,7 @@ export const CapacityPanel: React.FC<{
                   row.isUnassignedBucket
                     ? "border-b border-amstar-line mb-1 pb-1.5"
                     : ""
-                }`}
+                } active:translate-y-px`}
               >
                 <span
                   className={`flex-1 min-w-0 truncate ${
