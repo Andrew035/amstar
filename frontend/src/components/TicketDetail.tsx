@@ -216,8 +216,15 @@ export const TicketDetail: React.FC<{
     <div
       className={`bg-amstar-surface border border-amstar-line rounded flex flex-col min-h-0 overflow-hidden ${className}`}
     >
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
-        <div className="shrink-0 flex items-start gap-5 pb-5 border-b border-amstar-line-soft">
+      {/*
+       * Sized to fit without scrolling on the screens the shop uses. The
+       * scroller stays as a backstop for a genuinely short window, but it
+       * should not be reachable on an iPad or the counter PC: the five field
+       * cells sit on one row, the photo is h-24, and the note pads flex down to
+       * min-h-12. Adding another fixed row here brings the scrollbar back.
+       */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col gap-3">
+        <div className="shrink-0 flex items-start gap-5 pb-4 border-b border-amstar-line-soft">
           {repair.vehicle?.carImageUrl ? (
             <img
               src={repair.vehicle.carImageUrl}
@@ -303,7 +310,12 @@ export const TicketDetail: React.FC<{
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {/*
+          * Five cells, one row from lg up. lg and not xl on purpose: the shop
+          * works on iPads at 1180px wide, where xl never applies and these
+          * wrapped onto three rows - 204px of the 505px the pane gets.
+          */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div>
             <span className={LABEL_STYLE}>Severity</span>
             {isAdmin ? (
@@ -400,6 +412,15 @@ export const TicketDetail: React.FC<{
           </div>
         </div>
 
+        {/*
+          * The pads are flex-1 with a deliberately low floor: they grow to fill
+          * a tall window, and on a short one they shrink rather than pushing the
+          * pane into a scrollbar. min-h-32 made 128px the effective minimum,
+          * which overflowed a 1366x768 laptop by 102px once Phone and Mileage
+          * added a row to the grid above. The header's height is set by the
+          * column beside the photo, not the photo, so shrinking that buys
+          * nothing - the levers are this floor and the grid's row count.
+          */}
         {/* The bookkeeper reads these to write the invoice, so she sees them;
             TicketNotes renders a disabled pad without isAdmin. The API sends the
             fields to both roles, so this hides a panel rather than being the
@@ -412,7 +433,7 @@ export const TicketDetail: React.FC<{
               isAdmin={isAdmin}
               onSave={onSaveNotes}
               className="flex flex-col min-h-0"
-              textareaClass="flex-1 min-h-32"
+              textareaClass="flex-1 min-h-12"
             />
             <TicketNotes
               repairId={id}
@@ -424,7 +445,7 @@ export const TicketDetail: React.FC<{
               placeholder="Part name, part number, price - written down, not stored as figures..."
               emptyText="No parts recorded for this repair yet."
               className="flex flex-col min-h-0"
-              textareaClass="flex-1 min-h-32"
+              textareaClass="flex-1 min-h-12"
             />
           </div>
         )}
