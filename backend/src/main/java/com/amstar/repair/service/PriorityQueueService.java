@@ -389,7 +389,10 @@ public class PriorityQueueService {
               vehicle.setIsComeback(isComeback);
               vehicles.save(vehicle);
               if (!Objects.equals(before, isComeback)) {
-                activity.record(repair, "COMEBACK", isComeback ? "Marked" : "Cleared");
+                activity.record(
+                    repair,
+                    "COMEBACK",
+                    isComeback ? "Marked as comeback" : "Cleared comeback status");
               }
               return true;
             })
