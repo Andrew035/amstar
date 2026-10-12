@@ -104,7 +104,9 @@ export interface TicketActivity {
     | "LINE_ITEMS"
     | "BILLING_TYPE"
     | "COMEBACK"
-    | "INVOICED";
+    | "INVOICED"
+    | "MILEAGE"
+    | "PHONE";
   detail: string | null;
   createdAt: string;
 }

@@ -260,7 +260,7 @@ public class PriorityQueueService {
               } else if (!Objects.equals(phoneBefore, repair.getCustomerPhone())) {
                 // No amount and no number in the detail: the feed is readable by
                 // every signed-in account.
-                activity.record(repair, "CUSTOMER", "Phone recorded");
+                activity.record(repair, "CUSTOMER", "Phone number recorded");
               }
               return true;
             })

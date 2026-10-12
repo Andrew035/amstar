@@ -145,6 +145,8 @@ const ACTION_TEXT: Record<TicketActivity["action"], string> = {
   DELETED: "deleted",
   COMEBACK: "marked a comeback on",
   INVOICED: "marked invoiced on",
+  MILEAGE: "mileage updated on",
+  PHONE: "telephone number updated on",
 };
 
 const ACTION_DOT: Record<TicketActivity["action"], string> = {
@@ -163,6 +165,8 @@ const ACTION_DOT: Record<TicketActivity["action"], string> = {
   DELETED: "bg-sev-5",
   COMEBACK: "bg-sev-3",
   INVOICED: "bg-amstar-ink-faint",
+  MILEAGE: "bg-amstar-ink-faint",
+  PHONE: "bg-amstar-ink-faint",
 };
 
 const timeAgo = (iso: string): string => {
