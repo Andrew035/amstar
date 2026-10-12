@@ -122,7 +122,7 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 - `isFinished` in `ticketFilters.ts` is `COMPLETED || READY_FOR_INVOICE`, and `isActive` is `!isFinished`. A car waiting on paperwork is not overdue, not due today and not unassigned, and it counts toward on-time rate, turnaround and monthly throughput the moment the work is done. It still appears in the queue, which filters on `COMPLETED` directly, because the car may well still be on the lot.
 
 ### API client
-`src/api.ts` `apiFetch<T>(path, init)` is the one way to call the API: it attaches the bearer token, sets JSON headers, forces a logout on 401, turns 403/429 into friendly messages, surfaces the backend's `{"error": "..."}` text as `ApiError.message`, and tolerates empty 200 bodies. Show failures with `toastError(error, fallback)`. (`RepairForm`'s ticket POST still uses raw `fetch`, migrate it rather than copying it.)
+`src/api.ts` `apiFetch<T>(path, init)` is the one way to call the API: it attaches the bearer token, sets JSON headers, forces a logout on 401, turns 403/429 into friendly messages, surfaces the backend's `{"error": "..."}` text as `ApiError.message`, and tolerates empty 200 bodies. Show failures with `toastError(error, fallback)`. (`RepairForm` uses it for the ticket POST. The three raw `fetch` calls left in that file are the NHTSA and Wikipedia lookups, and they must **stay** raw: `apiFetch` attaches the bearer token, which must never be sent to a third party.)
 
 `src/config.ts` `API_BASE` is `VITE_API_URL`, defaulting to `http://localhost:8080` in dev. `frontend/.env.production` sets it empty, so production calls are same-origin `/api/...` through Caddy and CORS never applies.
 

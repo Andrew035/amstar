@@ -102,6 +102,7 @@ public class PasswordResetService {
 
     User user = resetToken.getUser();
     user.setPasswordHash(passwordEncoder.encode(newPassword));
+    user.setTokenVersion(user.getTokenVersion() + 1);
     users.save(user);
 
     resetToken.setUsedAt(Instant.now());
