@@ -103,7 +103,8 @@ export interface TicketActivity {
     | "DELETED"
     | "LINE_ITEMS"
     | "BILLING_TYPE"
-    | "COMEBACK";
+    | "COMEBACK"
+    | "INVOICED";
   detail: string | null;
   createdAt: string;
 }
