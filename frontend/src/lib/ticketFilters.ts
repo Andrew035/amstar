@@ -50,6 +50,28 @@ export const monthLabel = (iso?: string | null): string => {
 };
 
 /** Money, rendered one way everywhere. Grouped, two decimals, zero is still a number. */
+/**
+ * A phone number as the shop writes it: (301)-123-1234.
+ *
+ * Derived from the digits every time, so it is idempotent - running it over an
+ * already-formatted number gives the same answer, which lets the input, the
+ * payload and the display all call it without caring what they were handed.
+ * Formats progressively so it can be typed into, and keeps whatever partial
+ * number has been entered rather than rejecting it.
+ */
+export const phone = (raw?: string | null): string => {
+  const d = (raw ?? "").replace(/\D/g, "").slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0, 3)})-${d.slice(3)}`;
+  return `(${d.slice(0, 3)})-${d.slice(3, 6)}-${d.slice(6)}`;
+};
+
+/** Thousands separators, for an odometer reading. Blank stays blank. */
+export const miles = (raw?: string | number | null): string => {
+  const d = String(raw ?? "").replace(/\D/g, "");
+  return d ? Number(d).toLocaleString() : "";
+};
+
 export const money = (n?: number | null): string =>
   `$${(n ?? 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,

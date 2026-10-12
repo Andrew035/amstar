@@ -674,7 +674,6 @@ export const App: React.FC = () => {
           onClose={() => setViewedRepair(null)}
           onSaveNotes={handleSaveNotes}
           onSaveParts={handleSaveParts}
-          onSaveComeback={handleSaveComeback}
         />
       )}
 

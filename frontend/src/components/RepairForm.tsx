@@ -13,6 +13,7 @@ import {
 } from "../styles/controls";
 import { apiFetch, ApiError } from "../api";
 import { panelCoords } from "../lib/floating";
+import { miles, phone } from "../lib/ticketFilters";
 import { CustomDatePicker } from "./CustomDatePicker";
 import { DropdownArrow } from "./DropdownArrow";
 
@@ -671,7 +672,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
       customerName,
       // Both optional: send null rather than "" so a blank never overwrites a
       // number or a reading already on file.
-      customerPhone: customerPhone.trim() || null,
+      customerPhone: phone(customerPhone) || null,
       serviceType,
       severity,
       expectedCompletionDate,
@@ -745,10 +746,13 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           <input
             type="tel"
             inputMode="tel"
-            value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
-            maxLength={20}
-            placeholder="e.g. (301) 555-0142"
+            // State holds the digits; the field shows them formatted, so the
+            // number takes its shape as it is typed.
+            value={phone(customerPhone)}
+            onChange={(e) =>
+              setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+            }
+            placeholder="e.g. (301)-555-0142"
             className={`${SHARED_INPUT_STYLE} tabular-nums`}
           />
         </div>
@@ -785,11 +789,12 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           <input
             type="text"
             inputMode="numeric"
-            value={mileage}
-            // Digits only. vehicles_mileage_sane caps it at 3,000,000, so seven
-            // characters is all the column will ever accept.
+            // Same shape as the phone field: digits in state, separators on
+            // screen. vehicles_mileage_sane caps it at 3,000,000, so seven
+            // digits is all the column will ever accept.
+            value={miles(mileage)}
             onChange={(e) => setMileage(e.target.value.replace(/\D/g, "").slice(0, 7))}
-            placeholder="e.g. 128450"
+            placeholder="e.g. 128,450"
             className={`${SHARED_INPUT_STYLE} font-mono tabular-nums`}
           />
         </div>

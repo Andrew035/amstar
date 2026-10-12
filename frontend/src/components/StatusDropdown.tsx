@@ -22,10 +22,15 @@ export const StatusDropdown: React.FC<{
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
   /*
-   * COMPLETED stays here so a ticket can be corrected in place - on a History
-   * row it is also the current value, and a dropdown that cannot show the state
-   * it is in reads as broken. The everyday path out of the shop is still TO
-   * INVOICE, with an owner marking it invoiced from the Invoices page.
+   * COMPLETED is deliberately not offered. Marking a repair invoiced is what
+   * completes it and moves it into History, so there is one way in and the
+   * shop cannot put a car there by picking a status - which is how "completed"
+   * came to mean two different things in the first place.
+   *
+   * PATCH /status still accepts it, so a correction remains possible over the
+   * API, and TicketLifecycleTest relies on that. On a History row, where the
+   * value already is COMPLETED, the trigger falls back to showing the raw
+   * status and these three become the reopen path.
    *
    * TO INVOICE is short because the status column is w-40 and "READY FOR
    * INVOICE" truncates there; the stored value is READY_FOR_INVOICE everywhere.
@@ -34,7 +39,6 @@ export const StatusDropdown: React.FC<{
     { val: "PENDING", label: "PENDING" },
     { val: "IN_PROGRESS", label: "IN PROGRESS" },
     { val: "READY_FOR_INVOICE", label: "TO INVOICE" },
-    { val: "COMPLETED", label: "COMPLETED" },
   ];
 
   const currentLabel =

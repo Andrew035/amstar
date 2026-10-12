@@ -7,14 +7,15 @@ import {
   HOVER,
   getStatusStyle,
 } from "../styles/controls";
-import { Truncated } from "../components/Truncated";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { useSearchParams } from "react-router-dom";
 import {
   invoiceTotal,
   isReadyForInvoice,
   matchesSearch,
+  miles,
   money,
+  phone,
   parseTicketFilter,
   technicianList,
   usDate,
@@ -22,31 +23,8 @@ import {
 } from "../lib/ticketFilters";
 import { FilterBanner } from "../components/FilterBanner";
 import { PlateChip } from "../components/PlateChip";
+import { Fact } from "../components/Fact";
 import { PartsEditor } from "../components/PartsEditor";
-
-/** One labelled fact in the expanded editor. */
-const Fact: React.FC<{
-  label: string;
-  value?: string | null;
-  fallback?: string;
-  mono?: boolean;
-  /** Renders instead of `value`, for a fact that is a component rather than text. */
-  children?: React.ReactNode;
-}> = ({ label, value, fallback = "N/A", mono = false, children }) => (
-  <div className="min-w-0">
-    <span className="block font-cond uppercase tracking-widest text-[9px] text-amstar-ink-faint mb-1">
-      {label}
-    </span>
-    {children ?? (
-      <Truncated
-        value={value || fallback}
-        className={`block px-2 py-1 bg-amstar-field border border-amstar-line rounded-sm text-[11px] font-bold text-amstar-ink ${
-          mono ? "font-mono tabular-nums" : ""
-        }`}
-      />
-    )}
-  </div>
-);
 
 const PAD_LABEL =
   "block font-cond text-[10px] font-bold uppercase tracking-[0.2em] text-amstar-ink-dim";
@@ -110,11 +88,18 @@ const InvoiceEditor: React.FC<{
     <div className="anim-rise border-t border-amstar-line-soft bg-amstar-field p-4 sm:p-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
         <Fact label="Customer" value={item.customerName} />
+        <Fact label="Phone" value={phone(item.customerPhone)} fallback="-" />
         <Fact label="Plate">
           <PlateChip vehicle={item.vehicle} />
         </Fact>
         <Fact label="Vehicle" value={vehicleLabel(item)} />
         <Fact label="VIN" value={item.vehicle?.vin} mono />
+        <Fact
+          label="Mileage"
+          value={miles(item.vehicle?.mileage)}
+          fallback="-"
+          mono
+        />
         <Fact label="Service" value={item.serviceType} />
         <Fact
           label="Technician(s)"

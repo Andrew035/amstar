@@ -6,7 +6,7 @@ import {
   SHARED_INPUT_STYLE,
   TABLE_DROPDOWN_STYLE,
 } from "../styles/controls";
-import { isComeback, usDate, vehicleLabel } from "../lib/ticketFilters";
+import { isComeback, phone, usDate, vehicleLabel } from "../lib/ticketFilters";
 import { SeverityDropdown } from "./SeverityDropdown";
 import { StatusDropdown } from "./StatusDropdown";
 import { CustomDatePicker } from "./CustomDatePicker";
@@ -267,7 +267,7 @@ export const TicketDetail: React.FC<{
           <div>
             <span className={LABEL_STYLE}>Phone</span>
             <span className="block text-sm font-bold text-amstar-ink tabular-nums">
-              {repair.customerPhone || "-"}
+              {phone(repair.customerPhone) || "-"}
             </span>
           </div>
           <div>
