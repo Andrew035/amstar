@@ -53,7 +53,7 @@ The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the
 ## Architecture
 
 ### Schema is owned by Flyway
-`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V19__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
+`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V20__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
 
 | Migration | Adds |
 |---|---|
@@ -72,9 +72,12 @@ The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the
 | V13 | activity label separator |
 | V14 | `SHOP_VIEW` → `BOOKKEEPER`, role default dropped, every `token_version` bumped |
 | V15 | `READY_FOR_INVOICE` status, INVOICED activity action |
-| V16 | dropped `lease_price` / `include_lease` |
+| V16 | folds lease money into `retail_price`, then drops `lease_price` / `include_lease` |
 | V17 | `actual_completion_date` now means the repair finished |
 | V18 | `vehicles.mileage` (optional, latest reading) |
+| V19 | MILEAGE activity action |
+
+**A migration's comments are part of its checksum.** V16 ran in production on 2026-10-12; correcting even a comment in it now makes Flyway refuse to start the backend. If a migration needs explaining after the fact, explain it here instead. The one worth knowing: V16's `UPDATE` folds any `lease_price` into `retail_price` **before** dropping the columns, so no invoice total changes - without it a pre-line-item ticket with `include_lease` set would silently lose that money off its total.
 
 Many rules are enforced twice, once in Java for a readable 400, once as a database CHECK as the backstop (severity 1–5, status values, non-negative prices, notes ≤ 5000, uppercase service names, a completion date on exactly the two finished statuses). Keep the pair in sync when changing one.
 
@@ -93,6 +96,7 @@ In the database a ticket links to real rows: `vehicles`, `customers`, and the `t
 `TicketAssemblyService` converts between the two, and every ticket write goes through it:
 - **Vehicles are deduplicated**, matched by 17-char VIN, then by plate + state, otherwise inserted. A known car only has blank fields filled in.
 - **Customers** are matched by name (case-insensitive) or created. An optional `customerPhone` on a ticket write is set whenever a non-blank value arrives, so a changed number is not ignored, but a blank never wipes the number on file. The customer PATCH carries only a name and passes null, leaving any number alone.
+- **Phone and mileage can be filled in later.** The shop often has neither at drop-off, so both are editable in the queue's detail pane, not just on the intake form. The phone rides on `PATCH /{id}/customer` (which already resolves the customer, and requires the name, so the UI sends the current one back unchanged); mileage has its own `PATCH /{id}/mileage` because it belongs to the vehicle, and its own MILEAGE activity action (V19). **For both, a blank value means "leave it alone", never "clear it"** - so tabbing through a field cannot wipe a number already on file, and the activity detail carries the reading but never the phone number, since every signed-in account can read the feed.
 - **Mileage is the exception to fill-the-blanks.** `vehicles.mileage` (V18, optional) holds the **most recent** reading, not a history, and the assembly takes whatever was entered rather than only filling a blank: unlike make or VIN it is not a fact about the car, it is a reading taken today, and it only goes up. A per-visit record would belong on `service_tickets`.
 - **Services** are uppercased; an unknown name joins the catalog with the ticket's severity as its default. Names over 80 chars are rejected.
 - **Technicians** must already exist on the roster. Unknown names are silently dropped, the roster is managed data, not something a ticket write can invent.
@@ -104,7 +108,7 @@ Frontend: `App.tsx` owns `repairs`, `technicians`, `serviceCatalog`, `activity`,
 
 Backend: each write is a `@Transactional` method on `PriorityQueueService` that also calls `ActivityService.record(...)` when something actually changed, so an activity row exists only if its change was committed. `ticket_activity.ticket_label` is a snapshot ("2010 FORD E-250, Kane") so deleted tickets still read correctly. Pricing events deliberately carry no amount, because every signed-in account can read the feed. New actions must also be added to the `activity_action_valid` CHECK (via a new migration).
 
-Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}/status|severity|assign|service|notes|parts|pricing|line-items|due-date|customer|comeback|invoiced`, `DELETE /{id}`.
+Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}/status|severity|assign|service|notes|parts|pricing|line-items|due-date|customer|comeback|mileage|invoiced`, `DELETE /{id}`.
 
 ### Pricing is split from invoicing
 "Completed" used to mean two different things to the two people using it: the car has left the shop, or the invoice can be written. `READY_FOR_INVOICE` (V15) is the second one.

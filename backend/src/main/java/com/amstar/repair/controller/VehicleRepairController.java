@@ -172,7 +172,43 @@ public class VehicleRepairController {
               java.util.Map.of("error", "A customer name of 120 characters or fewer is required"));
     }
 
-    boolean isUpdated = priorityQueueService.updateCustomerName(id, name);
+    // Optional, and only ever set: a blank leaves the number already on file
+    // alone, so saving the name back does not wipe a phone number.
+    String phone = request.get("customerPhone");
+    phone = phone == null ? null : phone.trim();
+    if (phone != null && phone.length() > 20) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "A phone number must be 20 characters or fewer"));
+    }
+
+    boolean isUpdated = priorityQueueService.updateCustomerName(id, name, phone);
+    return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+  }
+
+  /** The odometer reading, which often arrives after the car does. */
+  @PatchMapping("/{id}/mileage")
+  public ResponseEntity<?> updateMileage(
+      @PathVariable Long id, @RequestBody java.util.Map<String, Object> request) {
+    Object raw = request.get("mileage");
+    Integer mileage = null;
+    if (raw instanceof Number number) {
+      mileage = number.intValue();
+    } else if (raw instanceof String text && !text.isBlank()) {
+      try {
+        mileage = Integer.valueOf(text.trim());
+      } catch (NumberFormatException e) {
+        return ResponseEntity.badRequest()
+            .body(java.util.Map.of("error", "Mileage must be a whole number"));
+      }
+    }
+    // Mirrors vehicles_mileage_sane in V18, so a typo is a readable 400 rather
+    // than a constraint violation turned into a 409.
+    if (mileage != null && (mileage < 0 || mileage > 3_000_000)) {
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("error", "Mileage must be between 0 and 3,000,000"));
+    }
+
+    boolean isUpdated = priorityQueueService.updateMileage(id, mileage);
     return isUpdated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
   }
 

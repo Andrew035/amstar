@@ -6,7 +6,13 @@ import {
   SHARED_INPUT_STYLE,
   TABLE_DROPDOWN_STYLE,
 } from "../styles/controls";
-import { isComeback, phone, usDate, vehicleLabel } from "../lib/ticketFilters";
+import {
+  isComeback,
+  miles,
+  phone,
+  usDate,
+  vehicleLabel,
+} from "../lib/ticketFilters";
 import { SeverityDropdown } from "./SeverityDropdown";
 import { StatusDropdown } from "./StatusDropdown";
 import { CustomDatePicker } from "./CustomDatePicker";
@@ -66,6 +72,87 @@ const CustomerNameField: React.FC<{
 };
 
 /**
+ * A number the shop often does not have at drop-off, typed in later.
+ *
+ * <p>Digits in state, formatted on screen - the same shape the intake form
+ * uses. Blank is "leave it alone" rather than "clear it": the backend ignores an
+ * empty value, so tabbing through a field cannot wipe a number already on file.
+ */
+const InlineNumberField: React.FC<{
+  repairId: number;
+  /** Whatever is on file, in any shape. Only its digits are kept. */
+  value?: string | number | null;
+  label: string;
+  canEdit: boolean;
+  placeholder: string;
+  maxDigits: number;
+  display: (digits: string) => string;
+  /** What goes to the API. Phone sends its formatted shape, mileage its digits. */
+  toSend: (digits: string) => string;
+  mono?: boolean;
+  onSave: (id: number, next: string) => void;
+}> = ({
+  repairId,
+  value,
+  label,
+  canEdit,
+  placeholder,
+  maxDigits,
+  display,
+  toSend,
+  mono = false,
+  onSave,
+}) => {
+  const onFile = String(value ?? "").replace(/\D/g, "");
+  const [draft, setDraft] = useState(onFile);
+
+  // The pane stays mounted while you move between tickets.
+  useEffect(() => setDraft(onFile), [repairId, onFile]);
+
+  const commit = () => {
+    if (!draft || draft === onFile) {
+      setDraft(onFile);
+      return;
+    }
+    onSave(repairId, toSend(draft));
+  };
+
+  if (!canEdit) {
+    return (
+      <span
+        className={`block text-sm font-bold text-amstar-ink tabular-nums ${
+          mono ? "font-mono" : ""
+        }`}
+      >
+        {display(onFile) || "-"}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={display(draft)}
+      aria-label={label}
+      placeholder={placeholder}
+      onChange={(e) =>
+        setDraft(e.target.value.replace(/\D/g, "").slice(0, maxDigits))
+      }
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") setDraft(onFile);
+      }}
+      className={`w-full max-w-xs tabular-nums ${mono ? "font-mono" : ""} px-2 py-1 -ml-2 bg-transparent border border-transparent rounded-sm
+      text-sm font-bold text-amstar-ink transition-colors cursor-pointer hover:border-amstar-line
+      focus:bg-amstar-field focus:cursor-text focus:outline-none focus:border-amstar-red-edge
+      focus:ring-2 focus:ring-amstar-red-edge/40`}
+    />
+  );
+};
+
+/**
  * The right half of the queue: one ticket, everything about it, all editable.
  *
  * This is what used to be spread across ten table columns plus the vehicle
@@ -89,6 +176,8 @@ export const TicketDetail: React.FC<{
   onSaveComeback: (id: number, isComeback: boolean) => void;
   canEdit: boolean;
   onOpenPricing: (repair: VehicleRepair) => void;
+  onPhoneChange: (id: number, phone: string) => void;
+  onMileageChange: (id: number, mileage: string) => void;
   className?: string;
 }> = ({
   repair,
@@ -107,6 +196,8 @@ export const TicketDetail: React.FC<{
   onSaveComeback,
   canEdit,
   onOpenPricing,
+  onPhoneChange,
+  onMileageChange,
   className = "",
 }) => {
   if (!repair) {
@@ -266,17 +357,32 @@ export const TicketDetail: React.FC<{
            */}
           <div>
             <span className={LABEL_STYLE}>Phone</span>
-            <span className="block text-sm font-bold text-amstar-ink tabular-nums">
-              {phone(repair.customerPhone) || "-"}
-            </span>
+            <InlineNumberField
+              repairId={id}
+              value={repair.customerPhone}
+              label="Customer phone"
+              canEdit={canEdit}
+              placeholder="Add a number"
+              maxDigits={10}
+              display={phone}
+              toSend={phone}
+              onSave={onPhoneChange}
+            />
           </div>
           <div>
             <span className={LABEL_STYLE}>Mileage</span>
-            <span className="block font-mono text-sm font-bold text-amstar-ink tabular-nums">
-              {repair.vehicle?.mileage != null
-                ? repair.vehicle.mileage.toLocaleString()
-                : "-"}
-            </span>
+            <InlineNumberField
+              repairId={id}
+              value={repair.vehicle?.mileage}
+              label="Vehicle mileage"
+              canEdit={canEdit}
+              placeholder="Add a reading"
+              maxDigits={7}
+              display={miles}
+              toSend={(d) => d}
+              mono
+              onSave={onMileageChange}
+            />
           </div>
         </div>
 

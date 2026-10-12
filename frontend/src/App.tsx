@@ -356,6 +356,40 @@ export const App: React.FC = () => {
    * handleSaveInvoice, which also writes notes and the parts pad from the
    * Invoices page; this one touches only what the modal shows.
    */
+  /**
+   * The phone number, filled in after drop-off. Goes through /customer, which
+   * requires the name, so the current one is sent back unchanged alongside it.
+   */
+  const handlePhoneChange = async (id: number, phone: string) => {
+    if (!canEdit) return;
+    const name = repairs.find((r) => r.id === id)?.customerName;
+    if (!name) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/customer`, {
+        method: "PATCH",
+        body: JSON.stringify({ customerName: name, customerPhone: phone }),
+      });
+      showToast("Phone number saved.", "success");
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not save the phone number.");
+    }
+  };
+
+  const handleMileageChange = async (id: number, mileage: string) => {
+    if (!canEdit) return;
+    try {
+      await apiFetch(`/api/repairs/${id}/mileage`, {
+        method: "PATCH",
+        body: JSON.stringify({ mileage }),
+      });
+      showToast("Mileage saved.", "success");
+      fetchQueue();
+    } catch (error) {
+      toastError(error, "Could not save the mileage.");
+    }
+  };
+
   const handleSavePricing = async (
     id: number,
     lineItems: LineItem[],
@@ -593,6 +627,8 @@ export const App: React.FC = () => {
                     onSaveComeback={handleSaveComeback}
                     canEdit={canEdit}
                     onOpenPricing={setPricedRepair}
+                    onPhoneChange={handlePhoneChange}
+                    onMileageChange={handleMileageChange}
                   />
                 ) : (
                   <Navigate to="/login" replace />

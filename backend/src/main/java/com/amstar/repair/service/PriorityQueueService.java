@@ -229,17 +229,22 @@ public class PriorityQueueService {
   }
 
   @Transactional
-  public boolean updateCustomerName(Long id, String fullName) {
+  public boolean updateCustomerName(Long id, String fullName, String phone) {
     return repository
         .findById(id)
         .map(
             repair -> {
               String before = repair.getCustomerName();
-              assembly.applyCustomer(repair, fullName);
+              String phoneBefore = repair.getCustomerPhone();
+              assembly.applyCustomer(repair, fullName, phone);
               repository.save(repair);
               String after = repair.getCustomerName();
               if (!Objects.equals(before, after)) {
                 activity.record(repair, "CUSTOMER", before + " → " + after);
+              } else if (!Objects.equals(phoneBefore, repair.getCustomerPhone())) {
+                // No amount and no number in the detail: the feed is readable by
+                // every signed-in account.
+                activity.record(repair, "CUSTOMER", "Phone recorded");
               }
               return true;
             })
@@ -369,6 +374,36 @@ public class PriorityQueueService {
               vehicles.save(vehicle);
               if (!Objects.equals(before, isComeback)) {
                 activity.record(repair, "COMEBACK", isComeback ? "Marked" : "Cleared");
+              }
+              return true;
+            })
+        .orElse(false);
+  }
+
+  /**
+   * The odometer reading, which the shop often does not have at drop-off.
+   *
+   * <p>Null leaves whatever is on file alone, so a blank field cannot wipe a
+   * reading already taken. Stored on the vehicle, like updateComeback.
+   */
+  @Transactional
+  public boolean updateMileage(Long ticketId, Integer mileage) {
+    return repository
+        .findById(ticketId)
+        .map(
+            repair -> {
+              Vehicle vehicle = repair.getVehicle();
+              if (vehicle == null) {
+                return false;
+              }
+              if (mileage == null) {
+                return true;
+              }
+              Integer before = vehicle.getMileage();
+              vehicle.setMileage(mileage);
+              vehicles.save(vehicle);
+              if (!Objects.equals(before, mileage)) {
+                activity.record(repair, "MILEAGE", String.format("%,d", mileage));
               }
               return true;
             })

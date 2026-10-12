@@ -380,6 +380,41 @@ public class TicketLifecycleTest extends IntegrationTest {
     assertEquals("(301) 555-0142", ticketById(admin, id).get("customerPhone"));
   }
 
+  /** The shop often does not have either number at drop-off. */
+  @Test
+  void aPhoneNumberAndMileageCanBeFilledInLater() {
+    String admin = adminToken();
+    long id = createTicket(admin, "Ingrid Solheim", 3, "2026-12-05");
+
+    assertEquals(null, ticketById(admin, id).get("customerPhone"));
+    assertEquals(null, ((Map<?, ?>) ticketById(admin, id).get("vehicle")).get("mileage"));
+
+    assertOk(
+        patch(
+            "/api/repairs/" + id + "/customer",
+            admin,
+            Map.of("customerName", "Ingrid Solheim", "customerPhone", "(443)-555-0199")));
+    assertOk(patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", 84210)));
+
+    Map<String, Object> after = ticketById(admin, id);
+    assertEquals("(443)-555-0199", after.get("customerPhone"));
+    assertEquals(84210, ((Map<?, ?>) after.get("vehicle")).get("mileage"));
+
+    // Correcting a reading, and proving MILEAGE reached activity_action_valid in
+    // V19 - without it this write would come back a 409.
+    assertOk(patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", 84500)));
+    assertEquals(84500, ((Map<?, ?>) ticketById(admin, id).get("vehicle")).get("mileage"));
+    assertTrue(activityActions(admin).contains("MILEAGE"));
+
+    // Out of range is a readable 400, not a constraint violation turned into 409.
+    assertEquals(400, patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", 9_000_000)).status());
+    assertEquals(400, patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", -5)).status());
+
+    // A blank leaves the reading alone rather than wiping it.
+    assertOk(patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", "")));
+    assertEquals(84500, ((Map<?, ?>) ticketById(admin, id).get("vehicle")).get("mileage"));
+  }
+
   private long ticketFor(String token, Map<String, Object> vehicle) {
     ApiResponse created =
         post(

@@ -129,10 +129,8 @@ public class TicketAssemblyService {
    * Points the ticket at the customer of this name, reusing the existing row or creating one.
    * Correcting a typo on one ticket therefore never rewrites the name on anybody else's.
    */
-  public void applyCustomer(VehicleRepair repair, String fullName) {
-    // The customer PATCH carries only a name; a phone number arrives with a
-    // ticket write, so null here leaves any number already on file alone.
-    repair.setCustomer(resolveCustomer(fullName, null));
+  public void applyCustomer(VehicleRepair repair, String fullName, String phone) {
+    repair.setCustomer(resolveCustomer(fullName, phone));
   }
 
   private Customer resolveCustomer(String fullName, String phone) {
