@@ -258,6 +258,26 @@ export const TicketDetail: React.FC<{
               </span>
             )}
           </div>
+
+          {/*
+           * Both optional, and read-only here: they are captured on the intake
+           * form. Mileage is the latest reading on the car, not a per-visit
+           * figure, so it belongs to the vehicle rather than this ticket.
+           */}
+          <div>
+            <span className={LABEL_STYLE}>Phone</span>
+            <span className="block text-sm font-bold text-amstar-ink tabular-nums">
+              {repair.customerPhone || "-"}
+            </span>
+          </div>
+          <div>
+            <span className={LABEL_STYLE}>Mileage</span>
+            <span className="block font-mono text-sm font-bold text-amstar-ink tabular-nums">
+              {repair.vehicle?.mileage != null
+                ? repair.vehicle.mileage.toLocaleString()
+                : "-"}
+            </span>
+          </div>
         </div>
 
         <div>

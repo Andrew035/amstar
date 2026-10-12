@@ -53,7 +53,7 @@ The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the
 ## Architecture
 
 ### Schema is owned by Flyway
-`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V18__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
+`spring.jpa.hibernate.ddl-auto=validate`: Hibernate never changes the database, it only checks that entities match it. Every schema change is a new file in `backend/src/main/resources/db/migration/` (`V19__...sql` next). Never edit a migration that has already run anywhere, Flyway checksums them and the backend will refuse to start.
 
 | Migration | Adds |
 |---|---|
@@ -74,6 +74,7 @@ The Postgres container publishes **no port**, so `./mvnw spring-boot:run` on the
 | V15 | `READY_FOR_INVOICE` status, INVOICED activity action |
 | V16 | dropped `lease_price` / `include_lease` |
 | V17 | `actual_completion_date` now means the repair finished |
+| V18 | `vehicles.mileage` (optional, latest reading) |
 
 Many rules are enforced twice, once in Java for a readable 400, once as a database CHECK as the backstop (severity 1–5, status values, non-negative prices, notes ≤ 5000, uppercase service names, a completion date on exactly the two finished statuses). Keep the pair in sync when changing one.
 
@@ -91,7 +92,8 @@ In the database a ticket links to real rows: `vehicles`, `customers`, and the `t
 
 `TicketAssemblyService` converts between the two, and every ticket write goes through it:
 - **Vehicles are deduplicated**, matched by 17-char VIN, then by plate + state, otherwise inserted. A known car only has blank fields filled in.
-- **Customers** are matched by name (case-insensitive) or created.
+- **Customers** are matched by name (case-insensitive) or created. An optional `customerPhone` on a ticket write is set whenever a non-blank value arrives, so a changed number is not ignored, but a blank never wipes the number on file. The customer PATCH carries only a name and passes null, leaving any number alone.
+- **Mileage is the exception to fill-the-blanks.** `vehicles.mileage` (V18, optional) holds the **most recent** reading, not a history, and the assembly takes whatever was entered rather than only filling a blank: unlike make or VIN it is not a fact about the car, it is a reading taken today, and it only goes up. A per-visit record would belong on `service_tickets`.
 - **Services** are uppercased; an unknown name joins the catalog with the ticket's severity as its default. Names over 80 chars are rejected.
 - **Technicians** must already exist on the roster. Unknown names are silently dropped, the roster is managed data, not something a ticket write can invent.
 
@@ -153,7 +155,7 @@ Ticket endpoints, all under `/api/repairs`: `GET /queue`, `POST /`, `PATCH /{id}
 - **Status labels use `replace(/_/g, " ")`, never `replace("_", " ")`.** JavaScript's string-argument `replace` substitutes only the **first** match, so `READY_FOR_INVOICE` renders as "READY FOR_INVOICE". This shipped four separate times, in `TicketDetail`, `StatusDropdown`, `Pricing` and `QueueList`. Java's `replace(char, char)` is replace-all, so `PriorityQueueService.readable` is fine as written.
 - **One disclosure arrow, one direction.** `DropdownArrow` (`src/components/DropdownArrow.tsx`) is the only caret in the app: it points right when shut and rotates a quarter turn down when open. Every dropdown trigger and expandable row uses it. The queue previously had a `▼` that flipped down-to-up while the Invoices and History rows turned right-to-down, which read as two different controls doing the same job.
 - **`PRESS` is baked into the shared control strings**, not repeated at call sites - that is how half the app ended up without a press nudge. Any new clickable thing should take `PRIMARY_BUTTON_STYLE`, `TABLE_DROPDOWN_STYLE`, `OPTION_ROW_STYLE` or `PANEL_ROW_STYLE` and get it for free; a hand-rolled button has to add `${PRESS}` itself. **The exception is a trigger that is borderless until hover** (`INLINE_INPUT_STYLE`, and the `ServicesCell` trigger): nudging those drags the hairline border down with the content and reads as a glitch. `PRESS` is for controls with a surface of their own.
-- **No `alert()` / `confirm()`.** Use `showToast(message, 'success' | 'error')` / `toastError` from `App.tsx`, a modal, or inline `error` state in forms. `Toast` renders at the **top centre** of the screen the way a phone delivers a notification: it drops in on `.anim-drop`, can be dragged or flicked upward to dismiss, rubber-bands if dragged down, and **owns its own lifetime** - 3.4s for a confirmation, 6s for a warning, paused while a pointer is on it. `showToast` carries an incrementing id so a second toast remounts the component instead of inheriting the first one's running timer. **Three tones, by what the shop did rather than how alarming it is:** `success` is green (`amstar-notice`, something added or changed), `deleted` is red (`amstar-removed`, something is gone), `error` is amber (`amstar-alert`, it did not happen). `ToastType` → `ToastTone` goes through `TOAST_TONE` in `App.tsx`.
+- **No `alert()` / `confirm()`.** Use `showToast(message, 'success' | 'error')` / `toastError` from `App.tsx`, a modal, or inline `error` state in forms. `Toast` sits in the **bottom-right corner**, enters on `.anim-slide-up`, and **owns its own lifetime** - 3.4s for a confirmation, 4.2s for a deletion, 6s for a warning. It is **deliberately not interactive**: no dismiss gesture, and `pointer-events-none` so it can never swallow a click underneath. It was briefly top-centre and draggable; that version sat on the navbar and its fixed band ate clicks on the nav links, which is the reason for the `pointer-events-none`. `showToast` carries an incrementing id so a second toast remounts the component instead of inheriting the first one's running timer. **Three tones, by what the shop did rather than how alarming it is:** `success` is green (`amstar-notice`, something added or changed), `deleted` is red (`amstar-removed`, something is gone), `error` is amber (`amstar-alert`, it did not happen). `ToastType` → `ToastTone` goes through `TOAST_TONE` in `App.tsx`.
 
   Those three tokens exist because a toast lands *on* the navbar and is measured against `#0b3068`, where `amstar-raised` managed 1.23:1 and read as part of the bar. All three clear ~7:1 there with black text at ~11.5:1, so colour does the separating and no outline is needed. They are bright, so they take `SEVERITY_TEXT`; white on any of them is under 2:1. `amstar-removed` is a light coral rather than a true red for that reason: `sev-5` manages only 3.64:1 on the navbar, `red-edge` 4.36:1, `amstar-red` 2.15:1, and a pure red bright enough to clear 7:1 lands near `#ffb8c6`, which reads pink.
 

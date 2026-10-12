@@ -582,6 +582,8 @@ export const RepairForm: React.FC<RepairFormProps> = ({
   technicianNames,
 }) => {
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [mileage, setMileage] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [vehicleState, setVehicleState] = useState("MD");
   const [serviceType, setServiceType] = useState("");
@@ -667,6 +669,9 @@ export const RepairForm: React.FC<RepairFormProps> = ({
 
     const payload = {
       customerName,
+      // Both optional: send null rather than "" so a blank never overwrites a
+      // number or a reading already on file.
+      customerPhone: customerPhone.trim() || null,
       serviceType,
       severity,
       expectedCompletionDate,
@@ -680,6 +685,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
         model: finalModel,
         year: finalYear,
         carImageUrl: finalImageUrl,
+        mileage: mileage ? Number(mileage) : null,
       },
     };
 
@@ -689,6 +695,8 @@ export const RepairForm: React.FC<RepairFormProps> = ({
         body: JSON.stringify(payload),
       });
       setCustomerName("");
+      setCustomerPhone("");
+      setMileage("");
       setVin("");
       setLicensePlate("");
       setServiceType("");
@@ -733,6 +741,18 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           />
         </div>
         <div>
+          <label className={LABEL_STYLE}>Phone (optional)</label>
+          <input
+            type="tel"
+            inputMode="tel"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            maxLength={20}
+            placeholder="e.g. (301) 555-0142"
+            className={`${SHARED_INPUT_STYLE} tabular-nums`}
+          />
+        </div>
+        <div>
           <label className={LABEL_STYLE}>VIN (17-Digits)</label>
           <input
             type="text"
@@ -757,6 +777,20 @@ export const RepairForm: React.FC<RepairFormProps> = ({
             value={vehicleState}
             onChange={setVehicleState}
             className={ringIfMissing("state", vehicleState)}
+          />
+        </div>
+
+        <div>
+          <label className={LABEL_STYLE}>Mileage (optional)</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={mileage}
+            // Digits only. vehicles_mileage_sane caps it at 3,000,000, so seven
+            // characters is all the column will ever accept.
+            onChange={(e) => setMileage(e.target.value.replace(/\D/g, "").slice(0, 7))}
+            placeholder="e.g. 128450"
+            className={`${SHARED_INPUT_STYLE} font-mono tabular-nums`}
           />
         </div>
 

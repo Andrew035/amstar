@@ -107,6 +107,11 @@ public class VehicleRepair {
   @Size(max = 120, message = "Customer name must be 120 characters or fewer")
   private String customerNameInput;
 
+  /** Optional. The column is varchar(20), so the limit is the column's. */
+  @Transient
+  @Size(max = 20, message = "Phone number must be 20 characters or fewer")
+  private String customerPhoneInput;
+
   public VehicleRepair() {}
 
   // Legacy JSON compatibility
@@ -145,6 +150,16 @@ public class VehicleRepair {
     this.customerNameInput = customerName;
   }
 
+  @JsonProperty("customerPhone")
+  public String getCustomerPhone() {
+    return customer == null ? null : customer.getPhone();
+  }
+
+  @JsonProperty("customerPhone")
+  public void setCustomerPhone(String customerPhone) {
+    this.customerPhoneInput = customerPhone;
+  }
+
   @JsonIgnore
   public String getServiceTypeInput() {
     return serviceTypeInput;
@@ -158,6 +173,11 @@ public class VehicleRepair {
   @JsonIgnore
   public String getCustomerNameInput() {
     return customerNameInput;
+  }
+
+  @JsonIgnore
+  public String getCustomerPhoneInput() {
+    return customerPhoneInput;
   }
 
   // Standard accessors

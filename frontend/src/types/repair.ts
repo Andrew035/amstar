@@ -7,6 +7,8 @@ export interface Vehicle {
   model?: string;
   year?: number;
   carImageUrl?: string;
+  /** Most recent odometer reading. Optional. */
+  mileage?: number;
   customer?: Customer;
   isComeback?: boolean;
 }
@@ -47,6 +49,8 @@ export interface LineItem {
 export interface VehicleRepair {
   id?: number;
   customerName: string;
+  /** The customer's number, optional. Lives on the customer, not the ticket. */
+  customerPhone?: string;
   vehicle?: Vehicle;
   serviceType: string;
   severity: number;
