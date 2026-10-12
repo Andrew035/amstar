@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amstar.repair.support.IntegrationTest;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -92,9 +95,9 @@ public class SecurityRulesTest extends IntegrationTest {
   }
 
   /**
-   * Both roles run the shop floor. This used to assert the opposite for every one
-   * of these paths; the shop decided the bookkeeper does the same work on a
-   * ticket that an owner does, so the assertions are inverted on purpose.
+   * Both roles run the shop floor. This used to assert the opposite for every one of these paths;
+   * the shop decided the bookkeeper does the same work on a ticket that an owner does, so the
+   * assertions are inverted on purpose.
    */
   @Test
   void theBookkeeperHasTheSameAuthorityOverATicketAsAnAdmin() {
@@ -145,9 +148,9 @@ public class SecurityRulesTest extends IntegrationTest {
   }
 
   /**
-   * The one thing she cannot do. Scoped to the Invoices page's own action, which
-   * she has no UI for. Not a hard boundary - /status reaches COMPLETED too - so
-   * this pins the rule, not a security guarantee.
+   * The one thing she cannot do. Scoped to the Invoices page's own action, which she has no UI for.
+   * Not a hard boundary - /status reaches COMPLETED too - so this pins the rule, not a security
+   * guarantee.
    */
   @Test
   void onlyAnAdminMayMarkATicketInvoiced() {
@@ -300,7 +303,56 @@ public class SecurityRulesTest extends IntegrationTest {
 
   private void assertOk(ApiResponse response) {
     assertTrue(
-        response.isOk(), "expected this to be allowed, got " + response.status() + " " + response.body());
+        response.isOk(),
+        "expected this to be allowed, got " + response.status() + " " + response.body());
+  }
+
+  /**
+   * A password reset is the shop's "lock them out" action, and the only one a manager can actually
+   * reach - sign-out-everywhere has no button. Without the token_version bump in
+   * PasswordResetService.resetPassword, a token stolen before the reset keeps authenticating for up
+   * to ten more hours, because tv is the only revocation the JWT filter checks.
+   */
+  @Test
+  void aPasswordResetKillsTokensIssuedBeforeIt() throws Exception {
+    String stolenToken = adminToken();
+    assertTrue(get("/api/repairs/queue", stolenToken).isOk(), "the token works before the reset");
+
+    // The raw token only ever exists in the email, so plant a known one the way
+    // requestReset does: a SHA-256 hex digest in password_reset_tokens.
+    String rawToken = "reset-regression-" + System.nanoTime();
+    String tokenHash =
+        HexFormat.of()
+            .formatHex(
+                MessageDigest.getInstance("SHA-256")
+                    .digest(rawToken.getBytes(StandardCharsets.UTF_8)));
+    jdbc.update(
+        "insert into password_reset_tokens (user_id, token_hash, expires_at) "
+            + "values ((select id from users where email = ?), ?, now() + interval '30 minutes')",
+        ADMIN_EMAIL,
+        tokenHash);
+
+    ApiResponse reset =
+        post(
+            "/api/auth/reset-password",
+            null,
+            Map.of("token", rawToken, "password", "BrandNewPassword456"));
+    assertTrue(reset.isOk(), "the planted token should be redeemable: " + reset.body());
+
+    assertEquals(
+        401,
+        get("/api/repairs/queue", stolenToken).status(),
+        "a token issued before the reset must stop working the moment the password changes");
+
+    ApiResponse login =
+        post(
+            "/api/auth/login",
+            null,
+            Map.of("email", ADMIN_EMAIL, "password", "BrandNewPassword456"));
+    assertTrue(login.isOk(), "the new password must work: " + login.body());
+    assertTrue(
+        get("/api/repairs/queue", (String) login.asMap().get("token")).isOk(),
+        "and the freshly issued token must carry the new token_version");
   }
 
   private void assertForbidden(ApiResponse response) {

@@ -64,12 +64,28 @@ public class PriorityQueueService {
 
   @Transactional
   public VehicleRepair createRepair(VehicleRepair repair) {
+    // A create always inserts. With a non-null id, repository.save() takes
+    // em.merge() and silently UPDATEs that ticket instead - overwriting its
+    // notes and pricing and deleting its line items through orphanRemoval.
+    // Same guard as addTechnician and updateLineItems below.
+    repair.setId(null);
+
     if (repair.getEntryDate() == null) {
       repair.setEntryDate(LocalDate.now());
     }
     if (repair.getStatus() == null) {
-      repair.setStatus("PENDING");
+      repair.setStatus(TicketStatus.PENDING);
     }
+    if (!TicketStatus.isValid(repair.getStatus())) {
+      throw new IllegalArgumentException("Status must be one of " + TicketStatus.ALL);
+    }
+    // Derive, never accept: actual_completion_date means when the repair
+    // finished (V17), so intake does not get to pick it. Mirrors the stamping
+    // in updateRepairStatus and tickets_completion_matches_status.
+    boolean finished =
+        TicketStatus.COMPLETED.equals(repair.getStatus())
+            || TicketStatus.READY_FOR_INVOICE.equals(repair.getStatus());
+    repair.setActualCompletionDate(finished ? LocalDate.now() : null);
 
     // Intercept the repair to fetch the car image and details before saving
     lookupService.enrichVehicleData(repair);
@@ -383,8 +399,8 @@ public class PriorityQueueService {
   /**
    * The odometer reading, which the shop often does not have at drop-off.
    *
-   * <p>Null leaves whatever is on file alone, so a blank field cannot wipe a
-   * reading already taken. Stored on the vehicle, like updateComeback.
+   * <p>Null leaves whatever is on file alone, so a blank field cannot wipe a reading already taken.
+   * Stored on the vehicle, like updateComeback.
    */
   @Transactional
   public boolean updateMileage(Long ticketId, Integer mileage) {

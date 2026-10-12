@@ -19,6 +19,7 @@ public class VehicleRepair {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private Long id;
 
   @ManyToOne(fetch = FetchType.EAGER)

@@ -95,7 +95,7 @@ public class AuthController {
           .body(Map.of("error", "Password must be at least 8 characters"));
     }
     if (userRepository.findByEmail(email).isPresent()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "That email is already registered"));
+      return ResponseEntity.badRequest().body(Map.of("error", "Invalid signup code"));
     }
 
     User user = new User();

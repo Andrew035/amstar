@@ -1,6 +1,7 @@
 package com.amstar.repair;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amstar.repair.support.IntegrationTest;
@@ -175,6 +176,44 @@ public class BadInputTest extends IntegrationTest {
         "An expected completion date is required",
         response.asMap().get("error"),
         "the message the form displays, actual body: " + response.body());
+  }
+
+  /**
+   * A create always inserts. Jackson binds `id` straight off the request body, so without
+   * repair.setId(null) in createRepair, repository.save() takes em.merge() and this POST silently
+   * UPDATEs the named ticket instead - overwriting its notes and pricing and deleting its line
+   * items through orphanRemoval.
+   */
+  @Test
+  void aCreateCarryingAnExistingIdMustNotOverwriteThatTicket() {
+    String admin = adminToken();
+    long victim = createTicket(admin, "Rosalind", 4, "2026-12-01");
+    assertTrue(
+        patch("/api/repairs/" + victim + "/notes", admin, Map.of("notes", "KEEP THIS NOTE")).isOk(),
+        "setting up the victim ticket");
+
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("id", victim); // the whole point of the test
+    payload.put("customerName", "Someone Else");
+    payload.put("serviceType", "OIL CHANGE");
+    payload.put("severity", 1);
+    payload.put("expectedCompletionDate", "2026-12-31");
+    payload.put(
+        "vehicle",
+        Map.of(
+            "licensePlate", "ZZZ999", "state", "NY", "make", "KIA", "model", "RIO", "year", 2001));
+
+    ApiResponse created = post("/api/repairs", admin, payload);
+    assertTrue(created.isOk(), "body was: " + created.body());
+
+    long newId = ((Number) created.asMap().get("id")).longValue();
+    assertNotEquals(victim, newId, "the create must insert a new row, not merge onto " + victim);
+
+    Map<String, Object> survivor = ticketById(admin, victim);
+    assertEquals("KEEP THIS NOTE", survivor.get("notes"), "the victim's notes were overwritten");
+    assertEquals(
+        4, ((Number) survivor.get("severity")).intValue(), "the victim's severity was overwritten");
+    assertEquals(2, get("/api/repairs/queue", admin).asList().size(), "both tickets must exist");
   }
 
   private void assertRefused(ApiResponse response, String what) {
