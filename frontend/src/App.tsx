@@ -23,6 +23,8 @@ import { Roster } from "./pages/Roster";
 import { VehicleModal } from "./components/VehicleModal";
 import { PricingModal } from "./components/PricingModal";
 import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
+import { DashboardSkeleton, QueueSkeleton } from "./components/Skeleton";
+import { useDelayed } from "./lib/useDelayed";
 
 /**
  * What the shop did, not how alarming it is. Green for something added or
@@ -41,6 +43,7 @@ export const App: React.FC = () => {
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const showSkeleton = useDelayed(loading && !!currentUser);
   const [currentRole, setCurrentRole] = useState<string | null>(null);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceType[]>([]);
@@ -150,7 +153,10 @@ export const App: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ isComeback }),
       });
-      showToast(isComeback ? "Marked as a comeback." : "Comeback cleared.", "success");
+      showToast(
+        isComeback ? "Marked as a comeback." : "Comeback cleared.",
+        "success",
+      );
       fetchQueue();
     } catch (error) {
       toastError(error, "Could not update the comeback flag.");
@@ -559,147 +565,167 @@ export const App: React.FC = () => {
         className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable] anim-rise"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* React Router DOM Routes */}
-          <Routes>
-            {/* Public Authentication Routes */}
-            <Route
-              path="/login"
-              element={
-                !currentUser ? (
-                  <Login onLoginSuccess={handleLoginSuccess} />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                !currentUser ? <Register /> : <Navigate to="/" replace />
-              }
-            />
-            <Route
-              path="/forgot-password"
-              element={
-                !currentUser ? <ForgotPassword /> : <Navigate to="/" replace />
-              }
-            />
-            <Route path="reset-password" element={<ResetPassword />} />
+          {/*
+            The navbar, the page heading and the red rule need no data, so they
+            paint while the queue is still in flight and only the data regions
+            stand in. This used to be an early return above <Navbar>, which
+            meant the entire app appeared in one jump when the fetch landed.
 
-            {/* Shop Overview (Dashboard) */}
-            <Route
-              path="/"
-              element={
-                currentUser ? (
-                  <Dashboard
-                    repairs={repairs}
-                    technicianNames={technicianNames}
-                    activity={activity}
-                    isAdmin={canEdit}
-                  />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
+            `currentUser &&` matters: a signed-out visitor has loading=false
+            already, so /login is never behind a skeleton.
+          */}
+          {showSkeleton ? (
+            location.pathname === "/queue" ? (
+              <QueueSkeleton />
+            ) : (
+              <DashboardSkeleton />
+            )
+          ) : (
+            <Routes>
+              {/* Public Authentication Routes */}
+              <Route
+                path="/login"
+                element={
+                  !currentUser ? (
+                    <Login onLoginSuccess={handleLoginSuccess} />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  !currentUser ? <Register /> : <Navigate to="/" replace />
+                }
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  !currentUser ? (
+                    <ForgotPassword />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              <Route path="reset-password" element={<ResetPassword />} />
 
-            {/* Active Queue */}
-            <Route
-              path="/queue"
-              element={
-                currentUser ? (
-                  <ActiveQueue
-                    repairs={repairs}
-                    isAdmin={canEdit}
-                    currentUser={currentUser}
-                    historicalServiceMap={historicalServiceMap}
-                    technicianNames={technicianNames}
-                    onRefresh={handleTicketCreated}
-                    onStatusChange={handleStatusChange}
-                    onSeverityChange={handleSeverityChange}
-                    onDueDateChange={handleDueDateChange}
-                    onCustomerNameChange={handleCustomerNameChange}
-                    onAssignWorker={handleAssignWorker}
-                    onServiceChange={handleServiceChange}
-                    onDeleteClick={handleDeleteClick}
-                    onSaveNotes={handleSaveNotes}
-                    onSaveParts={handleSaveParts}
-                    onSaveComeback={handleSaveComeback}
-                    canEdit={canEdit}
-                    onOpenPricing={setPricedRepair}
-                    onPhoneChange={handlePhoneChange}
-                    onMileageChange={handleMileageChange}
-                  />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
+              {/* Shop Overview (Dashboard) */}
+              <Route
+                path="/"
+                element={
+                  currentUser ? (
+                    <Dashboard
+                      repairs={repairs}
+                      technicianNames={technicianNames}
+                      activity={activity}
+                      isAdmin={canEdit}
+                    />
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
 
-            {/* Invoices: the owner prices, the bookkeeper invoices. */}
-            <Route
-              path="/invoices"
-              element={
-                currentUser && isAdmin ? (
-                  <PricingPage
-                    repairs={repairs}
-                    onSaveInvoice={handleSaveInvoice}
-                    onMarkInvoiced={handleMarkInvoiced}
-                  />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            {/* Dashboard.tsx:373 and any bookmark still say /pricing. */}
-            <Route
-              path="/pricing"
-              element={<Navigate to="/invoices" replace />}
-            />
+              {/* Active Queue */}
+              <Route
+                path="/queue"
+                element={
+                  currentUser ? (
+                    <ActiveQueue
+                      repairs={repairs}
+                      isAdmin={canEdit}
+                      currentUser={currentUser}
+                      historicalServiceMap={historicalServiceMap}
+                      technicianNames={technicianNames}
+                      onRefresh={handleTicketCreated}
+                      onStatusChange={handleStatusChange}
+                      onSeverityChange={handleSeverityChange}
+                      onDueDateChange={handleDueDateChange}
+                      onCustomerNameChange={handleCustomerNameChange}
+                      onAssignWorker={handleAssignWorker}
+                      onServiceChange={handleServiceChange}
+                      onDeleteClick={handleDeleteClick}
+                      onSaveNotes={handleSaveNotes}
+                      onSaveParts={handleSaveParts}
+                      onSaveComeback={handleSaveComeback}
+                      canEdit={canEdit}
+                      onOpenPricing={setPricedRepair}
+                      onPhoneChange={handlePhoneChange}
+                      onMileageChange={handleMileageChange}
+                    />
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
 
-            {/* Admin Protected: History */}
-            <Route
-              path="/history"
-              element={
-                currentUser ? (
-                  <HistoryPage
-                    repairs={repairs}
-                    historicalServiceMap={historicalServiceMap}
-                    technicianNames={technicianNames}
-                    onStatusChange={handleStatusChange}
-                    onAssignWorker={handleAssignWorker}
-                    onServiceChange={handleServiceChange}
-                    onViewDeepDive={setViewedRepair}
-                    onDeleteClick={handleDeleteClick}
-                    viewedRepairId={viewedRepair?.id}
-                  />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
+              {/* Invoices: the owner prices, the bookkeeper invoices. */}
+              <Route
+                path="/invoices"
+                element={
+                  currentUser && isAdmin ? (
+                    <PricingPage
+                      repairs={repairs}
+                      onSaveInvoice={handleSaveInvoice}
+                      onMarkInvoiced={handleMarkInvoiced}
+                    />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              {/* Dashboard.tsx:373 and any bookmark still say /pricing. */}
+              <Route
+                path="/pricing"
+                element={<Navigate to="/invoices" replace />}
+              />
 
-            {/* Admin Protected: Roster */}
-            <Route
-              path="/roster"
-              element={
-                currentUser ? (
-                  <Roster
-                    technicians={technicians}
-                    repairs={repairs}
-                    onAddTechnician={handleAddTechnician}
-                    onRenameTechnician={handleRenameTechnician}
-                    onSetTechnicianActive={handleSetTechnicianActive}
-                  />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
+              {/* Admin Protected: History */}
+              <Route
+                path="/history"
+                element={
+                  currentUser ? (
+                    <HistoryPage
+                      repairs={repairs}
+                      historicalServiceMap={historicalServiceMap}
+                      technicianNames={technicianNames}
+                      onStatusChange={handleStatusChange}
+                      onAssignWorker={handleAssignWorker}
+                      onServiceChange={handleServiceChange}
+                      onViewDeepDive={setViewedRepair}
+                      onDeleteClick={handleDeleteClick}
+                      viewedRepairId={viewedRepair?.id}
+                    />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              {/* Admin Protected: Roster */}
+              <Route
+                path="/roster"
+                element={
+                  currentUser ? (
+                    <Roster
+                      technicians={technicians}
+                      repairs={repairs}
+                      onAddTechnician={handleAddTechnician}
+                      onRenameTechnician={handleRenameTechnician}
+                      onSetTechnicianActive={handleSetTechnicianActive}
+                    />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          )}
         </div>
       </main>
 

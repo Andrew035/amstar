@@ -161,6 +161,30 @@ body {
 }
 
 /*
+ * Loading placeholders.
+ *
+ * One keyframe at 50% and nothing else: 0% and 100% fall back to the element's
+ * own opacity, so a block breathes 1 -> 0.45 -> 1 around its resting state.
+ * That is also what makes it safe under the reduced-motion block below, which
+ * collapses every animation to a single 0.01ms run - this one lands on 100%,
+ * the element's normal appearance, instead of freezing half-faded.
+ *
+ * 1.4s, not the 140/220/300ms the rest of the app uses. Those are durations for
+ * a transition between two states, where anything slower reads as lag. This is
+ * ambient: it has to look like breathing, and a pulse under ~800ms reads as
+ * flashing. ease-in-out because it is neither entering nor exiting, it is
+ * continuous motion.
+ */
+@keyframes amstar-skeleton {
+  50% {
+    opacity: 0.45;
+  }
+}
+.skeleton {
+  animation: amstar-skeleton 1.4s ease-in-out infinite;
+}
+
+/*
  * Not a preference to honour politely: on iOS, "Reduce Motion" is set by people
  * who get motion sick from it. Everything collapses to its finished state.
  */
