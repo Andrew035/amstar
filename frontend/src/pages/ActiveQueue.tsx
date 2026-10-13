@@ -26,7 +26,7 @@ export const ActiveQueue: React.FC<{
   isAdmin: boolean;
   currentUser: string;
   historicalServiceMap: Record<string, number>;
-  onRefresh: () => void;
+  onRefresh: () => void | Promise<void>;
   onStatusChange: (id: number, status: string) => void;
   onAssignWorker: (id: number, workers: string) => void;
   technicianNames: string[];
@@ -98,6 +98,31 @@ export const ActiveQueue: React.FC<{
    */
   const selectedId = Number(searchParams.get("ticket")) || null;
 
+  /**
+   * Puts a freshly created ticket in the detail pane.
+   *
+   * It has to clear the filter and the search as well as set the id, because
+   * `selected` falls back to the top of the list for an id that is not in it:
+   * a new PENDING ticket is not in "Overdue", and would not match whatever is
+   * still typed in the search box either. Clearing both is what makes the car
+   * you just added the car you are looking at.
+   *
+   * `replace` so Back leaves the queue rather than stepping back through the
+   * ticket you just created, matching what a row click does.
+   */
+  const focusTicket = (id: number) => {
+    setSearchTerm("");
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("ticket", String(id));
+        next.delete("filter");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   const activeRepairs = repairs
     .filter((r) => r.status !== "COMPLETED")
     .filter((r) => !ticketFilter || ticketFilter.matches(r))
@@ -115,9 +140,12 @@ export const ActiveQueue: React.FC<{
       {isAdmin && isFormOpen && (
         <NewTicketModal onClose={() => setIsFormOpen(false)}>
           <RepairForm
-            onSuccess={() => {
-              onRefresh();
+            onSuccess={async (createdId) => {
               setIsFormOpen(false);
+              // Awaited: the new ticket is not in `repairs` yet, and selecting
+              // an id the list does not hold shows the top of the queue.
+              await onRefresh();
+              if (createdId) focusTicket(createdId);
             }}
             onClose={() => setIsFormOpen(false)}
             currentUser={currentUser}

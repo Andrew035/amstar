@@ -12,6 +12,7 @@ import {
   SELECT_TRIGGER_STYLE,
   PRESS,
 } from "../styles/controls";
+import type { VehicleRepair } from "../types/repair";
 import { apiFetch, ApiError } from "../api";
 import { panelCoords } from "../lib/floating";
 import { miles, phone } from "../lib/ticketFilters";
@@ -568,7 +569,13 @@ const FormWorkerDropdown: React.FC<{
 };
 
 interface RepairFormProps {
-  onSuccess: () => void;
+  /**
+   * Called with the id of the ticket that was just written, so the queue
+   * can put it on screen. Optional because apiFetch returns undefined for
+   * an empty 200 body, and a created ticket we cannot identify is still a
+   * created ticket - the form should close either way.
+   */
+  onSuccess: (createdId?: number) => void;
   onClose: () => void;
   currentUser: string;
   isAdmin: boolean;
@@ -692,7 +699,9 @@ export const RepairForm: React.FC<RepairFormProps> = ({
     };
 
     try {
-      await apiFetch("/api/repairs", {
+      // The POST answers with the saved ticket, which is the only place its id
+      // exists - the queue refetch that follows cannot tell which row is new.
+      const created = await apiFetch<VehicleRepair>("/api/repairs", {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -706,7 +715,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
       setExpectedCompletionDate("");
       setMissing([]);
       if (isAdmin) setAssignedWorkers("");
-      onSuccess();
+      onSuccess(created?.id);
     } catch (err) {
       // apiFetch has already turned the backend's {"error": "..."} into the
       // message, so a rejected ticket says which field is wrong instead of

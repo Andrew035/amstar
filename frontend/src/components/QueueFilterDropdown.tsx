@@ -17,6 +17,7 @@ const OPTIONS: Array<{ value: string; label: string }> = [
   { value: "unassigned", label: "Unassigned" },
   { value: "pending", label: "Pending" },
   { value: "in-progress", label: "In progress" },
+  { value: "ready-for-invoice", label: "Ready for invoice" },
   { value: "critical", label: "Critical (level 4-5)" },
 ];
 

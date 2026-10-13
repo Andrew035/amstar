@@ -482,9 +482,11 @@ export const App: React.FC = () => {
    * which it uses for nothing else, so the toast belongs here rather than
    * inside the form.
    */
-  const handleTicketCreated = () => {
+  const handleTicketCreated = async () => {
     showToast("Ticket created.", "success");
-    fetchQueue();
+    // Awaited so ActiveQueue can select the new ticket once it is actually in
+    // the list it selects from.
+    await fetchQueue();
   };
 
   const confirmDelete = async () => {
