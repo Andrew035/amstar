@@ -77,7 +77,20 @@ public abstract class IntegrationTest {
   void resetDatabase() {
     jdbc.execute(
         "truncate ticket_activity, ticket_services, ticket_technicians, service_tickets,"
-            + " vehicles, customers, password_reset_tokens, users restart identity cascade");
+            + " vehicles, customers, password_reset_tokens restart identity cascade");
+    /*
+     * users is DELETEd, not TRUNCATEd, and that is load-bearing.
+     *
+     * V20 gave technicians a `user_id` referencing users. TRUNCATE ... CASCADE
+     * follows every foreign key pointing at the table unconditionally - rows or
+     * no rows - so including users in the list above silently truncated
+     * technicians with it and wiped the seeded roster that almost every test
+     * depends on. DELETE honours `on delete set null` instead: the roster
+     * survives with its account links cleared, which is the state a fresh test
+     * wants. password_reset_tokens is emptied above, so nothing blocks this.
+     */
+    jdbc.execute("delete from users");
+    jdbc.execute("alter table users alter column id restart with 1");
   }
 
   // --- talking to the API -------------------------------------------------
@@ -157,6 +170,89 @@ public abstract class IntegrationTest {
 
   protected String adminToken() {
     return tokenFor(ADMIN_EMAIL);
+  }
+
+  /**
+   * The address an invited technician gets. Deliberately on neither allowlist: a technician cannot
+   * self-register, the invite is the authorization.
+   */
+  protected static final String TECHNICIAN_EMAIL = "tech@amstar-test.com";
+
+  /**
+   * A signed-in TECHNICIAN, created the only way one can be.
+   *
+   * <p>Walks the real path rather than inserting a row: an admin invites the first name on the
+   * roster, the invite is redeemed, and the account signs in. The raw token exists only in the
+   * email, and nothing is listening on the test SMTP port, so it is planted as its SHA-256 digest -
+   * exactly what sendInvite stores - and redeemed through the public endpoint.
+   *
+   * @return a bearer token for an active TECHNICIAN account
+   */
+  protected String technicianToken() {
+    String admin = adminToken();
+    long rosterId = firstTechnicianId(admin);
+    ApiResponse invited =
+        post(
+            "/api/technicians/" + rosterId + "/invite",
+            admin,
+            Map.of("email", TECHNICIAN_EMAIL, "role", "TECHNICIAN"));
+    if (!invited.isOk()) {
+      throw new AssertionError("could not invite a technician: " + invited.body());
+    }
+
+    String raw = plantCredentialToken(TECHNICIAN_EMAIL, "INVITE");
+    ApiResponse accepted =
+        post("/api/auth/accept-invite", null, Map.of("token", raw, "password", "Password123"));
+    if (!accepted.isOk()) {
+      throw new AssertionError("could not accept the invite: " + accepted.body());
+    }
+
+    ApiResponse login =
+        post(
+            "/api/auth/login",
+            null,
+            Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"));
+    Object token = login.asMap().get("token");
+    if (token == null) {
+      throw new AssertionError("invited technician could not sign in: " + login.body());
+    }
+    return (String) token;
+  }
+
+  /** The id of the first seeded roster entry, which the invite tests attach accounts to. */
+  protected long firstTechnicianId(String token) {
+    List<Map<String, Object>> roster = get("/api/technicians", token).asList();
+    if (roster.isEmpty()) {
+      throw new AssertionError("the seeded roster is empty");
+    }
+    return ((Number) roster.get(0).get("id")).longValue();
+  }
+
+  /**
+   * Stores a credential token for an address and hands back the raw value.
+   *
+   * <p>The app only ever persists the digest, so a test that needs a working link has to plant one.
+   * `purpose` is RESET or INVITE; the two are not interchangeable by design.
+   */
+  protected String plantCredentialToken(String email, String purpose) {
+    String raw = purpose.toLowerCase() + "-" + System.nanoTime();
+    String digest;
+    try {
+      digest =
+          java.util.HexFormat.of()
+              .formatHex(
+                  java.security.MessageDigest.getInstance("SHA-256")
+                      .digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (Exception e) {
+      throw new AssertionError("SHA-256 unavailable", e);
+    }
+    jdbc.update(
+        "insert into password_reset_tokens (user_id, token_hash, expires_at, purpose) "
+            + "values ((select id from users where email = ?), ?, now() + interval '30 minutes', ?)",
+        email,
+        digest,
+        purpose);
+    return raw;
   }
 
   protected String bookkeeperToken() {

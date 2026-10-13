@@ -176,6 +176,23 @@ public class AuthController {
         Map.of("message", "If that address has an account, a reset link is on its way."));
   }
 
+  /**
+   * Claims an invited account: first password, then the account goes live.
+   *
+   * <p>Public, like the other /api/auth routes, because the person redeeming it has no account to
+   * authenticate with yet. The token is the authorization. Deliberately not /reset-password: that
+   * one refuses invite tokens, so the two cannot be crossed.
+   */
+  @PostMapping("/accept-invite")
+  public ResponseEntity<?> acceptInvite(@RequestBody Map<String, String> request) {
+    boolean ok = passwordResets.acceptInvite(request.get("token"), request.get("password"));
+    if (ok) {
+      return ResponseEntity.ok(Map.of("message", "Password set. You can sign in now."));
+    }
+    return ResponseEntity.badRequest()
+        .body(Map.of("error", "That invite link is invalid or has expired. Ask for a new one."));
+  }
+
   @PostMapping("/reset-password")
   public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
     boolean ok = passwordResets.resetPassword(request.get("token"), request.get("password"));

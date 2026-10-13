@@ -24,6 +24,25 @@ public class Technician {
   @Column(name = "is_active", nullable = false)
   private Boolean isActive = true;
 
+  /**
+   * The account behind this roster entry, or null for someone with no login.
+   *
+   * <p>A plain id, deliberately not a {@code @ManyToOne User}. A relation here would serialize the
+   * whole account - email, password hash, token_version - straight out of GET /api/technicians,
+   * which every signed-in role can read.
+   */
+  @Column(name = "user_id")
+  private Long userId;
+
+  /**
+   * That account's role, for display on the roster.
+   *
+   * <p>Not a column: the role lives on `users`, and a roster entry with no account has none. Filled
+   * in per request by AccountService.withRoles, the same shape as the comma strings VehicleRepair
+   * exposes over the API.
+   */
+  @Transient private String role;
+
   public Technician() {
   }
 
@@ -65,5 +84,21 @@ public class Technician {
 
   public void setIsActive(Boolean isActive) {
     this.isActive = isActive;
+  }
+
+  public Long getUserId() {
+    return userId;
+  }
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
+  }
+
+  public String getRole() {
+    return role;
+  }
+
+  public void setRole(String role) {
+    this.role = role;
   }
 }

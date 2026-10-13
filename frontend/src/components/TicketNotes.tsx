@@ -14,7 +14,7 @@ const MAX_NOTES = 5000;
 export const TicketNotes: React.FC<{
   repairId: number;
   initialNotes?: string;
-  isAdmin: boolean;
+  canEdit: boolean;
   onSave: (id: number, notes: string) => Promise<void>;
   label?: string;
   saveLabel?: string;
@@ -26,7 +26,7 @@ export const TicketNotes: React.FC<{
 }> = ({
   repairId,
   initialNotes,
-  isAdmin,
+  canEdit,
   onSave,
   label = "Notes",
   saveLabel = "Save Notes",
@@ -78,9 +78,9 @@ export const TicketNotes: React.FC<{
         value={text}
         onChange={(e) => setText(e.target.value.slice(0, MAX_NOTES))}
         onBlur={save}
-        disabled={!isAdmin}
+        disabled={!canEdit}
         title={text || emptyText}
-        placeholder={isAdmin ? placeholder : emptyText}
+        placeholder={canEdit ? placeholder : emptyText}
         className={`w-full ${textareaClass} resize-none overflow-y-auto px-3 py-2 bg-amstar-field border border-amstar-line
         rounded font-mono text-xs leading-relaxed text-amstar-ink shadow-inner transition focus:outline-none
         focus:border-amstar-red-edge focus:ring-2 focus:ring-amstar-red-edge/40 disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -90,7 +90,7 @@ export const TicketNotes: React.FC<{
         <p className="mt-2 text-xs font-bold text-amstar-red-ink">{error}</p>
       )}
 
-      {isAdmin && (
+      {canEdit && (
         <div className="flex justify-between items-center mt-2">
           <span className="text-[11px] font-bold text-amstar-ink-faint">
             {isSaving ? "Saving..." : isDirty ? "Unsaved changes" : "Saved"}

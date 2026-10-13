@@ -23,7 +23,7 @@ import { QueueFilterDropdown } from "../components/QueueFilterDropdown";
  */
 export const ActiveQueue: React.FC<{
   repairs: VehicleRepair[];
-  isAdmin: boolean;
+  canEdit: boolean;
   currentUser: string;
   historicalServiceMap: Record<string, number>;
   onRefresh: () => void | Promise<void>;
@@ -38,13 +38,12 @@ export const ActiveQueue: React.FC<{
   onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
   onSaveComeback: (id: number, isComeback: boolean) => void;
-  canEdit: boolean;
   onOpenPricing: (repair: VehicleRepair) => void;
   onPhoneChange: (id: number, phone: string) => void;
   onMileageChange: (id: number, mileage: string) => void;
 }> = ({
   repairs,
-  isAdmin,
+  canEdit,
   currentUser,
   historicalServiceMap,
   technicianNames,
@@ -59,7 +58,6 @@ export const ActiveQueue: React.FC<{
   onSaveParts,
   onDeleteClick,
   onSaveComeback,
-  canEdit,
   onOpenPricing,
   onPhoneChange,
   onMileageChange,
@@ -137,7 +135,7 @@ export const ActiveQueue: React.FC<{
 
   return (
     <div className="flex flex-col gap-4">
-      {isAdmin && isFormOpen && (
+      {canEdit && isFormOpen && (
         <NewTicketModal onClose={() => setIsFormOpen(false)}>
           <RepairForm
             onSuccess={async (createdId) => {
@@ -149,7 +147,7 @@ export const ActiveQueue: React.FC<{
             }}
             onClose={() => setIsFormOpen(false)}
             currentUser={currentUser}
-            isAdmin={isAdmin}
+            canEdit={canEdit}
             historicalServiceMap={historicalServiceMap}
             technicianNames={technicianNames}
           />
@@ -168,7 +166,7 @@ export const ActiveQueue: React.FC<{
             value={searchParams.get("filter") ?? ""}
             onChange={(next) => setParam("filter", next || null)}
           />
-          {isAdmin && (
+          {canEdit && (
             <button
               type="button"
               onClick={() => setIsFormOpen(true)}
@@ -209,7 +207,7 @@ export const ActiveQueue: React.FC<{
           />
           <TicketDetail
             repair={selected}
-            isAdmin={isAdmin}
+            canEdit={canEdit}
             technicianNames={technicianNames}
             historicalServiceMap={historicalServiceMap}
             onStatusChange={onStatusChange}
@@ -222,7 +220,6 @@ export const ActiveQueue: React.FC<{
             onSaveParts={onSaveParts}
             onSaveComeback={onSaveComeback}
             onDeleteClick={onDeleteClick}
-            canEdit={canEdit}
             onOpenPricing={onOpenPricing}
             onPhoneChange={onPhoneChange}
             onMileageChange={onMileageChange}

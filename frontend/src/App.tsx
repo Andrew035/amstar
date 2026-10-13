@@ -20,6 +20,7 @@ import { apiFetch, ApiError } from "./api";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import { Roster } from "./pages/Roster";
+import { AcceptInvite } from "./pages/AcceptInvite";
 import { VehicleModal } from "./components/VehicleModal";
 import { PricingModal } from "./components/PricingModal";
 import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
@@ -78,12 +79,22 @@ export const App: React.FC = () => {
   // privilege the UI can offer. SecurityConfig is the actual boundary.
   const isAdmin = currentRole === "ADMIN";
   /**
-   * Both roles run the shop floor, so this is simply "signed in". The role
-   * decides one thing: the Invoices page, and PATCH /invoiced which lives there.
-   * The `isAdmin` prop on the queue, dashboard and vehicle modal means "may
-   * edit", so it is handed this rather than isAdmin.
+   * May change things on the shop floor.
+   *
+   * ADMIN and BOOKKEEPER both may, and the role decides exactly one thing
+   * between them: the Invoices page, plus PATCH /invoiced which lives there.
+   * TECHNICIAN is the floor role and reads only, which is why this is no
+   * longer simply "signed in".
+   *
+   * It used to be handed to a prop called `isAdmin` on the queue, the
+   * dashboard and the vehicle modal - a leftover from when the two roles
+   * differed - and TicketDetail and ActiveQueue each ended up taking the same
+   * boolean twice under both names. One name now, everywhere.
+   *
+   * This only hides controls. SecurityConfig is the boundary: a technician who
+   * calls the API directly gets a 403 from the server, not from here.
    */
-  const canEdit = Boolean(currentUser);
+  const canEdit = Boolean(currentUser) && currentRole !== "TECHNICIAN";
 
   // Centralized Authentication Check
   const authenticateUser = useCallback(() => {
@@ -418,6 +429,100 @@ export const App: React.FC = () => {
     }
   };
 
+  /**
+   * Gives a roster entry an account and mails them an invite.
+   *
+   * The hierarchy is enforced on the server; the roster only offers what the
+   * signed-in role may grant, so a refusal here means the UI and the server
+   * disagree and the message is worth showing.
+   */
+  const handleInviteTechnician = async (
+    id: number,
+    email: string,
+    role: string,
+  ): Promise<boolean> => {
+    if (!canEdit) return false;
+    try {
+      const result = await apiFetch<{ emailed?: boolean }>(
+        `/api/technicians/${id}/invite`,
+        { method: "POST", body: JSON.stringify({ email, role }) },
+      );
+      // The account exists either way. A bounced invite is recoverable - press
+      // Invite again - but the manager has to be told, because they are the
+      // only person who can fix it.
+      if (result?.emailed === false) {
+        showToast("Account created, but the invite email failed to send.", "error");
+      } else {
+        showToast(`Invite sent to ${email}.`, "success");
+      }
+      await fetchReferenceData();
+      return true;
+    } catch (error) {
+      toastError(error, "Could not invite that person.");
+      return false;
+    }
+  };
+
+  /**
+   * Points a roster entry at an account that already exists.
+   *
+   * The counterpart to inviting: everyone who was signing in before the roster
+   * could hold an account has an address that is already taken, so an invite
+   * would correctly refuse them.
+   */
+  const handleLinkAccount = async (
+    id: number,
+    email: string,
+  ): Promise<boolean> => {
+    if (!canEdit) return false;
+    try {
+      await apiFetch(`/api/technicians/${id}/account`, {
+        method: "PATCH",
+        body: JSON.stringify({ email }),
+      });
+      showToast("Account linked.", "success");
+      await fetchReferenceData();
+      return true;
+    } catch (error) {
+      toastError(error, "Could not link that account.");
+      return false;
+    }
+  };
+
+  /** Breaks the link. Neither the account nor the roster entry is removed. */
+  const handleUnlinkAccount = async (id: number): Promise<boolean> => {
+    if (!canEdit) return false;
+    try {
+      await apiFetch(`/api/technicians/${id}/account`, { method: "DELETE" });
+      showToast("Account unlinked.", "deleted");
+      await fetchReferenceData();
+      return true;
+    } catch (error) {
+      toastError(error, "Could not unlink that account.");
+      return false;
+    }
+  };
+
+  /** Changes the role on the account behind a roster entry. */
+  const handleChangeRole = async (
+    id: number,
+    role: string,
+  ): Promise<boolean> => {
+    if (!canEdit) return false;
+    try {
+      await apiFetch(`/api/technicians/${id}/role`, {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
+      });
+      showToast(`Role changed to ${role.replace(/_/g, " ")}.`, "success");
+      await fetchReferenceData();
+      return true;
+    } catch (error) {
+      toastError(error, "Could not change that role.");
+      return false;
+    }
+  };
+
   const handleAddTechnician = async (fullName: string): Promise<boolean> => {
     if (!canEdit) return false;
     try {
@@ -543,6 +648,7 @@ export const App: React.FC = () => {
       {currentUser && (
         <Navbar
           isAdmin={isAdmin}
+          currentRole={currentRole}
           currentUser={currentUser}
           onLogout={handleLogout}
         />
@@ -605,6 +711,9 @@ export const App: React.FC = () => {
                 }
               />
               <Route path="reset-password" element={<ResetPassword />} />
+              {/* Claiming an invited account. Public: there is no account to
+                  authenticate with until the link is opened. */}
+              <Route path="accept-invite" element={<AcceptInvite />} />
 
               {/* Shop Overview (Dashboard) */}
               <Route
@@ -615,7 +724,7 @@ export const App: React.FC = () => {
                       repairs={repairs}
                       technicianNames={technicianNames}
                       activity={activity}
-                      isAdmin={canEdit}
+                      canEdit={canEdit}
                     />
                   ) : (
                     <Navigate to="/login" replace />
@@ -630,7 +739,7 @@ export const App: React.FC = () => {
                   currentUser ? (
                     <ActiveQueue
                       repairs={repairs}
-                      isAdmin={canEdit}
+                      canEdit={canEdit}
                       currentUser={currentUser}
                       historicalServiceMap={historicalServiceMap}
                       technicianNames={technicianNames}
@@ -645,7 +754,6 @@ export const App: React.FC = () => {
                       onSaveNotes={handleSaveNotes}
                       onSaveParts={handleSaveParts}
                       onSaveComeback={handleSaveComeback}
-                      canEdit={canEdit}
                       onOpenPricing={setPricedRepair}
                       onPhoneChange={handlePhoneChange}
                       onMileageChange={handleMileageChange}
@@ -710,6 +818,11 @@ export const App: React.FC = () => {
                       onAddTechnician={handleAddTechnician}
                       onRenameTechnician={handleRenameTechnician}
                       onSetTechnicianActive={handleSetTechnicianActive}
+                      currentRole={currentRole}
+                      onInvite={handleInviteTechnician}
+                      onChangeRole={handleChangeRole}
+                      onLinkAccount={handleLinkAccount}
+                      onUnlinkAccount={handleUnlinkAccount}
                     />
                   ) : (
                     <Navigate to="/" replace />
@@ -727,7 +840,7 @@ export const App: React.FC = () => {
       {viewedRepair && (
         <VehicleModal
           repair={viewedRepair}
-          isAdmin={canEdit}
+          canEdit={canEdit}
           onClose={() => setViewedRepair(null)}
           onSaveNotes={handleSaveNotes}
           onSaveParts={handleSaveParts}

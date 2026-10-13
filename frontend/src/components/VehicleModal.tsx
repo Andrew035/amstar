@@ -28,13 +28,13 @@ import { Fact } from "./Fact";
  */
 export const VehicleModal: React.FC<{
   repair: VehicleRepair;
-  isAdmin: boolean;
+  canEdit: boolean;
   onClose: () => void;
   onSaveNotes: (id: number, notes: string) => Promise<void>;
   onSaveParts: (id: number, parts: string) => Promise<void>;
 }> = ({
   repair,
-  isAdmin,
+  canEdit,
   onClose,
   onSaveNotes,
   onSaveParts,
@@ -144,13 +144,13 @@ export const VehicleModal: React.FC<{
           <TicketNotes
             repairId={repair.id!}
             initialNotes={repair.notes}
-            isAdmin={isAdmin}
+            canEdit={canEdit}
             onSave={onSaveNotes}
           />
           <TicketNotes
             repairId={repair.id!}
             initialNotes={repair.parts}
-            isAdmin={isAdmin}
+            canEdit={canEdit}
             onSave={onSaveParts}
             label="Parts"
             saveLabel="Save Parts"

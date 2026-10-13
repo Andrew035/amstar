@@ -1,19 +1,60 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { AmstarLogo } from "./AmstarLogo";
 import { HOVER, PRESS } from "../styles/controls";
+import { DropdownArrow } from "./DropdownArrow";
 
 interface NavbarProps {
   isAdmin: boolean;
+  // For the chip's label. `isAdmin` means "may edit" and both roles may.
+  currentRole: string | null;
   currentUser: string;
   onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   isAdmin,
+  currentRole,
   currentUser,
   onLogout,
 }) => {
+  /*
+   * The account menu.
+   *
+   * Roster moves behind the chip because its one job - add, rename, retire a
+   * name - is maintenance done a few times a year, while it was costing a
+   * permanent navbar slot. "Who has capacity" already answers the daily
+   * question on the Overview.
+   *
+   * A plain `absolute` panel, not the fixed/panelCoords pattern the rest of
+   * the app uses. That is safe *here specifically*: <header> is a flex sibling
+   * of <main> and nothing animates it, so there is no transformed ancestor to
+   * position against. The fixed dropdowns elsewhere exist because their
+   * triggers sit inside scrolling, overflow-hidden table cells.
+   */
+  const [menu, setMenu] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menu) return;
+    const close = (e: MouseEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setMenu(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [menu]);
+
+  const MENU_ROW =
+    `w-full text-left min-h-11 px-4 flex items-center gap-3 font-cond uppercase ` +
+    `tracking-widest text-[11px] text-amstar-ink-dim ${HOVER} ` +
+    `hover:bg-amstar-surface hover:text-amstar-ink ` +
+    `border-b border-amstar-line-soft last:border-0 ` +
+    `focus:outline-none focus:bg-amstar-surface focus:text-amstar-ink`;
   /*
    * The active tab used to be a static inset border. It is now a bar that
    * grows out of the middle when a tab is picked, so when you move between
@@ -72,25 +113,59 @@ export const Navbar: React.FC<NavbarProps> = ({
           <NavLink to="/history" className={linkClass} draggable={false}>
             <Label full="History" short="History" />
           </NavLink>
-          <NavLink to="/roster" className={linkClass} draggable={false}>
-            Roster
-          </NavLink>
         </nav>
 
-        {/* User Account / Logout */}
-        <div className="flex items-center gap-4 select-none">
-          <span className="font-cond text-[11px] uppercase tracking-widest bg-amstar-raised border border-amstar-line px-3 py-1.5 rounded-sm text-amstar-ink-dim">
-            {isAdmin ? `Admin: ${currentUser}` : `Books: ${currentUser}`}
-          </span>
+        {/* Account: the chip is the trigger, roster and logout live behind it. */}
+        <div className="relative flex items-center select-none" ref={wrap}>
           <button
-            onClick={onLogout}
-            className={`font-cond text-[11px] uppercase tracking-widest text-amstar-red-ink
-            hover:text-white bg-transparent hover:bg-amstar-red border border-amstar-red
-            px-4 py-1.5 rounded-sm ${PRESS}
-            transition-[color,background-color,transform] duration-150 ease-out`}
+            type="button"
+            onClick={() => setMenu((v) => !v)}
+            aria-expanded={menu}
+            aria-haspopup="menu"
+            className={`font-cond text-[11px] uppercase tracking-widest bg-amstar-raised
+              border px-3 py-1.5 min-h-11 rounded-sm flex items-center gap-2 ${HOVER} ${PRESS}
+              focus:outline-none focus:border-amstar-red-edge focus:ring-2 focus:ring-amstar-red-edge/40
+              ${
+                menu
+                  ? "border-amstar-red text-amstar-ink"
+                  : "border-amstar-line text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink"
+              }`}
           >
-            Log Out
+            <span className="truncate max-w-[12rem]">
+              {currentRole
+                ? `${currentRole.replace(/_/g, " ")}: ${currentUser}`
+                : currentUser}
+            </span>
+            <DropdownArrow isOpen={menu} />
           </button>
+
+          {menu && (
+            <div
+              role="menu"
+              className="anim-pop absolute right-0 top-full mt-2 w-52 bg-amstar-raised
+                border border-amstar-line rounded shadow-2xl overflow-hidden origin-top-right"
+            >
+              <NavLink
+                to="/roster"
+                role="menuitem"
+                onClick={() => setMenu(false)}
+                className={MENU_ROW}
+              >
+                Shop roster
+              </NavLink>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenu(false);
+                  onLogout();
+                }}
+                className={`${MENU_ROW} text-amstar-red-ink hover:text-white hover:bg-amstar-red`}
+              >
+                Log out
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

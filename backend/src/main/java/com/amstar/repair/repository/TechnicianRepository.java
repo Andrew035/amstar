@@ -11,4 +11,7 @@ public interface TechnicianRepository extends JpaRepository<Technician, Long> {
   List<Technician> findByIsActiveTrueOrderByFullNameAsc();
 
   List<Technician> findAllByOrderByFullNameAsc();
+
+  /** Enforces uq_technician_user in Java, for a readable 400 instead of a 409. */
+  Optional<Technician> findByUserId(Long userId);
 }

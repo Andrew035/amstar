@@ -27,6 +27,10 @@ export interface Technician {
   phone?: string;
   hiredOn?: string;
   isActive: boolean;
+  /** The account behind this name, if they have one. */
+  userId?: number | null;
+  /** That account's role. Absent means no login - see AccountService.withRoles. */
+  role?: string | null;
 }
 
 export interface ServiceType {

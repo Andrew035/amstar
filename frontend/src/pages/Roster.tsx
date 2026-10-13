@@ -9,6 +9,7 @@ import {
   PRESS,
 } from "../styles/controls";
 import { isActive, technicianList } from "../lib/ticketFilters";
+import { grantableRoles, mayManage, roleLabel } from "../lib/roles";
 
 const ACTION_BUTTON =
   "shrink-0 min-h-10 px-3 py-1.5 rounded-sm border font-cond uppercase tracking-widest text-xs transition-colors";
@@ -28,17 +29,62 @@ export const Roster: React.FC<{
   onAddTechnician: (fullName: string) => Promise<boolean>;
   onRenameTechnician: (id: number, fullName: string) => Promise<boolean>;
   onSetTechnicianActive: (id: number, isActive: boolean) => void;
+  /** The signed-in role, which decides what may be granted. */
+  currentRole: string | null;
+  onInvite: (id: number, email: string, role: string) => Promise<boolean>;
+  onChangeRole: (id: number, role: string) => Promise<boolean>;
+  onLinkAccount: (id: number, email: string) => Promise<boolean>;
+  onUnlinkAccount: (id: number) => Promise<boolean>;
 }> = ({
   technicians,
   repairs,
   onAddTechnician,
   onRenameTechnician,
   onSetTechnicianActive,
+  currentRole,
+  onInvite,
+  onChangeRole,
+  onLinkAccount,
+  onUnlinkAccount,
 }) => {
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
+  /*
+   * Which row has its second line open, and which of the two things it is for.
+   *
+   * "invite" makes a new account; "link" points at one that already exists.
+   * Both are the same shape - an email and a confirm - so they share a row and
+   * differ only in what the button does.
+   */
+  const [formRow, setFormRow] = useState<{ id: number; mode: "invite" | "link" } | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("");
+
+  const grantable = grantableRoles(currentRole);
+  const isOpen = (tech: Technician, mode: "invite" | "link") =>
+    formRow?.id === tech.id && formRow.mode === mode;
+
+  const openForm = (tech: Technician, mode: "invite" | "link") => {
+    setFormRow({ id: tech.id, mode });
+    setInviteEmail("");
+    setInviteRole(grantable[grantable.length - 1] ?? "");
+  };
+
+  const submitForm = async (tech: Technician) => {
+    const email = inviteEmail.trim();
+    if (!email || !formRow) return;
+    setSaving(true);
+    const ok =
+      formRow.mode === "link"
+        ? await onLinkAccount(tech.id, email)
+        : inviteRole
+          ? await onInvite(tech.id, email, inviteRole)
+          : false;
+    setSaving(false);
+    if (ok) setFormRow(null);
+  };
 
   // Open tickets per technician, so nobody is taken off the roster without
   // seeing what is still assigned to them.
@@ -128,14 +174,95 @@ export const Roster: React.FC<{
     return (
       <li
         key={tech.id}
-        className="flex items-center gap-2 px-4 py-2 border-b border-amstar-line-soft last:border-0"
+        className="flex flex-col gap-2 px-4 py-2 border-b border-amstar-line-soft last:border-0"
       >
-        <span className="flex-1 min-w-0 text-sm font-bold text-amstar-ink truncate">
+        {/*
+          Two lines, not one. The invite form used to sit inline in this row:
+          nine flex children in a 766px row measured 1368px of content, which
+          squeezed the name to zero width and pushed Rename and Remove clean
+          off the panel. The form gets its own line and the whole width.
+        */}
+        <div className="flex items-center gap-2">
+          <span className="flex-1 min-w-0 text-sm font-bold text-amstar-ink truncate">
           {tech.fullName}
         </span>
         <span className="shrink-0 font-mono tabular-nums text-xs text-amstar-ink-dim">
           {open > 0 ? `${open} open` : "-"}
         </span>
+        {/*
+          The role, or "no login" for a name that is only ever assigned work.
+          A technician with no account is the normal case: most of the roster
+          never signs in.
+        */}
+        <span
+          className={`shrink-0 font-cond uppercase tracking-widest text-[10px] px-2 py-1 rounded-sm border ${
+            tech.role
+              ? "border-amstar-line text-amstar-ink-dim"
+              : "border-transparent text-amstar-ink-faint"
+          }`}
+        >
+          {roleLabel(tech.role)}
+        </span>
+        {tech.role ? (
+          mayManage(currentRole, tech.role) && grantable.length > 0 ? (
+            /*
+              Buttons rather than a native <select>: the roster is used on the
+              same iPad as everything else, and there are at most two ranks to
+              offer. The chip to the left already says what they are now, so
+              these are the moves available, not a list containing the status
+              quo.
+            */
+            <span className="shrink-0 flex items-center gap-1">
+              {grantable
+                .filter((role) => role !== tech.role)
+                .map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => onChangeRole(tech.id, role)}
+                    className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink ${PRESS}`}
+                  >
+                    Make {roleLabel(role)}
+                  </button>
+                ))}
+            </span>
+          ) : null
+        ) : null}
+        {tech.role ? (
+          <button
+            type="button"
+            onClick={() => onUnlinkAccount(tech.id)}
+            className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
+          >
+            Unlink
+          </button>
+        ) : (
+          <>
+            {/* Two ways to get a login: make a new one, or point at an
+                existing one. Everyone who signed in before V20 needs the
+                second, because their address is already taken. */}
+            {grantable.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  isOpen(tech, "invite") ? setFormRow(null) : openForm(tech, "invite")
+                }
+                className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
+              >
+                {isOpen(tech, "invite") ? "Cancel" : "Invite"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() =>
+                isOpen(tech, "link") ? setFormRow(null) : openForm(tech, "link")
+              }
+              className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
+            >
+              {isOpen(tech, "link") ? "Cancel" : "Link account"}
+            </button>
+          </>
+        )}
         <button
           type="button"
           onClick={() => startEdit(tech)}
@@ -154,6 +281,60 @@ export const Roster: React.FC<{
         >
           {tech.isActive ? "Remove" : "Bring back"}
         </button>
+        </div>
+
+        {formRow?.id === tech.id && (
+          /* Wraps rather than overflows: on a narrow window the role buttons
+             drop to their own line instead of pushing Send out of the panel. */
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder={
+                formRow.mode === "link"
+                  ? "Their existing account email"
+                  : "email@example.com"
+              }
+              aria-label={`${formRow.mode === "link" ? "Account" : "Invite"} email for ${tech.fullName}`}
+              /* flex-1 with a floor, not a fixed width: SHARED_INPUT_STYLE
+                 already carries w-full, and Tailwind emits w-full after the
+                 numeric widths, so a `w-52` here would simply be ignored. */
+              className={`${SHARED_INPUT_STYLE} flex-1 min-w-[14rem]`}
+            />
+            {formRow.mode === "invite" && (
+            <span
+              role="radiogroup"
+              aria-label={`Invite role for ${tech.fullName}`}
+              className="shrink-0 flex items-center gap-1"
+            >
+              {grantable.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  role="radio"
+                  aria-checked={inviteRole === role}
+                  onClick={() => setInviteRole(role)}
+                  className={`${ACTION_BUTTON} ${PRESS} ${
+                    inviteRole === role
+                      ? "border-amstar-red-edge bg-amstar-raised text-amstar-ink"
+                      : "border-amstar-line text-amstar-ink-dim hover:text-amstar-ink"
+                  }`}
+                >
+                  {roleLabel(role)}
+                </button>
+              ))}
+            </span>
+            )}
+            <button
+              type="button"
+              disabled={saving || !inviteEmail.trim()}
+              onClick={() => submitForm(tech)}
+              className={`${PRIMARY_BUTTON_STYLE} shrink-0 min-h-10 px-4 text-xs`}
+            >
+              {formRow.mode === "link" ? "Link" : "Send"}
+            </button>
+          </div>
+        )}
       </li>
     );
   };

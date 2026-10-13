@@ -2,6 +2,7 @@ package com.amstar.repair;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amstar.repair.support.IntegrationTest;
@@ -353,6 +354,373 @@ public class SecurityRulesTest extends IntegrationTest {
     assertTrue(
         get("/api/repairs/queue", (String) login.asMap().get("token")).isOk(),
         "and the freshly issued token must carry the new token_version");
+  }
+
+  // --- the role hierarchy -------------------------------------------------
+
+  /**
+   * The grant matrix, all nine actor/target pairs.
+   *
+   * <p>The rule is "strictly below your own", which is what stops the hierarchy being able to
+   * widen itself: no role can mint its own rank, so a single compromised account cannot multiply.
+   * ADMIN is the one nobody can hand out, which is why a second owner stays a deliberate manual
+   * job - the allowlist plus the documented SQL.
+   */
+  @Test
+  void aRoleCanOnlyBeGrantedBelowYourOwn() {
+    String admin = adminToken();
+    String bookkeeper = bookkeeperToken();
+    String technician = technicianToken();
+    long rosterId = firstTechnicianId(admin);
+
+    // A technician cannot reach the roster's writes at all: SecurityConfig
+    // stops them before any hierarchy check runs.
+    for (String role : List.of("ADMIN", "BOOKKEEPER", "TECHNICIAN")) {
+      assertForbidden(
+          patch("/api/technicians/" + rosterId + "/role", technician, Map.of("role", role)));
+    }
+
+    // Nobody mints an admin. 400 rather than 403 for both: the actor is allowed
+    // to act on this person, they have asked for a role that cannot be handed
+    // out. 403 is reserved for "not your person to touch", below.
+    assertEquals(
+        400,
+        patch("/api/technicians/" + rosterId + "/role", admin, Map.of("role", "ADMIN")).status(),
+        "an admin must not be able to create another admin");
+    assertEquals(
+        400,
+        patch("/api/technicians/" + rosterId + "/role", bookkeeper, Map.of("role", "ADMIN"))
+            .status(),
+        "a bookkeeper must not be able to create an admin");
+
+    // A bookkeeper cannot mint her own rank, but may appoint a technician.
+    assertEquals(
+        400,
+        patch("/api/technicians/" + rosterId + "/role", bookkeeper, Map.of("role", "BOOKKEEPER"))
+            .status(),
+        "a bookkeeper must not be able to create another bookkeeper");
+    assertTrue(
+        patch("/api/technicians/" + rosterId + "/role", bookkeeper, Map.of("role", "TECHNICIAN"))
+            .isOk(),
+        "a bookkeeper may appoint a technician");
+
+    // An admin may do both of the ranks below.
+    assertTrue(
+        patch("/api/technicians/" + rosterId + "/role", admin, Map.of("role", "BOOKKEEPER")).isOk(),
+        "an admin may appoint a bookkeeper");
+
+    // ...and now that the target IS a bookkeeper, an equal rank cannot touch them.
+    assertForbidden(
+        patch("/api/technicians/" + rosterId + "/role", bookkeeper, Map.of("role", "TECHNICIAN")));
+  }
+
+  /** Your own rank is never strictly below your own, and the message should say so. */
+  @Test
+  void nobodyCanChangeTheirOwnRole() {
+    String admin = adminToken();
+    long rosterId = firstTechnicianId(admin);
+    // Point a roster entry at the admin's own account, the way an invite would.
+    jdbc.update(
+        "update technicians set user_id = (select id from users where email = ?) where id = ?",
+        ADMIN_EMAIL,
+        rosterId);
+
+    ApiResponse response =
+        patch("/api/technicians/" + rosterId + "/role", admin, Map.of("role", "BOOKKEEPER"));
+
+    assertEquals(400, response.status(), "body was: " + response.body());
+    assertEquals("You cannot change your own role.", response.asMap().get("error"));
+  }
+
+  /**
+   * A demotion has to bite on the next request, not when the token expires.
+   *
+   * <p>Same mechanism as the manual SQL path: changeRole bumps token_version, which is the only
+   * revocation JwtAuthenticationFilter checks. Without the bump the account would keep the
+   * authority it just lost for up to ten hours.
+   */
+  @Test
+  void changingARoleInvalidatesTheTokenItWasHolding() {
+    String admin = adminToken();
+    String technician = technicianToken();
+    long rosterId = firstTechnicianId(admin);
+
+    assertTrue(get("/api/repairs/queue", technician).isOk(), "the token works before the change");
+
+    assertTrue(
+        patch("/api/technicians/" + rosterId + "/role", admin, Map.of("role", "BOOKKEEPER")).isOk(),
+        "the admin may promote a technician to bookkeeper");
+
+    assertEquals(
+        401,
+        get("/api/repairs/queue", technician).status(),
+        "the old token must stop working the moment the role changes");
+  }
+
+  /** A roster entry with no account has no role to change. */
+  @Test
+  void aRosterEntryWithNoAccountCannotBeGivenARole() {
+    String admin = adminToken();
+    long rosterId = firstTechnicianId(admin);
+
+    ApiResponse response =
+        patch("/api/technicians/" + rosterId + "/role", admin, Map.of("role", "TECHNICIAN"));
+
+    assertEquals(400, response.status(), "body was: " + response.body());
+    assertTrue(
+        String.valueOf(response.asMap().get("error")).contains("does not have an account"),
+        "the message should send the manager to the invite: " + response.body());
+  }
+
+  // --- linking an account that already exists -----------------------------
+
+  /**
+   * The migration case: an account that predates the roster being able to hold one.
+   *
+   * <p>Inviting them cannot work - the address is taken, correctly - so without this their login
+   * and their name on the roster stay two unrelated records.
+   */
+  @Test
+  void anExistingAccountCanBeLinkedToARosterEntry() {
+    String admin = adminToken();
+    bookkeeperToken(); // the account exists, and predates any roster link
+    long rosterId = firstTechnicianId(admin);
+
+    assertEquals(
+        400,
+        post(
+                "/api/technicians/" + rosterId + "/invite",
+                admin,
+                Map.of("email", BOOKKEEPER_EMAIL, "role", "TECHNICIAN"))
+            .status(),
+        "inviting a taken address must be refused, which is why linking exists");
+
+    assertTrue(
+        patch(
+                "/api/technicians/" + rosterId + "/account",
+                admin,
+                Map.of("email", BOOKKEEPER_EMAIL))
+            .isOk(),
+        "an admin may link a bookkeeper's existing account");
+
+    assertEquals(
+        "BOOKKEEPER",
+        rosterEntry(admin, rosterId).get("role"),
+        "the roster now shows the role that account already had");
+  }
+
+  /** One account, one roster entry - the partial unique index, with a readable message. */
+  @Test
+  void anAccountCannotBeLinkedToTwoPeople() {
+    String admin = adminToken();
+    bookkeeperToken();
+    List<Map<String, Object>> roster = get("/api/technicians", admin).asList();
+    long first = ((Number) roster.get(0).get("id")).longValue();
+    long second = ((Number) roster.get(1).get("id")).longValue();
+
+    assertTrue(
+        patch("/api/technicians/" + first + "/account", admin, Map.of("email", BOOKKEEPER_EMAIL))
+            .isOk());
+
+    ApiResponse twice =
+        patch("/api/technicians/" + second + "/account", admin, Map.of("email", BOOKKEEPER_EMAIL));
+    assertEquals(400, twice.status(), "body was: " + twice.body());
+    assertTrue(
+        String.valueOf(twice.asMap().get("error")).contains("already linked"),
+        "the message should name who holds it: " + twice.body());
+  }
+
+  /**
+   * Linking obeys the hierarchy, with one deliberate exception: yourself.
+   *
+   * <p>An owner who also turns a wrench has to be able to put their own name on the roster, and
+   * their own rank is never strictly below their own. They still cannot reach the other owner,
+   * which is the same rule that stops two admins editing each other.
+   */
+  @Test
+  void linkingIsBoundByTheHierarchyExceptForYourself() {
+    String admin = adminToken();
+    String bookkeeper = bookkeeperToken();
+    List<Map<String, Object>> roster = get("/api/technicians", admin).asList();
+    long first = ((Number) roster.get(0).get("id")).longValue();
+    long second = ((Number) roster.get(1).get("id")).longValue();
+
+    // A bookkeeper cannot reach an admin's account.
+    assertForbidden(
+        patch("/api/technicians/" + first + "/account", bookkeeper, Map.of("email", ADMIN_EMAIL)));
+
+    // An admin may link their own.
+    assertTrue(
+        patch("/api/technicians/" + first + "/account", admin, Map.of("email", ADMIN_EMAIL)).isOk(),
+        "an admin may link their own account to their own name");
+
+    // A bookkeeper may link her own too.
+    assertTrue(
+        patch(
+                "/api/technicians/" + second + "/account",
+                bookkeeper,
+                Map.of("email", BOOKKEEPER_EMAIL))
+            .isOk(),
+        "a bookkeeper may link her own account");
+  }
+
+  /** Unlinking leaves the account and the roster entry both standing. */
+  @Test
+  void unlinkingKeepsBothSides() {
+    String admin = adminToken();
+    bookkeeperToken();
+    long rosterId = firstTechnicianId(admin);
+    patch("/api/technicians/" + rosterId + "/account", admin, Map.of("email", BOOKKEEPER_EMAIL));
+
+    assertTrue(delete("/api/technicians/" + rosterId + "/account", admin).isOk());
+
+    assertNull(rosterEntry(admin, rosterId).get("role"), "the roster entry has no account again");
+    assertTrue(
+        post("/api/auth/login", null, Map.of("email", BOOKKEEPER_EMAIL, "password", "Password123"))
+            .isOk(),
+        "the account itself is untouched");
+  }
+
+  /** A typo should say so rather than fail silently. */
+  @Test
+  void linkingAnAddressWithNoAccountIsRefused() {
+    String admin = adminToken();
+    long rosterId = firstTechnicianId(admin);
+
+    ApiResponse response =
+        patch(
+            "/api/technicians/" + rosterId + "/account",
+            admin,
+            Map.of("email", "nobody@amstar-test.com"));
+
+    assertEquals(400, response.status(), "body was: " + response.body());
+    assertTrue(String.valueOf(response.asMap().get("error")).contains("No account"));
+  }
+
+  private Map<String, Object> rosterEntry(String token, long id) {
+    return get("/api/technicians", token).asList().stream()
+        .filter(t -> ((Number) t.get("id")).longValue() == id)
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("roster entry " + id + " is missing"));
+  }
+
+  // --- invites ------------------------------------------------------------
+
+  /** An invited account is inert until the link is opened. */
+  @Test
+  void anInvitedAccountCannotSignInUntilTheInviteIsAccepted() {
+    String admin = adminToken();
+    long rosterId = firstTechnicianId(admin);
+
+    assertTrue(
+        post(
+                "/api/technicians/" + rosterId + "/invite",
+                admin,
+                Map.of("email", TECHNICIAN_EMAIL, "role", "TECHNICIAN"))
+            .isOk());
+
+    // The row exists, with a password nobody has ever seen and is_active false.
+    ApiResponse tooEarly =
+        post(
+            "/api/auth/login",
+            null,
+            Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"));
+    assertTrue(tooEarly.isClientError(), "an unaccepted invite must not be a working account");
+
+    String raw = plantCredentialToken(TECHNICIAN_EMAIL, "INVITE");
+    assertTrue(
+        post("/api/auth/accept-invite", null, Map.of("token", raw, "password", "Password123"))
+            .isOk());
+
+    assertEquals(
+        "TECHNICIAN",
+        roleIn(
+            (String)
+                post(
+                        "/api/auth/login",
+                        null,
+                        Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"))
+                    .asMap()
+                    .get("token")));
+  }
+
+  /**
+   * The two token purposes are not interchangeable.
+   *
+   * <p>An invite redeemed at /reset-password would set a password and leave is_active false, which
+   * is a dead end; a reset redeemed at /accept-invite would activate an account a manager had
+   * deliberately switched off.
+   */
+  @Test
+  void anInviteTokenAndAResetTokenCannotBeSwapped() {
+    String admin = adminToken();
+    long rosterId = firstTechnicianId(admin);
+    post(
+        "/api/technicians/" + rosterId + "/invite",
+        admin,
+        Map.of("email", TECHNICIAN_EMAIL, "role", "TECHNICIAN"));
+
+    String invite = plantCredentialToken(TECHNICIAN_EMAIL, "INVITE");
+    assertEquals(
+        400,
+        post("/api/auth/reset-password", null, Map.of("token", invite, "password", "Password123"))
+            .status(),
+        "an invite token must not work as a password reset");
+
+    String reset = plantCredentialToken(ADMIN_EMAIL, "RESET");
+    assertEquals(
+        400,
+        post("/api/auth/accept-invite", null, Map.of("token", reset, "password", "Password123"))
+            .status(),
+        "a reset token must not activate an account");
+  }
+
+  /** Only an owner can bring on a bookkeeper; a bookkeeper can only bring on a technician. */
+  @Test
+  void invitingIsBoundByTheSameHierarchy() {
+    String admin = adminToken();
+    String bookkeeper = bookkeeperToken();
+    long rosterId = firstTechnicianId(admin);
+
+    assertForbidden(
+        post(
+            "/api/technicians/" + rosterId + "/invite",
+            bookkeeper,
+            Map.of("email", "someone@amstar-test.com", "role", "BOOKKEEPER")));
+    assertForbidden(
+        post(
+            "/api/technicians/" + rosterId + "/invite",
+            admin,
+            Map.of("email", "someone@amstar-test.com", "role", "ADMIN")));
+    assertTrue(
+        post(
+                "/api/technicians/" + rosterId + "/invite",
+                bookkeeper,
+                Map.of("email", TECHNICIAN_EMAIL, "role", "TECHNICIAN"))
+            .isOk(),
+        "a bookkeeper may invite a technician");
+  }
+
+  /** The floor role reads the shop and writes nothing, with no money in sight. */
+  @Test
+  void aTechnicianReadsTheShopAndSeesNoMoney() {
+    String admin = adminToken();
+    long ticket = createTicket(admin, "Rosalind", 3, "2026-12-01");
+    patch("/api/repairs/" + ticket + "/notes", admin, Map.of("notes", "CUSTOMER CALLED"));
+
+    String technician = technicianToken();
+
+    assertTrue(get("/api/repairs/queue", technician).isOk(), "a technician may read the queue");
+    assertForbidden(
+        patch("/api/repairs/" + ticket + "/status", technician, Map.of("status", "IN_PROGRESS")));
+    assertForbidden(patch("/api/repairs/" + ticket + "/severity", technician, Map.of("severity", 5)));
+    assertForbidden(delete("/api/repairs/" + ticket, technician));
+
+    // BILLING_AUTHORITIES was unreachable until TECHNICIAN existed. It is live now.
+    Map<String, Object> asTechnician = ticketById(technician, ticket);
+    assertNull(asTechnician.get("notes"), "a technician must not read the notes");
+    assertNull(asTechnician.get("retailPrice"), "a technician must not read the prices");
+    assertNull(asTechnician.get("laborPrice"), "a technician must not read the prices");
   }
 
   private void assertForbidden(ApiResponse response) {

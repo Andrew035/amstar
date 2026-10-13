@@ -578,7 +578,7 @@ interface RepairFormProps {
   onSuccess: (createdId?: number) => void;
   onClose: () => void;
   currentUser: string;
-  isAdmin: boolean;
+  canEdit: boolean;
   historicalServiceMap: Record<string, number>;
   technicianNames: string[];
 }
@@ -586,7 +586,7 @@ interface RepairFormProps {
 export const RepairForm: React.FC<RepairFormProps> = ({
   onSuccess,
   onClose,
-  isAdmin,
+  canEdit,
   historicalServiceMap,
   technicianNames,
 }) => {
@@ -684,7 +684,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
       serviceType,
       severity,
       expectedCompletionDate,
-      assignedWorker: isAdmin ? assignedWorkers : "",
+      assignedWorker: canEdit ? assignedWorkers : "",
       status: "PENDING",
       vehicle: {
         vin: vin || null,
@@ -714,7 +714,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
       setSeverity(3);
       setExpectedCompletionDate("");
       setMissing([]);
-      if (isAdmin) setAssignedWorkers("");
+      if (canEdit) setAssignedWorkers("");
       onSuccess(created?.id);
     } catch (err) {
       // apiFetch has already turned the backend's {"error": "..."} into the
@@ -820,7 +820,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           />
         </div>
 
-        {isAdmin && (
+        {canEdit && (
           <div>
             <label className={LABEL_STYLE}>
               Assign Technician(s){" "}

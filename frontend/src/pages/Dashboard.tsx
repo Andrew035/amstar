@@ -232,8 +232,8 @@ export const Dashboard: React.FC<{
   repairs: VehicleRepair[];
   technicianNames: string[];
   activity: TicketActivity[];
-  isAdmin: boolean;
-}> = ({ repairs, technicianNames, activity, isAdmin }) => {
+  canEdit: boolean;
+}> = ({ repairs, technicianNames, activity, canEdit }) => {
   const navigate = useNavigate();
   const openQueue = (filter: string) =>
     navigate(`/queue?filter=${encodeURIComponent(filter)}`);
@@ -382,7 +382,7 @@ export const Dashboard: React.FC<{
           repairs={repairs}
           today={today}
           onOpenFilter={(f) =>
-            f === "unbilled" && isAdmin
+            f === "unbilled" && canEdit
               ? navigate("/invoices?filter=unbilled")
               : openQueue(f)
           }

@@ -95,7 +95,7 @@ public class PasswordResetService {
       return false;
     }
     Optional<PasswordResetToken> match = tokens.findByTokenHash(hash(token));
-    if (match.isEmpty() || !match.get().isRedeemable()) {
+    if (match.isEmpty() || !match.get().isRedeemableAs(PasswordResetToken.RESET)) {
       return false;
     }
     PasswordResetToken resetToken = match.get();
@@ -110,6 +110,94 @@ public class PasswordResetService {
 
     log.info("Password reset completed for user id {}", user.getId());
     return true;
+  }
+
+  /**
+   * Mints an invite token for an account that is waiting to be claimed and mails the link.
+   *
+   * @return false if the token was stored but the email could not be sent, so the caller can tell
+   *     the admin to try again. Unlike a password reset - where silence is the point, because the
+   *     response must not disclose whether an address is registered - an invite is an action a
+   *     signed-in manager just took, and they are the only person who can fix a bounce.
+   */
+  @Transactional
+  public boolean sendInvite(User user) {
+    tokens.invalidateOutstanding(user);
+
+    byte[] raw = new byte[32];
+    RANDOM.nextBytes(raw);
+    String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
+
+    tokens.save(
+        new PasswordResetToken(
+            user,
+            hash(token),
+            Instant.now().plus(tokenMinutes, ChronoUnit.MINUTES),
+            PasswordResetToken.INVITE));
+
+    try {
+      sendInviteEmail(user.getEmail(), token);
+      return true;
+    } catch (Exception e) {
+      log.error("Failed to send invite email to user id {}", user.getId(), e);
+      return false;
+    }
+  }
+
+  /**
+   * Claims an invited account: first password, and the account goes live.
+   *
+   * <p>This is separate from resetPassword because it is the only path that may flip is_active, and
+   * that distinction matters: requestReset refuses inactive accounts on purpose, so an account
+   * deactivated by a manager cannot be revived through the reset flow. Only an unredeemed invite
+   * activates anything.
+   *
+   * <p>The token_version bump is here for the same reason it is in resetPassword - if an invite is
+   * ever re-issued, any token minted against the half-set-up account stops working.
+   */
+  @Transactional
+  public boolean acceptInvite(String token, String newPassword) {
+    if (token == null || newPassword == null || newPassword.length() < 8) {
+      return false;
+    }
+    Optional<PasswordResetToken> match = tokens.findByTokenHash(hash(token));
+    if (match.isEmpty() || !match.get().isRedeemableAs(PasswordResetToken.INVITE)) {
+      return false;
+    }
+    PasswordResetToken invite = match.get();
+
+    User user = invite.getUser();
+    user.setPasswordHash(passwordEncoder.encode(newPassword));
+    user.setIsActive(true);
+    user.setTokenVersion(user.getTokenVersion() + 1);
+    users.save(user);
+
+    invite.setUsedAt(Instant.now());
+    tokens.save(invite);
+
+    log.info("Invite accepted for user id {}", user.getId());
+    return true;
+  }
+
+  private void sendInviteEmail(String to, String token) {
+    String link = appUrl + "/accept-invite?token=" + token;
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setFrom(fromAddress);
+    message.setTo(to);
+    message.setSubject("AM Star - your account");
+    message.setText(
+        """
+        You have been given an account on the AM Star shop manager.
+
+        Open this link to choose your password (expires in %d minutes):
+
+        %s
+
+        If you were not expecting this, ignore this email - the account
+        cannot be used until that link is opened.
+        """
+            .formatted(tokenMinutes, link));
+    mailSender.send(message);
   }
 
   private void send(String to, String token) {

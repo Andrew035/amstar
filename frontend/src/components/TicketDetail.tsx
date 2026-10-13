@@ -30,9 +30,9 @@ import { PlateChip } from "./PlateChip";
 const CustomerNameField: React.FC<{
   repairId: number;
   value: string;
-  isAdmin: boolean;
+  canEdit: boolean;
   onSave: (id: number, name: string) => void;
-}> = ({ repairId, value, isAdmin, onSave }) => {
+}> = ({ repairId, value, canEdit, onSave }) => {
   const [draft, setDraft] = useState(value);
 
   // The pane stays mounted while you move between tickets.
@@ -47,7 +47,7 @@ const CustomerNameField: React.FC<{
     onSave(repairId, next);
   };
 
-  if (!isAdmin) {
+  if (!canEdit) {
     return (
       <span className="block text-sm font-bold text-amstar-ink">{value}</span>
     );
@@ -162,7 +162,6 @@ const InlineNumberField: React.FC<{
  */
 export const TicketDetail: React.FC<{
   repair: VehicleRepair | null;
-  isAdmin: boolean;
   technicianNames: string[];
   historicalServiceMap: Record<string, number>;
   onStatusChange: (id: number, status: string) => void;
@@ -182,7 +181,6 @@ export const TicketDetail: React.FC<{
   className?: string;
 }> = ({
   repair,
-  isAdmin,
   technicianNames,
   historicalServiceMap,
   onStatusChange,
@@ -253,11 +251,11 @@ export const TicketDetail: React.FC<{
             <CustomerNameField
               repairId={id}
               value={repair.customerName}
-              isAdmin={isAdmin}
+              canEdit={canEdit}
               onSave={onCustomerNameChange}
             />
             <div className="mt-2">
-              {isAdmin ? (
+              {canEdit ? (
                 <button
                   type="button"
                   role="switch"
@@ -283,7 +281,7 @@ export const TicketDetail: React.FC<{
 
           <div className="shrink-0 w-40">
             <span className={LABEL_STYLE}>Status</span>
-            {isAdmin ? (
+            {canEdit ? (
               <StatusDropdown
                 value={repair.status || "PENDING"}
                 onChange={(val) => onStatusChange(id, val)}
@@ -319,7 +317,7 @@ export const TicketDetail: React.FC<{
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div>
             <span className={LABEL_STYLE}>Severity</span>
-            {isAdmin ? (
+            {canEdit ? (
               <SeverityDropdown
                 value={repair.severity}
                 onChange={(level) => onSeverityChange(id, level)}
@@ -334,7 +332,7 @@ export const TicketDetail: React.FC<{
 
           <div>
             <span className={LABEL_STYLE}>Due Date</span>
-            {isAdmin ? (
+            {canEdit ? (
               <CustomDatePicker
                 value={repair.expectedCompletionDate}
                 onChange={(date) => onDueDateChange(id, date)}
@@ -349,7 +347,7 @@ export const TicketDetail: React.FC<{
 
           <div className="sm:col-span-2 xl:col-span-1">
             <span className={LABEL_STYLE}>Technician(s)</span>
-            {isAdmin ? (
+            {canEdit ? (
               <MultiWorkerDropdown
                 currentWorkers={repair.assignedWorker}
                 technicianNames={technicianNames}
@@ -406,7 +404,7 @@ export const TicketDetail: React.FC<{
               value={repair.serviceType}
               historicalMap={historicalServiceMap}
               onChange={(next) => onServiceChange(id, next)}
-              readOnly={!isAdmin}
+              readOnly={!canEdit}
               className="min-h-11"
               subtitle={`${vehicleLabel(repair)} - ${repair.customerName}`}
             />
@@ -423,7 +421,7 @@ export const TicketDetail: React.FC<{
           * nothing - the levers are this floor and the grid's row count.
           */}
         {/* The bookkeeper reads these to write the invoice, so she sees them;
-            TicketNotes renders a disabled pad without isAdmin. The API sends the
+            TicketNotes renders a disabled pad without canEdit. The API sends the
             fields to both roles, so this hides a panel rather than being the
             boundary. */}
         {canEdit && (
@@ -431,7 +429,7 @@ export const TicketDetail: React.FC<{
             <TicketNotes
               repairId={id}
               initialNotes={repair.notes}
-              isAdmin={isAdmin}
+              canEdit={canEdit}
               onSave={onSaveNotes}
               className="flex flex-col min-h-0"
               textareaClass="flex-1 min-h-12"
@@ -439,7 +437,7 @@ export const TicketDetail: React.FC<{
             <TicketNotes
               repairId={id}
               initialNotes={repair.parts}
-              isAdmin={isAdmin}
+              canEdit={canEdit}
               onSave={onSaveParts}
               label="Parts"
               saveLabel="Save Parts"
@@ -459,7 +457,7 @@ export const TicketDetail: React.FC<{
             {usDate(repair.entryDate)}
           </span>
         </div>
-        {isAdmin && (
+        {canEdit && (
           <button
             type="button"
             onClick={() => onDeleteClick(id)}
