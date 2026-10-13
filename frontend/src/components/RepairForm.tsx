@@ -10,6 +10,7 @@ import {
   PRIMARY_BUTTON_STYLE,
   OPTION_ROW_STYLE,
   SELECT_TRIGGER_STYLE,
+  PRESS,
 } from "../styles/controls";
 import { apiFetch, ApiError } from "../api";
 import { panelCoords } from "../lib/floating";
@@ -75,7 +76,7 @@ const SeveritySegments: React.FC<{
               selected
                 ? "text-white border border-amstar-red-edge bg-amstar-red/[0.16]"
                 : "text-amstar-ink-faint border border-amstar-line hover:border-amstar-red/60"
-            } active:translate-y-px`}
+            } ${PRESS}`}
           >
             {level}
           </button>
@@ -256,7 +257,7 @@ const ServicePicker: React.FC<{
                 <button
                   type="button"
                   onClick={addTyped}
-                  className="w-full min-h-10 px-3 py-2 rounded-sm text-left text-xs font-bold text-amstar-red-ink uppercase hover:bg-amstar-surface transition-colors active:translate-y-px"
+                  className={`w-full min-h-10 px-3 py-2 rounded-sm text-left text-xs font-bold text-amstar-red-ink uppercase hover:bg-amstar-surface transition-colors ${PRESS}`}
                 >
                   + Add "{q}"
                 </button>
@@ -846,7 +847,7 @@ export const RepairForm: React.FC<RepairFormProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors active:translate-y-px"
+            className={`px-5 py-2.5 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition-colors ${PRESS}`}
           >
             Cancel
           </button>

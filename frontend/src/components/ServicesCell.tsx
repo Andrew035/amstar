@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { LABEL_STYLE, SHARED_INPUT_STYLE } from "../styles/controls";
+import {
+  LABEL_STYLE,
+  SHARED_INPUT_STYLE,
+  PRIMARY_BUTTON_STYLE,
+  PRESS,
+} from "../styles/controls";
 
 const splitServices = (csv?: string | null) =>
   (csv ?? "")
@@ -154,7 +159,7 @@ export const ServicesCell: React.FC<{
                 type="button"
                 onClick={close}
                 aria-label="Close"
-                className="shrink-0 w-10 h-10 -mr-2 -mt-1 grid place-items-center rounded-sm text-amstar-ink-faint hover:text-amstar-ink hover:bg-amstar-surface text-2xl leading-none ml-2 active:translate-y-px"
+                className={`shrink-0 w-10 h-10 -mr-2 -mt-1 grid place-items-center rounded-sm text-amstar-ink-faint hover:text-amstar-ink hover:bg-amstar-surface text-2xl leading-none ml-2 ${PRESS}`}
               >
                 &times;
               </button>
@@ -184,7 +189,7 @@ export const ServicesCell: React.FC<{
                             type="button"
                             onClick={() => remove(service)}
                             aria-label={`Remove ${service}`}
-                            className="shrink-0 w-8 h-8 rounded-sm text-amstar-ink-faint hover:text-white hover:bg-amstar-red transition-colors text-lg leading-none active:translate-y-px"
+                            className={`shrink-0 w-8 h-8 rounded-sm text-amstar-ink-faint hover:text-white hover:bg-amstar-red transition-colors text-lg leading-none ${PRESS}`}
                           >
                             &times;
                           </button>
@@ -216,7 +221,7 @@ export const ServicesCell: React.FC<{
                     <button
                       type="button"
                       onClick={() => add(typed)}
-                      className="mt-2 w-full min-h-10 px-3 py-2 rounded-sm border border-amstar-line bg-amstar-surface hover:border-amstar-red text-left text-xs font-bold text-amstar-red-ink uppercase transition-colors active:translate-y-px"
+                      className={`mt-2 w-full min-h-10 px-3 py-2 rounded-sm border border-amstar-line bg-amstar-surface hover:border-amstar-red text-left text-xs font-bold text-amstar-red-ink uppercase transition-colors ${PRESS}`}
                     >
                       + Add &quot;{typed}&quot;
                     </button>
@@ -237,7 +242,7 @@ export const ServicesCell: React.FC<{
                           key={s}
                           type="button"
                           onClick={() => add(s)}
-                          className="min-h-9 px-3 py-2 rounded-sm border border-amstar-line bg-amstar-surface hover:border-amstar-red text-xs font-bold text-amstar-ink uppercase text-left transition-colors active:translate-y-px"
+                          className={`min-h-9 px-3 py-2 rounded-sm border border-amstar-line bg-amstar-surface hover:border-amstar-red text-xs font-bold text-amstar-ink uppercase text-left transition-colors ${PRESS}`}
                         >
                           + {s}
                         </button>
@@ -253,7 +258,7 @@ export const ServicesCell: React.FC<{
                 <button
                   type="button"
                   onClick={close}
-                  className="px-5 py-2 rounded-sm border border-amstar-line text-amstar-ink font-cond uppercase tracking-widest text-sm hover:bg-amstar-surface transition-colors active:translate-y-px"
+                  className={`px-5 py-2 rounded-sm border border-amstar-line text-amstar-ink font-cond uppercase tracking-widest text-sm hover:bg-amstar-surface transition-colors ${PRESS}`}
                 >
                   Close
                 </button>
@@ -262,7 +267,7 @@ export const ServicesCell: React.FC<{
                   <button
                     type="button"
                     onClick={close}
-                    className="px-5 py-2 rounded-sm border border-amstar-line text-amstar-ink font-cond uppercase tracking-widest text-sm hover:bg-amstar-surface transition-colors active:translate-y-px"
+                    className={`px-5 py-2 rounded-sm border border-amstar-line text-amstar-ink font-cond uppercase tracking-widest text-sm hover:bg-amstar-surface transition-colors ${PRESS}`}
                   >
                     Cancel
                   </button>
@@ -270,7 +275,7 @@ export const ServicesCell: React.FC<{
                     type="button"
                     onClick={save}
                     disabled={!isDirty}
-                    className="px-5 py-2 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest text-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-px"
+                    className={`${PRIMARY_BUTTON_STYLE} px-5 py-2 text-sm`}
                   >
                     Save
                   </button>

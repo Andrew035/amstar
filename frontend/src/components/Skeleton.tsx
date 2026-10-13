@@ -6,10 +6,12 @@ import { PANEL_STYLE } from "../styles/controls";
  *
  * `amstar-raised` is the one surface above `amstar-surface`, so a block reads
  * as a hole in the panel it sits in rather than a shape drawn on top of it.
+ * The pulse itself is `.skeleton` in index.css.
  *
  * The delay is applied NEGATIVE, which starts the pulse partway through its
- * cycle. A positive delay would hold every block at full opacity until its turn
- * came round, which looks like the page froze before it looks like a wave.
+ * cycle so neighbouring blocks are already out of step on the first frame. A
+ * positive delay would hold every block at full opacity until its turn came
+ * round, which looks like the page froze before it looks like a wave.
  */
 export const Skeleton: React.FC<{ className?: string; delay?: number }> = ({
   className = "",
@@ -22,6 +24,9 @@ export const Skeleton: React.FC<{ className?: string; delay?: number }> = ({
   />
 );
 
+// Matches DASHBOARD_HEIGHT in pages/Dashboard.tsx. Duplicated rather than
+// exported from there because importing a page into a component would make the
+// skeleton depend on everything Dashboard imports.
 const DASHBOARD_HEIGHT = "sm:h-[calc(100dvh-129px)]";
 
 /** Mirrors Panel in components/dashboard/Panel.tsx, including its header rule. */
@@ -49,10 +54,13 @@ const PanelSkeleton: React.FC<{ rows: number; className?: string }> = ({
 );
 
 /**
- * The dashboard with its data regions stood in for. The heading and the red
- * rule are real: they need no data, so there is no reason to withhold them.
- * Grid and row template copied from pages/Dashboard.tsx so nothing shifts when
- * the real panels take over.
+ * The dashboard with only its data regions stood in for.
+ *
+ * The heading and the red rule are the real ones: they need no data, so there
+ * is no reason to withhold them and every reason not to, since they are what
+ * stops the page moving when the real panels take over. The grid and row
+ * template are copied from pages/Dashboard.tsx for the same reason - the five
+ * tiles and five panels land exactly where their placeholders were.
  */
 export const DashboardSkeleton: React.FC = () => (
   <div className={`flex flex-col gap-3 ${DASHBOARD_HEIGHT}`}>
@@ -72,7 +80,7 @@ export const DashboardSkeleton: React.FC = () => (
       ))}
     </div>
 
-    {/* Needs attention | Recent activity / Throughput (full) / Capacity | Target */}
+    {/* Needs attention | Recent activity / Throughput (full width) / Capacity | Target */}
     <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:grid-rows-[minmax(0,1.15fr)_auto_minmax(0,1.3fr)]">
       <PanelSkeleton rows={4} />
       <PanelSkeleton rows={4} />
@@ -83,7 +91,7 @@ export const DashboardSkeleton: React.FC = () => (
   </div>
 );
 
-/** Mirrors the list/detail split in pages/ActiveQueue.tsx. */
+/** Mirrors the list / detail split in pages/ActiveQueue.tsx. */
 export const QueueSkeleton: React.FC = () => (
   <div className="flex flex-col gap-4">
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b-2 border-amstar-red pb-2 gap-4">

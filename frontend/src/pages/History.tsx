@@ -8,6 +8,7 @@ import {
   SEVERITY_LABELS,
   SEVERITY_TEXT,
   getSeverityColor,
+  PRESS,
 } from "../styles/controls";
 import { ServicesCell } from "../components/ServicesCell";
 import { MultiWorkerDropdown } from "../components/WorkerDropdown";
@@ -215,7 +216,7 @@ export const HistoryPage: React.FC<{
                           }}
                           aria-expanded={isOpen}
                           aria-label={`Details for ${vehicleLabel(item)}`}
-                          className="flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink active:translate-y-px"
+                          className={`flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink ${PRESS}`}
                         >
                           {/*
                             One glyph that turns, not two that swap. Same
@@ -412,14 +413,14 @@ export const HistoryPage: React.FC<{
                               <button
                                 type="button"
                                 onClick={() => onViewDeepDive(item)}
-                                className={`w-full min-h-10 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs active:translate-y-px ${HOVER}`}
+                                className={`w-full min-h-10 bg-transparent border border-amstar-line hover:bg-amstar-raised text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs ${PRESS} ${HOVER}`}
                               >
                                 Vehicle Record
                               </button>
                               <button
                                 type="button"
                                 onClick={() => onDeleteClick(item.id!)}
-                                className={`w-full min-h-10 bg-transparent border border-amstar-red text-amstar-red-ink hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs active:translate-y-px ${HOVER}`}
+                                className={`w-full min-h-10 bg-transparent border border-amstar-red text-amstar-red-ink hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs ${PRESS} ${HOVER}`}
                               >
                                 Delete Ticket
                               </button>

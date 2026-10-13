@@ -88,7 +88,7 @@ export const QueueFilterDropdown: React.FC<{
                   option.value === value
                     ? "bg-amstar-surface text-amstar-ink"
                     : "text-amstar-ink-dim hover:bg-amstar-surface"
-                } active:translate-y-px`}
+                } ${PRESS}`}
               >
                 {option.label}
               </button>

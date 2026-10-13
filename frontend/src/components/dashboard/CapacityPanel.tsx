@@ -1,6 +1,6 @@
 import React from "react";
 import type { VehicleRepair } from "../../types/repair";
-import { getSeverityColor } from "../../styles/controls";
+import { getSeverityColor, PRESS } from "../../styles/controls";
 import { capacityRows } from "../../lib/shopStats";
 import { Empty, Panel } from "./Panel";
 
@@ -49,7 +49,7 @@ export const CapacityPanel: React.FC<{
                   row.isUnassignedBucket
                     ? "border-b border-amstar-line mb-1 pb-1.5"
                     : ""
-                } active:translate-y-px`}
+                } ${PRESS}`}
               >
                 <span
                   className={`flex-1 min-w-0 truncate ${

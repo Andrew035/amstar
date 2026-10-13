@@ -6,6 +6,7 @@ import {
   PRIMARY_BUTTON_STYLE,
   HOVER,
   getStatusStyle,
+  PRESS,
 } from "../styles/controls";
 import { CurrencyInput } from "../components/CurrencyInput";
 import { useSearchParams } from "react-router-dom";
@@ -188,7 +189,7 @@ const InvoiceEditor: React.FC<{
             <button
               type="button"
               onClick={() => item.id && onMarkInvoiced(item.id)}
-              className={`min-h-11 px-5 rounded-sm border border-amstar-red-edge bg-transparent font-cond text-xs font-bold uppercase tracking-widest text-amstar-red-ink hover:bg-amstar-red hover:text-white active:translate-y-px transition-[color,background-color,transform] duration-150 ease-out`}
+              className={`min-h-11 px-5 rounded-sm border border-amstar-red-edge bg-transparent font-cond text-xs font-bold uppercase tracking-widest text-amstar-red-ink hover:bg-amstar-red hover:text-white ${PRESS} transition-[color,background-color,transform] duration-150 ease-out`}
             >
               Invoiced
             </button>
@@ -230,7 +231,7 @@ const PricingRow: React.FC<{
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER} active:translate-y-px`}
+        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER} ${PRESS}`}
       >
         <PlateChip vehicle={item.vehicle} className="shrink-0" />
         <span className="flex-1 min-w-0 truncate font-cond text-sm font-bold uppercase tracking-wide text-amstar-ink">

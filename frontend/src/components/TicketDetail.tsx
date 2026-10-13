@@ -5,6 +5,7 @@ import {
   PANEL_STYLE,
   SHARED_INPUT_STYLE,
   TABLE_DROPDOWN_STYLE,
+  PRESS,
 } from "../styles/controls";
 import {
   isComeback,
@@ -266,7 +267,7 @@ export const TicketDetail: React.FC<{
                     isComeback(repair)
                       ? "bg-amstar-red border-amstar-red text-white hover:bg-red-700 hover:border-red-700"
                       : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"
-                  } active:translate-y-px`}
+                  } ${PRESS}`}
                 >
                   Comeback
                 </button>
@@ -302,7 +303,7 @@ export const TicketDetail: React.FC<{
               <button
                 type="button"
                 onClick={() => onOpenPricing(repair)}
-                className="mt-2 w-full min-h-11 px-3 rounded-sm border border-amstar-line bg-amstar-field font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink active:translate-y-px transition-[color,border-color,transform] duration-150 ease-out"
+                className={`mt-2 w-full min-h-11 px-3 rounded-sm border border-amstar-line bg-amstar-field font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink ${PRESS} transition-[color,border-color,transform] duration-150 ease-out`}
               >
                 Parts &amp; Pricing
               </button>
@@ -462,9 +463,9 @@ export const TicketDetail: React.FC<{
           <button
             type="button"
             onClick={() => onDeleteClick(id)}
-            className="ml-auto px-5 min-h-11 bg-transparent border border-amstar-red text-amstar-red-ink
+            className={`ml-auto px-5 min-h-11 bg-transparent border border-amstar-red text-amstar-red-ink
             hover:bg-amstar-red hover:text-white rounded-sm font-cond uppercase tracking-widest text-xs
-            transition-colors active:translate-y-px"
+            transition-colors ${PRESS}`}
           >
             Delete Ticket
           </button>

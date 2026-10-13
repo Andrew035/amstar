@@ -1,7 +1,7 @@
 import React from "react";
 
 import type { LineItem } from "../types/repair";
-import { HOVER, NUMBER_INPUT_STYLE } from "../styles/controls";
+import { HOVER, NUMBER_INPUT_STYLE, PRESS } from "../styles/controls";
 import { CurrencyInput } from "./CurrencyInput";
 
 const blankLine = (): LineItem => ({
@@ -126,7 +126,7 @@ export const PartsEditor: React.FC<{
               type="button"
               onClick={() => removeLine(i)}
               aria-label={`Remove ${line.description || `part ${i + 1}`}`}
-              className={`min-h-11 w-full grid place-items-center rounded-sm text-amstar-ink-faint hover:text-white hover:bg-amstar-red active:translate-y-px text-lg leading-none ${HOVER}`}
+              className={`min-h-11 w-full grid place-items-center rounded-sm text-amstar-ink-faint hover:text-white hover:bg-amstar-red ${PRESS} text-lg leading-none ${HOVER}`}
             >
               &times;
             </button>
@@ -136,7 +136,7 @@ export const PartsEditor: React.FC<{
         <button
           type="button"
           onClick={() => onChange([...lines, blankLine()])}
-          className={`mt-1 min-h-11 px-3 rounded-sm border border-dashed border-amstar-line text-left font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink active:translate-y-px ${HOVER}`}
+          className={`mt-1 min-h-11 px-3 rounded-sm border border-dashed border-amstar-line text-left font-cond text-[10px] font-bold uppercase tracking-widest text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink ${PRESS} ${HOVER}`}
         >
           + Add part
         </button>

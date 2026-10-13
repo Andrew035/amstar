@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { PRIMARY_BUTTON_STYLE } from "../styles/controls";
 
 const MAX_NOTES = 5000;
 
@@ -98,9 +99,7 @@ export const TicketNotes: React.FC<{
             type="button"
             onClick={save}
             disabled={!isDirty || isSaving}
-            className="px-4 py-1.5 bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest
-            text-xs rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition disabled:opacity-40
-            disabled:cursor-not-allowed active:translate-y-px"
+            className={`${PRIMARY_BUTTON_STYLE} px-4 py-1.5 text-xs`}
           >
             {saveLabel}
           </button>

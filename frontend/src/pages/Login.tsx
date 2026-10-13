@@ -5,6 +5,7 @@ import {
   SHARED_INPUT_STYLE,
   PANEL_STYLE,
   LABEL_STYLE,
+  PRIMARY_BUTTON_STYLE,
 } from "../styles/controls";
 import { API_BASE } from "../config";
 
@@ -104,7 +105,7 @@ export const Login: React.FC<{ onLoginSuccess: () => void }> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition disabled:opacity-70 active:translate-y-px"
+            className={`${PRIMARY_BUTTON_STYLE} w-full py-3`}
           >
             {isSubmitting ? "Authenticating..." : "Sign In"}
           </button>

@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { AmstarLogo } from "./AmstarLogo";
-import { HOVER } from "../styles/controls";
+import { HOVER, PRESS } from "../styles/controls";
 
 interface NavbarProps {
   isAdmin: boolean;
@@ -84,10 +84,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
           <button
             onClick={onLogout}
-            className="font-cond text-[11px] uppercase tracking-widest text-amstar-red-ink
+            className={`font-cond text-[11px] uppercase tracking-widest text-amstar-red-ink
             hover:text-white bg-transparent hover:bg-amstar-red border border-amstar-red
-            px-4 py-1.5 rounded-sm active:translate-y-px
-            transition-[color,background-color,transform] duration-150 ease-out"
+            px-4 py-1.5 rounded-sm ${PRESS}
+            transition-[color,background-color,transform] duration-150 ease-out`}
           >
             Log Out
           </button>

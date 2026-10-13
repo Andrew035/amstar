@@ -1,4 +1,5 @@
 import React from "react";
+import { PRIMARY_BUTTON_STYLE, PRESS } from "../styles/controls";
 
 /** Asks before a ticket is deleted for good. */
 export const ConfirmDeleteModal: React.FC<{
@@ -17,13 +18,13 @@ export const ConfirmDeleteModal: React.FC<{
       <div className="flex justify-end gap-2 pt-2">
         <button
           onClick={() => onCancel()}
-          className="px-4 py-2 bg-transparent border border-amstar-line hover:bg-amstar-surface text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition active:translate-y-px"
+          className={`px-4 py-2 bg-transparent border border-amstar-line hover:bg-amstar-surface text-amstar-ink-dim rounded-sm font-cond uppercase tracking-widest text-xs transition ${PRESS}`}
         >
           Cancel
         </button>
         <button
           onClick={onConfirm}
-          className="px-4 py-2 bg-amstar-red hover:bg-red-700 text-white rounded-sm font-cond uppercase tracking-widest text-xs shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition active:translate-y-px"
+          className={`${PRIMARY_BUTTON_STYLE} px-4 py-2 text-xs`}
         >
           Delete Ticket
         </button>

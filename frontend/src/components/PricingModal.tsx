@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 import type { LineItem, VehicleRepair } from "../types/repair";
-import { PRIMARY_BUTTON_STYLE } from "../styles/controls";
+import { PRIMARY_BUTTON_STYLE, PRESS } from "../styles/controls";
 import { money, vehicleLabel } from "../lib/ticketFilters";
 import { CurrencyInput } from "./CurrencyInput";
 import { PartsEditor } from "./PartsEditor";
@@ -79,7 +79,7 @@ export const PricingModal: React.FC<{
           <button
             onClick={onClose}
             aria-label="Close"
-            className="min-h-11 shrink-0 px-2 text-2xl leading-none text-amstar-ink-faint hover:text-amstar-ink active:translate-y-px"
+            className={`min-h-11 shrink-0 px-2 text-2xl leading-none text-amstar-ink-faint hover:text-amstar-ink ${PRESS}`}
           >
             &times;
           </button>

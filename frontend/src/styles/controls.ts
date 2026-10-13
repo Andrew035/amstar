@@ -39,8 +39,14 @@ export const HOVER_LIFT =
  * feels the same wherever you are: triggers, option rows, panel rows and
  * buttons. It is baked into the shared strings below rather than repeated at
  * call sites, which is how half the app ended up without it.
+ *
+ * The 1px drop alone was invisible on the hardware this runs on: a fingertip
+ * covers the control it is pressing, so a movement that small happens entirely
+ * underneath it. The scale is what makes the press legible, because it moves
+ * all four edges - the parts of the button the finger is not on top of.
+ * Both are tiny on purpose; together they read as a key going down.
  */
-export const PRESS = "active:translate-y-px";
+export const PRESS = "active:translate-y-px active:scale-[0.98]";
 
 /**
  * Chips that brighten under the pointer: status and severity. Tailwind's bare
@@ -74,7 +80,7 @@ export const OPTION_ROW_STYLE = `w-full min-h-10 flex items-center gap-3 px-3 py
  * and text size; everything else lives here so the ten copies of this button
  * cannot drift apart again.
  */
-export const PRIMARY_BUTTON_STYLE = `bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-[background-color,transform] duration-150 ease-out ${PRESS} disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amstar-red disabled:active:translate-y-0`;
+export const PRIMARY_BUTTON_STYLE = `bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-[background-color,transform] duration-150 ease-out ${PRESS} disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amstar-red disabled:active:translate-y-0 disabled:active:scale-100`;
 
 export const INLINE_INPUT_STYLE = `px-3 py-1.5 bg-transparent border border-transparent hover:border-amstar-line focus:bg-amstar-field rounded text-xs font-bold text-amstar-ink ${HOVER} cursor-pointer uppercase w-full ${FOCUS}`;
 

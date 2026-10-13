@@ -44,6 +44,13 @@ export const Toast: React.FC<{
 
   // Unmount when the exit transition finishes, so the node goes exactly as it
   // lands rather than snapping away mid-flight.
+  //
+  // It leaves downward, the way it came in, so the motion reads as one object
+  // arriving and departing rather than two unrelated effects. Not the full
+  // 150% of the entry: covering that distance in 200ms whips, and an exit
+  // should not pull the eye toward something that is already finished. The
+  // exit is also deliberately faster than the entry - slow where the user is
+  // reading, quick where the system is tidying up.
   useEffect(() => {
     if (!leaving) return;
     const gone = window.setTimeout(onDismiss, 220);
@@ -57,7 +64,7 @@ export const Toast: React.FC<{
       className={`anim-slide-up pointer-events-none fixed bottom-6 right-6 z-[150]
         flex max-w-[min(92vw,26rem)] items-center gap-3 rounded px-5 py-3 shadow-2xl
         transition-[transform,opacity] duration-200 ease-out
-        ${FILL[tone]} ${leaving ? "translate-y-2 opacity-0" : ""}`}
+        ${FILL[tone]} ${leaving ? "translate-y-8 opacity-0" : ""}`}
     >
       <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-black/20">
         {tone === "warn" ? (

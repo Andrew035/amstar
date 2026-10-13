@@ -521,13 +521,6 @@ export const App: React.FC = () => {
     window.location.reload();
   };
 
-  if (loading)
-    return (
-      <div className="p-8 text-center text-amstar-ink-dim">
-        Connecting to AMStar database...
-      </div>
-    );
-
   return (
     /*
      * The page does not scroll; <main> does.

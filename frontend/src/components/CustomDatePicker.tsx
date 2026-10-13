@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { FLOATING_PANEL_STYLE, SELECT_TRIGGER_STYLE } from "../styles/controls";
+import { FLOATING_PANEL_STYLE, SELECT_TRIGGER_STYLE, PRESS } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
 import { usDate } from "../lib/ticketFilters";
 
@@ -165,7 +165,7 @@ export const CustomDatePicker: React.FC<{
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors active:translate-y-px"
+                className={`w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors ${PRESS}`}
               >
                 {"<"}
               </button>
@@ -175,7 +175,7 @@ export const CustomDatePicker: React.FC<{
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors active:translate-y-px"
+                className={`w-6 h-6 flex items-center justify-center hover:bg-amstar-surface rounded text-amstar-ink-dim font-black transition-colors ${PRESS}`}
               >
                 {">"}
               </button>

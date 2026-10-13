@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { SHARED_INPUT_STYLE, PANEL_STYLE, LABEL_STYLE } from '../styles/controls';
+import { SHARED_INPUT_STYLE, PANEL_STYLE, LABEL_STYLE, PRIMARY_BUTTON_STYLE } from '../styles/controls';
 import { API_BASE } from '../config';
 
 export const ResetPassword: React.FC = () => {
@@ -87,7 +87,7 @@ export const ResetPassword: React.FC = () => {
               className={SHARED_INPUT_STYLE} placeholder="••••••••" />
           </div>
           <button type="submit" disabled={isSubmitting}
-            className="w-full py-3 bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition disabled:opacity-70 active:translate-y-px">
+            className={`${PRIMARY_BUTTON_STYLE} w-full py-3`}>
             {isSubmitting ? 'Saving...' : 'Set Password'}
           </button>
         </form>

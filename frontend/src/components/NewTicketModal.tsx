@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { PRESS } from "../styles/controls";
 
 /**
  * The intake form's shell. The form used to sit at the top of the queue page,
@@ -50,7 +51,7 @@ export const NewTicketModal: React.FC<{
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 grid place-items-center w-11 h-11 border border-amstar-line rounded-sm text-amstar-ink-dim hover:text-amstar-ink hover:bg-amstar-raised transition-colors active:translate-y-px"
+            className={`shrink-0 grid place-items-center w-11 h-11 border border-amstar-line rounded-sm text-amstar-ink-dim hover:text-amstar-ink hover:bg-amstar-raised transition-colors ${PRESS}`}
           >
             ✕
           </button>

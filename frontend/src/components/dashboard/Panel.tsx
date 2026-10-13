@@ -1,5 +1,5 @@
 import React from "react";
-import { HOVER, PANEL_STYLE } from "../../styles/controls";
+import { HOVER, PANEL_STYLE, PRESS } from "../../styles/controls";
 
 /**
  * A fixed-size dashboard panel. The body scrolls on its own, so a long list
@@ -39,7 +39,7 @@ export const Panel: React.FC<{
         <button
           type="button"
           onClick={onOpen}
-          className={`${headClass} group text-left hover:bg-amstar-raised ${HOVER} active:translate-y-px`}
+          className={`${headClass} group text-left hover:bg-amstar-raised ${HOVER} ${PRESS}`}
         >
           {heading}
         </button>

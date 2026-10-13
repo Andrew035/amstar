@@ -7,6 +7,7 @@ import {
   HOVER_LIFT,
   PANEL_STYLE,
   SEVERITY_TEXT,
+  PRESS,
 } from "../styles/controls";
 import {
   daysLate,
@@ -68,7 +69,7 @@ const StatTile: React.FC<{
     <button
       type="button"
       onClick={onOpen}
-      className={`${base} ${HOVER_LIFT} hover:border-amstar-ink-faint hover:bg-amstar-raised active:translate-y-px`}
+      className={`${base} ${HOVER_LIFT} hover:border-amstar-ink-faint hover:bg-amstar-raised ${PRESS}`}
     >
       {body}
     </button>
@@ -90,7 +91,7 @@ const TicketRow: React.FC<{
     <button
       type="button"
       onClick={onOpen}
-      className={`w-full min-h-11 flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised ${HOVER} active:translate-y-px`}
+      className={`w-full min-h-11 flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-sm text-left hover:bg-amstar-raised ${HOVER} ${PRESS}`}
     >
       <span
         className={`shrink-0 w-5 h-5 grid place-items-center rounded-sm font-cond text-[10px] font-bold ${SEVERITY_TEXT} ${getSeverityColor(repair.severity)}`}
@@ -273,8 +274,14 @@ export const Dashboard: React.FC<{
           Shop Overview
         </h2>
         <span className="flex items-center gap-1.5 font-cond text-[11px] uppercase tracking-widest text-amstar-ink-dim">
+          {/*
+            Static. This dot sits in the corner of a screen the shop has open
+            all day, and a permanent two-second pulse in the periphery is
+            motion nobody asked for - the queue refreshing every 60s is what
+            "Live" actually means, and the dot says that standing still.
+          */}
           <span
-            className="w-2 h-2 rounded-full bg-sev-1 animate-pulse"
+            className="w-2 h-2 rounded-full bg-sev-1"
             aria-hidden="true"
           />
           Live
