@@ -123,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             aria-expanded={menu}
             aria-haspopup="menu"
             className={`font-cond text-[11px] uppercase tracking-widest bg-amstar-raised
-              border px-3 py-1.5 min-h-11 rounded-sm flex items-center gap-2 ${HOVER} ${PRESS}
+              border px-2 lg:px-4  py-2 relative rounded-sm flex items-center gap-2 ${HOVER} ${PRESS}
               focus:outline-none focus:border-amstar-red-edge focus:ring-2 focus:ring-amstar-red-edge/40
               ${
                 menu
