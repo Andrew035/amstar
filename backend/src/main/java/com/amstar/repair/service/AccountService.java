@@ -100,6 +100,26 @@ public class AccountService {
     log.info("Linked technician id {} to user id {}", tech.getId(), user.getId());
   }
 
+  /**
+   * Switches an account off, or back on.
+   *
+   * <p>The missing half of "Remove from roster". That action sets
+   * technicians.is_active, which only hides a name from the assignment lists - the account behind
+   * it keeps working, which is the opposite of what removing someone looks like it does. Until this
+   * existed nothing in the application could revoke access at all; the only route was SQL.
+   *
+   * <p>The token_version bump is what makes it immediate. is_active alone would leave the session
+   * they are already holding alive for up to ten hours, and JwtAuthenticationFilter checks both on
+   * every request - that is_active branch has been there since V1 with nothing to reject.
+   */
+  @Transactional
+  public void setAccountActive(User target, boolean active) {
+    target.setIsActive(active);
+    target.setTokenVersion(target.getTokenVersion() + 1);
+    users.save(target);
+    log.info("Account id {} {}", target.getId(), active ? "restored" : "revoked");
+  }
+
   /** Breaks the link without touching either side. Mistake recovery. */
   @Transactional
   public void unlink(Technician tech) {
@@ -173,11 +193,14 @@ public class AccountService {
     if (ids.isEmpty()) {
       return roster;
     }
-    Map<Long, String> roleById =
-        users.findAllById(ids).stream()
-            .collect(Collectors.toMap(User::getId, User::getRole));
+    Map<Long, User> byId =
+        users.findAllById(ids).stream().collect(Collectors.toMap(User::getId, u -> u));
     roster.forEach(
-        tech -> tech.setRole(tech.getUserId() == null ? null : roleById.get(tech.getUserId())));
+        tech -> {
+          User account = tech.getUserId() == null ? null : byId.get(tech.getUserId());
+          tech.setRole(account == null ? null : account.getRole());
+          tech.setAccountActive(account == null ? null : account.getIsActive());
+        });
     return roster;
   }
 }

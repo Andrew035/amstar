@@ -31,6 +31,8 @@ export interface Technician {
   userId?: number | null;
   /** That account's role. Absent means no login - see AccountService.withRoles. */
   role?: string | null;
+  /** Whether that account can still sign in. Null when there is no account. */
+  accountActive?: boolean | null;
 }
 
 export interface ServiceType {

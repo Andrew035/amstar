@@ -518,6 +518,35 @@ export const App: React.FC = () => {
     }
   };
 
+  /**
+   * Revokes or restores someone's sign-in.
+   *
+   * Distinct from taking them off the roster, which only hides them from the
+   * assignment lists. This is the half that actually ends their access, and it
+   * bites on their next request rather than when their token expires.
+   */
+  const handleSetAccountActive = async (
+    id: number,
+    active: boolean,
+  ): Promise<boolean> => {
+    if (!canEdit) return false;
+    try {
+      await apiFetch(`/api/technicians/${id}/account/active`, {
+        method: "PATCH",
+        body: JSON.stringify({ active }),
+      });
+      showToast(
+        active ? "Sign-in restored." : "Sign-in revoked.",
+        active ? "success" : "deleted",
+      );
+      await fetchReferenceData();
+      return true;
+    } catch (error) {
+      toastError(error, "Could not change that sign-in.");
+      return false;
+    }
+  };
+
   /** Breaks the link. Neither the account nor the roster entry is removed. */
   const handleUnlinkAccount = async (id: number): Promise<boolean> => {
     if (!canEdit) return false;
@@ -852,6 +881,8 @@ export const App: React.FC = () => {
                       onChangeRole={handleChangeRole}
                       onLinkAccount={handleLinkAccount}
                       onUnlinkAccount={handleUnlinkAccount}
+                      onSetAccountActive={handleSetAccountActive}
+                      canEdit={canEdit}
                     />
                   ) : (
                     <Navigate to="/" replace />

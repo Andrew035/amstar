@@ -184,6 +184,53 @@ public class ReferenceDataController {
     return ResponseEntity.ok(Map.of("role", target.getRole()));
   }
 
+  /**
+   * Revokes or restores the sign-in behind a roster entry.
+   *
+   * <p>Separate from "Remove from roster" on purpose rather than folded into it: taking someone off
+   * the assignment lists and taking away their login are different decisions, and a technician who
+   * is off sick should not lose their account. But the roster is where a manager goes when someone
+   * leaves, so the two live next to each other.
+   *
+   * <p>Unlike linking, there is no self exception. Revoking your own account signs you out of the
+   * session you are doing it from and, for the last owner, out of the only account that can undo
+   * it. An admin cannot reach another admin either, since mayManage is strictly-below - so no
+   * request can leave the shop with nobody able to invoice.
+   */
+  @PatchMapping("/technicians/{id}/account/active")
+  public ResponseEntity<?> setAccountActive(
+      @PathVariable Long id,
+      @RequestBody Map<String, Object> request,
+      java.security.Principal principal) {
+
+    Technician tech = technicians.findById(id).orElse(null);
+    if (tech == null) {
+      return ResponseEntity.notFound().build();
+    }
+    if (tech.getUserId() == null) {
+      return ResponseEntity.badRequest()
+          .body(Map.of("error", "That person has no account to change."));
+    }
+    if (!(request.get("active") instanceof Boolean active)) {
+      return ResponseEntity.badRequest().body(Map.of("error", "active must be true or false"));
+    }
+
+    User actor = accounts.byEmail(principal.getName()).orElseThrow();
+    User target = accounts.byId(tech.getUserId()).orElseThrow();
+
+    if (target.getId().equals(actor.getId())) {
+      return ResponseEntity.badRequest()
+          .body(Map.of("error", "You cannot revoke your own sign-in."));
+    }
+    if (!UserRole.mayManage(actor.getRole(), target.getRole())) {
+      return ResponseEntity.status(403)
+          .body(Map.of("error", "You can only change the sign-in of someone below you."));
+    }
+
+    accounts.setAccountActive(target, active);
+    return ResponseEntity.ok(Map.of("active", active));
+  }
+
   /** Breaks the link. The account and the roster entry both survive it. */
   @DeleteMapping("/technicians/{id}/account")
   public ResponseEntity<?> unlinkAccount(

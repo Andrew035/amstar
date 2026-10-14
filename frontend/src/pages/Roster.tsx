@@ -36,6 +36,13 @@ export const Roster: React.FC<{
   onChangeRole: (id: number, role: string) => Promise<boolean>;
   onLinkAccount: (id: number, email: string) => Promise<boolean>;
   onUnlinkAccount: (id: number) => Promise<boolean>;
+  onSetAccountActive: (id: number, active: boolean) => Promise<boolean>;
+  /**
+   * Whether this account may change anything. False for a technician, who can
+   * reach this page but whose every write 403s at SecurityConfig - so the menu
+   * would offer four actions that all silently do nothing.
+   */
+  canEdit: boolean;
 }> = ({
   technicians,
   repairs,
@@ -47,6 +54,8 @@ export const Roster: React.FC<{
   onChangeRole,
   onLinkAccount,
   onUnlinkAccount,
+  onSetAccountActive,
+  canEdit,
 }) => {
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -217,16 +226,27 @@ export const Roster: React.FC<{
 
           {/* One chip treatment, two colours. A roster name with no account is
               the normal case, so it reads quietly rather than as an absence. */}
+          {/*
+            A revoked account must not look like a working one. That confusion
+            is the whole reason this field exists: "Remove from roster" leaves
+            the login alive, so a roster that rendered both the same was telling
+            the manager something untrue about who can get in.
+          */}
           <span
             className={`shrink-0 font-cond uppercase tracking-widest text-[10px] px-2 py-1 rounded-sm border ${
-              tech.role
-                ? "border-amstar-line bg-amstar-field text-amstar-ink-dim"
-                : "border-transparent text-amstar-ink-faint"
+              !tech.role
+                ? "border-transparent text-amstar-ink-faint"
+                : tech.accountActive === false
+                  ? "border-amstar-red-edge text-amstar-red-ink"
+                  : "border-amstar-line bg-amstar-field text-amstar-ink-dim"
             }`}
           >
-            {roleLabel(tech.role)}
+            {tech.role && tech.accountActive === false
+              ? `${roleLabel(tech.role)} · revoked`
+              : roleLabel(tech.role)}
           </span>
 
+          {canEdit && (
           <RowMenu
             label={tech.fullName}
             actions={[
@@ -240,6 +260,17 @@ export const Roster: React.FC<{
                             onSelect: () => onChangeRole(tech.id, r),
                           }))
                       : []),
+                    {
+                      label:
+                        tech.accountActive === false
+                          ? "Restore sign-in"
+                          : "Revoke sign-in",
+                      onSelect: () =>
+                        onSetAccountActive(
+                          tech.id,
+                          tech.accountActive === false,
+                        ),
+                    },
                     {
                       label: "Unlink account",
                       onSelect: () => onUnlinkAccount(tech.id),
@@ -267,6 +298,7 @@ export const Roster: React.FC<{
               },
             ]}
           />
+          )}
         </div>
 
         {formRow?.id === tech.id && (

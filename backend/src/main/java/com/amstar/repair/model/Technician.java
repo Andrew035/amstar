@@ -43,6 +43,14 @@ public class Technician {
    */
   @Transient private String role;
 
+  /**
+   * Whether that account can still sign in.
+   *
+   * <p>Null when there is no account. Without it the roster cannot tell a working login from a
+   * revoked one, and showing them identically is the whole class of bug this field exists to stop.
+   */
+  @Transient private Boolean accountActive;
+
   public Technician() {
   }
 
@@ -100,5 +108,13 @@ public class Technician {
 
   public void setRole(String role) {
     this.role = role;
+  }
+
+  public Boolean getAccountActive() {
+    return accountActive;
+  }
+
+  public void setAccountActive(Boolean accountActive) {
+    this.accountActive = accountActive;
   }
 }

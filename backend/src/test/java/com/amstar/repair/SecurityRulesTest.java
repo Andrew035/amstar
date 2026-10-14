@@ -604,6 +604,147 @@ public class SecurityRulesTest extends IntegrationTest {
         .orElseThrow(() -> new AssertionError("roster entry " + id + " is missing"));
   }
 
+  // --- revoking access ----------------------------------------------------
+
+  /**
+   * The gap this endpoint closes: "Remove from roster" never touched the account.
+   *
+   * <p>Taking someone off the roster hides them from the assignment lists and nothing more, so a
+   * bookkeeper who left the shop kept full write access until somebody ran SQL. This pins both
+   * halves - that removal alone does NOT revoke, and that revoking does.
+   */
+  @Test
+  void removingSomeoneFromTheRosterDoesNotRevokeTheirSignIn() {
+    String admin = adminToken();
+    String technician = technicianToken();
+    long rosterId = firstTechnicianId(admin);
+
+    assertTrue(
+        patch("/api/technicians/" + rosterId, admin, Map.of("isActive", false)).isOk(),
+        "take them off the roster");
+
+    assertTrue(
+        get("/api/repairs/queue", technician).isOk(),
+        "removal is not revocation - the account still works, which is why /account/active exists");
+  }
+
+  /** Revoking bites on the very next request, not when the token expires. */
+  @Test
+  void revokingAnAccountEndsItsSessionImmediately() {
+    String admin = adminToken();
+    String technician = technicianToken();
+    long rosterId = firstTechnicianId(admin);
+
+    assertTrue(get("/api/repairs/queue", technician).isOk(), "works before the revoke");
+
+    assertTrue(
+        patch("/api/technicians/" + rosterId + "/account/active", admin, Map.of("active", false))
+            .isOk());
+
+    assertEquals(
+        401,
+        get("/api/repairs/queue", technician).status(),
+        "is_active and the token_version bump together must end the session now");
+
+    assertTrue(
+        post(
+                "/api/auth/login",
+                null,
+                Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"))
+            .isClientError(),
+        "and they cannot simply sign in again");
+  }
+
+  /** Restoring puts them back, so a mistake is recoverable without SQL. */
+  @Test
+  void aRevokedAccountCanBeRestored() {
+    String admin = adminToken();
+    technicianToken();
+    long rosterId = firstTechnicianId(admin);
+
+    patch("/api/technicians/" + rosterId + "/account/active", admin, Map.of("active", false));
+    assertTrue(
+        patch("/api/technicians/" + rosterId + "/account/active", admin, Map.of("active", true))
+            .isOk());
+
+    assertTrue(
+        post(
+                "/api/auth/login",
+                null,
+                Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"))
+            .isOk(),
+        "they can sign in again");
+  }
+
+  /**
+   * No self exception here, unlike linking.
+   *
+   * <p>Revoking yourself signs you out of the session you are doing it from, and for the last owner
+   * out of the only account that could undo it.
+   */
+  @Test
+  void nobodyCanRevokeTheirOwnSignIn() {
+    String admin = adminToken();
+    long rosterId = firstTechnicianId(admin);
+    patch("/api/technicians/" + rosterId + "/account", admin, Map.of("email", ADMIN_EMAIL));
+
+    ApiResponse response =
+        patch("/api/technicians/" + rosterId + "/account/active", admin, Map.of("active", false));
+
+    assertEquals(400, response.status(), "body was: " + response.body());
+    assertEquals("You cannot revoke your own sign-in.", response.asMap().get("error"));
+  }
+
+  /** Nobody can revoke upwards, so the shop cannot be locked out of its own owners. */
+  @Test
+  void revokingIsBoundByTheHierarchy() {
+    String admin = adminToken();
+    String bookkeeper = bookkeeperToken();
+    String technician = technicianToken(); // lands on the first roster entry
+
+    List<Map<String, Object>> roster = get("/api/technicians", admin).asList();
+    long technicianRow = ((Number) roster.get(0).get("id")).longValue();
+    long adminRow = ((Number) roster.get(1).get("id")).longValue();
+    patch("/api/technicians/" + adminRow + "/account", admin, Map.of("email", ADMIN_EMAIL));
+
+    // A bookkeeper cannot reach an admin's sign-in.
+    assertForbidden(
+        patch(
+            "/api/technicians/" + adminRow + "/account/active",
+            bookkeeper,
+            Map.of("active", false)));
+
+    // She can reach a technician, who ranks below her.
+    assertTrue(
+        patch(
+                "/api/technicians/" + technicianRow + "/account/active",
+                bookkeeper,
+                Map.of("active", false))
+            .isOk(),
+        "a bookkeeper may revoke a technician");
+    assertEquals(401, get("/api/repairs/queue", technician).status());
+  }
+
+  /** The roster has to show a revoked account as revoked, not as a working one. */
+  @Test
+  void theRosterShowsWhenAnAccountIsRevoked() {
+    String admin = adminToken();
+    technicianToken();
+    long rosterId = firstTechnicianId(admin);
+
+    assertEquals(
+        Boolean.TRUE, rosterEntry(admin, rosterId).get("accountActive"), "live to begin with");
+
+    patch("/api/technicians/" + rosterId + "/account/active", admin, Map.of("active", false));
+
+    assertEquals(
+        Boolean.FALSE,
+        rosterEntry(admin, rosterId).get("accountActive"),
+        "a revoked account must not look identical to a working one");
+    assertEquals(
+        "TECHNICIAN", rosterEntry(admin, rosterId).get("role"), "and it still has its role");
+  }
+
   // --- invites ------------------------------------------------------------
 
   /** An invited account is inert until the link is opened. */
