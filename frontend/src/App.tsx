@@ -39,13 +39,50 @@ const TOAST_TONE: Record<ToastType, ToastTone> = {
   error: "warn",
 };
 
+/**
+ * Who is signed in, read straight out of the token.
+ *
+ * Module scope and synchronous on purpose. This used to live only in an
+ * effect, which meant `currentUser` was null on the very first render - and
+ * every protected route reads it on that render. A refresh on /queue therefore
+ * rendered `<Navigate to="/" replace />` before auth had resolved, bounced you
+ * to the dashboard, and the `replace` took the original URL out of history so
+ * Back could not recover it either.
+ *
+ * Nothing here is async: localStorage, atob and JSON.parse all answer
+ * immediately, so there was never a reason to make the routes wait a tick.
+ */
+const userFromToken = (): { user: string | null; role: string | null } => {
+  const token = localStorage.getItem("amstar_token");
+  if (!token) return { user: null, role: null };
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    // An expired token still decodes. Treating it as signed-in would paint the
+    // whole app and then have apiFetch log you straight back out on the first
+    // 401, which reads as a glitch.
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem("amstar_token");
+      return { user: null, role: null };
+    }
+    return { user: payload.sub ?? null, role: payload.role ?? null };
+  } catch {
+    console.error("Invalid token format");
+    localStorage.removeItem("amstar_token");
+    return { user: null, role: null };
+  }
+};
+
 export const App: React.FC = () => {
   const location = useLocation();
   const [repairs, setRepairs] = useState<VehicleRepair[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | null>(
+    () => userFromToken().user,
+  );
   const showSkeleton = useDelayed(loading && !!currentUser);
-  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState<string | null>(
+    () => userFromToken().role,
+  );
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceType[]>([]);
   const [activity, setActivity] = useState<TicketActivity[]>([]);
@@ -98,21 +135,10 @@ export const App: React.FC = () => {
 
   // Centralized Authentication Check
   const authenticateUser = useCallback(() => {
-    const token = localStorage.getItem("amstar_token");
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setCurrentUser(payload.sub);
-        setCurrentRole(payload.role ?? null);
-        return true;
-      } catch {
-        console.error("Invalid token format");
-        localStorage.removeItem("amstar_token");
-      }
-    }
-    setCurrentUser(null);
-    setCurrentRole(null);
-    return false;
+    const { user, role } = userFromToken();
+    setCurrentUser(user);
+    setCurrentRole(role);
+    return user !== null;
   }, []);
 
   // On-Load Login
@@ -451,7 +477,10 @@ export const App: React.FC = () => {
       // Invite again - but the manager has to be told, because they are the
       // only person who can fix it.
       if (result?.emailed === false) {
-        showToast("Account created, but the invite email failed to send.", "error");
+        showToast(
+          "Account created, but the invite email failed to send.",
+          "error",
+        );
       } else {
         showToast(`Invite sent to ${email}.`, "success");
       }

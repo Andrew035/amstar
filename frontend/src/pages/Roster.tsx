@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import type { Technician, VehicleRepair } from "../types/repair";
 import {
@@ -67,8 +67,13 @@ export const Roster: React.FC<{
   const [inviteRole, setInviteRole] = useState("");
 
   const grantable = grantableRoles(currentRole);
-  const isOpen = (tech: Technician, mode: "invite" | "link") =>
-    formRow?.id === tech.id && formRow.mode === mode;
+
+  useEffect(() => {
+    if (!formRow) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFormRow(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [formRow]);
 
   const openForm = (tech: Technician, mode: "invite" | "link") => {
     setFormRow({ id: tech.id, mode });
@@ -313,6 +318,17 @@ export const Roster: React.FC<{
               className={`${PRIMARY_BUTTON_STYLE} shrink-0 min-h-10 px-4 text-xs`}
             >
               {formRow.mode === "link" ? "Link" : "Send"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFormRow(null);
+                setInviteEmail("");
+                setInviteRole(grantable[grantable.length - 1] ?? "");
+              }}
+              className={`${ACTION_BUTTON} shrink-0 border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
+            >
+              Cancel
             </button>
           </div>
         )}
