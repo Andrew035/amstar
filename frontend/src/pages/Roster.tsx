@@ -10,6 +10,7 @@ import {
 } from "../styles/controls";
 import { isActive, technicianList } from "../lib/ticketFilters";
 import { grantableRoles, mayManage, roleLabel } from "../lib/roles";
+import { RowMenu } from "../components/RowMenu";
 
 const ACTION_BUTTON =
   "shrink-0 min-h-10 px-3 py-1.5 rounded-sm border font-cond uppercase tracking-widest text-xs transition-colors";
@@ -58,7 +59,10 @@ export const Roster: React.FC<{
    * Both are the same shape - an email and a confirm - so they share a row and
    * differ only in what the button does.
    */
-  const [formRow, setFormRow] = useState<{ id: number; mode: "invite" | "link" } | null>(null);
+  const [formRow, setFormRow] = useState<{
+    id: number;
+    mode: "invite" | "link";
+  } | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("");
 
@@ -182,105 +186,82 @@ export const Roster: React.FC<{
           squeezed the name to zero width and pushed Rename and Remove clean
           off the panel. The form gets its own line and the whole width.
         */}
-        <div className="flex items-center gap-2">
-          <span className="flex-1 min-w-0 text-sm font-bold text-amstar-ink truncate">
-          {tech.fullName}
-        </span>
-        <span className="shrink-0 font-mono tabular-nums text-xs text-amstar-ink-dim">
-          {open > 0 ? `${open} open` : "-"}
-        </span>
-        {/*
-          The role, or "no login" for a name that is only ever assigned work.
-          A technician with no account is the normal case: most of the roster
-          never signs in.
-        */}
-        <span
-          className={`shrink-0 font-cond uppercase tracking-widest text-[10px] px-2 py-1 rounded-sm border ${
-            tech.role
-              ? "border-amstar-line text-amstar-ink-dim"
-              : "border-transparent text-amstar-ink-faint"
-          }`}
-        >
-          {roleLabel(tech.role)}
-        </span>
-        {tech.role ? (
-          mayManage(currentRole, tech.role) && grantable.length > 0 ? (
-            /*
-              Buttons rather than a native <select>: the roster is used on the
-              same iPad as everything else, and there are at most two ranks to
-              offer. The chip to the left already says what they are now, so
-              these are the moves available, not a list containing the status
-              quo.
-            */
-            <span className="shrink-0 flex items-center gap-1">
-              {grantable
-                .filter((role) => role !== tech.role)
-                .map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => onChangeRole(tech.id, role)}
-                    className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:border-amstar-red hover:text-amstar-ink ${PRESS}`}
-                  >
-                    Make {roleLabel(role)}
-                  </button>
-                ))}
-            </span>
-          ) : null
-        ) : null}
-        {tech.role ? (
-          <button
-            type="button"
-            onClick={() => onUnlinkAccount(tech.id)}
-            className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
+        <div className="flex items-center gap-3">
+          {/* An initial, not a photo. Gives the eye something to run down the
+              left edge, which a list of bare names does not have. */}
+          <span
+            aria-hidden="true"
+            className="shrink-0 grid place-items-center w-8 h-8 rounded-full
+              bg-amstar-field border border-amstar-line
+              font-cond text-xs font-bold text-amstar-ink-dim"
           >
-            Unlink
-          </button>
-        ) : (
-          <>
-            {/* Two ways to get a login: make a new one, or point at an
-                existing one. Everyone who signed in before V20 needs the
-                second, because their address is already taken. */}
-            {grantable.length > 0 && (
-              <button
-                type="button"
-                onClick={() =>
-                  isOpen(tech, "invite") ? setFormRow(null) : openForm(tech, "invite")
-                }
-                className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
-              >
-                {isOpen(tech, "invite") ? "Cancel" : "Invite"}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() =>
-                isOpen(tech, "link") ? setFormRow(null) : openForm(tech, "link")
-              }
-              className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
-            >
-              {isOpen(tech, "link") ? "Cancel" : "Link account"}
-            </button>
-          </>
-        )}
-        <button
-          type="button"
-          onClick={() => startEdit(tech)}
-          className={`${ACTION_BUTTON} border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink ${PRESS}`}
-        >
-          Rename
-        </button>
-        <button
-          type="button"
-          onClick={() => onSetTechnicianActive(tech.id, !tech.isActive)}
-          className={`${ACTION_BUTTON} ${
-            tech.isActive
-              ? "border-amstar-red text-amstar-red-ink hover:bg-amstar-red hover:text-white"
-              : "border-amstar-line text-amstar-ink-dim hover:bg-amstar-raised hover:text-amstar-ink"
-          } ${PRESS}`}
-        >
-          {tech.isActive ? "Remove" : "Bring back"}
-        </button>
+            {tech.fullName.charAt(0).toUpperCase()}
+          </span>
+
+          <span className="flex-1 min-w-0">
+            <span className="block text-[15px] font-bold text-amstar-ink truncate">
+              {tech.fullName}
+            </span>
+            {/* "-" read as missing data rather than as zero. */}
+            <span className="block text-[11px] text-amstar-ink-faint truncate">
+              {open > 0
+                ? `Assigned ${open} open ticket${open > 1 ? "s" : ""}`
+                : "No open tickets"}
+            </span>
+          </span>
+
+          {/* One chip treatment, two colours. A roster name with no account is
+              the normal case, so it reads quietly rather than as an absence. */}
+          <span
+            className={`shrink-0 font-cond uppercase tracking-widest text-[10px] px-2 py-1 rounded-sm border ${
+              tech.role
+                ? "border-amstar-line bg-amstar-field text-amstar-ink-dim"
+                : "border-transparent text-amstar-ink-faint"
+            }`}
+          >
+            {roleLabel(tech.role)}
+          </span>
+
+          <RowMenu
+            label={tech.fullName}
+            actions={[
+              ...(tech.role
+                ? [
+                    ...(mayManage(currentRole, tech.role)
+                      ? grantable
+                          .filter((r) => r !== tech.role)
+                          .map((r) => ({
+                            label: `Make ${roleLabel(r).toLowerCase()}`,
+                            onSelect: () => onChangeRole(tech.id, r),
+                          }))
+                      : []),
+                    {
+                      label: "Unlink account",
+                      onSelect: () => onUnlinkAccount(tech.id),
+                    },
+                  ]
+                : [
+                    ...(grantable.length > 0
+                      ? [
+                          {
+                            label: "Invite to sign in",
+                            onSelect: () => openForm(tech, "invite"),
+                          },
+                        ]
+                      : []),
+                    {
+                      label: "Link existing account",
+                      onSelect: () => openForm(tech, "link"),
+                    },
+                  ]),
+              { label: "Rename", onSelect: () => startEdit(tech) },
+              {
+                label: tech.isActive ? "Remove from roster" : "Bring back",
+                onSelect: () => onSetTechnicianActive(tech.id, !tech.isActive),
+                destructive: tech.isActive,
+              },
+            ]}
+          />
         </div>
 
         {formRow?.id === tech.id && (
@@ -302,28 +283,28 @@ export const Roster: React.FC<{
               className={`${SHARED_INPUT_STYLE} flex-1 min-w-[14rem]`}
             />
             {formRow.mode === "invite" && (
-            <span
-              role="radiogroup"
-              aria-label={`Invite role for ${tech.fullName}`}
-              className="shrink-0 flex items-center gap-1"
-            >
-              {grantable.map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  role="radio"
-                  aria-checked={inviteRole === role}
-                  onClick={() => setInviteRole(role)}
-                  className={`${ACTION_BUTTON} ${PRESS} ${
-                    inviteRole === role
-                      ? "border-amstar-red-edge bg-amstar-raised text-amstar-ink"
-                      : "border-amstar-line text-amstar-ink-dim hover:text-amstar-ink"
-                  }`}
-                >
-                  {roleLabel(role)}
-                </button>
-              ))}
-            </span>
+              <span
+                role="radiogroup"
+                aria-label={`Invite role for ${tech.fullName}`}
+                className="shrink-0 flex items-center gap-1"
+              >
+                {grantable.map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    role="radio"
+                    aria-checked={inviteRole === role}
+                    onClick={() => setInviteRole(role)}
+                    className={`${ACTION_BUTTON} ${PRESS} ${
+                      inviteRole === role
+                        ? "border-amstar-red-edge bg-amstar-raised text-amstar-ink"
+                        : "border-amstar-line text-amstar-ink-dim hover:text-amstar-ink"
+                    }`}
+                  >
+                    {roleLabel(role)}
+                  </button>
+                ))}
+              </span>
             )}
             <button
               type="button"
