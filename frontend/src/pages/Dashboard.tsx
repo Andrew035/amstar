@@ -210,39 +210,39 @@ const ActivityFeed: React.FC<{ activity: TicketActivity[] }> = ({
         // actually happened.
         const sameAsAbove = i > 0 && activity[i - 1].actor === event.actor;
         return (
-        <li key={event.id} className="py-2 flex gap-3">
-          <span
-            className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${ACTION_DOT[event.action]}`}
-            aria-hidden="true"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-amstar-ink leading-snug">
-              {!sameAsAbove && (
-                <>
-                  <span className="font-bold" title={event.actor}>
-                    {actorName(event.actor)}
-                  </span>{" "}
-                </>
-              )}
-              <span className="text-amstar-ink-dim">
-                {ACTION_TEXT[event.action]}
-              </span>{" "}
-              <span className="font-bold">{event.ticketLabel}</span>
-            </p>
-            {event.detail && (
-              <p className="text-xs text-amstar-ink-dim truncate uppercase">
-                {event.detail}
+          <li key={event.id} className="py-2 flex gap-3">
+            <span
+              className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${ACTION_DOT[event.action]}`}
+              aria-hidden="true"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-amstar-ink leading-snug">
+                {!sameAsAbove && (
+                  <>
+                    <span className="font-bold" title={event.actor}>
+                      {actorName(event.actor)}
+                    </span>{" "}
+                  </>
+                )}
+                <span className="text-amstar-ink-dim">
+                  {ACTION_TEXT[event.action]}
+                </span>{" "}
+                <span className="font-bold">{event.ticketLabel}</span>
               </p>
-            )}
-          </div>
-          <time
-            dateTime={event.createdAt}
-            title={new Date(event.createdAt).toLocaleString()}
-            className="shrink-0 text-[11px] font-mono tabular-nums text-amstar-ink-faint mt-0.5"
-          >
-            {timeAgo(event.createdAt)}
-          </time>
-        </li>
+              {event.detail && (
+                <p className="text-xs text-amstar-ink-dim truncate uppercase">
+                  {event.detail}
+                </p>
+              )}
+            </div>
+            <time
+              dateTime={event.createdAt}
+              title={new Date(event.createdAt).toLocaleString()}
+              className="shrink-0 text-[11px] font-mono tabular-nums text-amstar-ink-faint mt-0.5"
+            >
+              {timeAgo(event.createdAt)}
+            </time>
+          </li>
         );
       })}
     </ul>
@@ -266,18 +266,6 @@ export const Dashboard: React.FC<{
    * once a second is work the shop never asked for, and the 60s refetch is
    * already a heartbeat that re-renders this.
    */
-  const syncMinutes =
-    lastSyncedAt === null
-      ? null
-      : Math.floor((Date.now() - lastSyncedAt) / 60000);
-  const stale = syncMinutes !== null && syncMinutes >= 3;
-  const syncLabel =
-    syncMinutes === null
-      ? "Connecting"
-      : syncMinutes < 1
-        ? "Live"
-        : `${syncMinutes}m ago`;
-
   const openQueue = (filter: string) =>
     navigate(`/queue?filter=${encodeURIComponent(filter)}`);
   /*
@@ -316,21 +304,6 @@ export const Dashboard: React.FC<{
         <h2 className="font-cond text-2xl font-black uppercase tracking-wider text-amstar-ink">
           Shop Overview
         </h2>
-        <span className="flex items-center gap-1.5 font-cond text-[11px] uppercase tracking-widest text-amstar-ink-dim">
-          {/*
-            Reports the last successful refresh rather than asserting "Live".
-            The queue refetches every 60s, so anything past a couple of minutes
-            means the last few attempts did not land - which is exactly when a
-            dashboard full of numbers is worth distrusting. Static, because a
-            pulse in the corner of a screen the shop has open all day is motion
-            nobody asked for.
-          */}
-          <span
-            className={`w-2 h-2 rounded-full ${stale ? "bg-amstar-alert" : "bg-sev-1"}`}
-            aria-hidden="true"
-          />
-          {syncLabel}
-        </span>
       </div>
 
       {/*
