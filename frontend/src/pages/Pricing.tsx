@@ -24,6 +24,7 @@ import {
 } from "../lib/ticketFilters";
 import { FilterBanner } from "../components/FilterBanner";
 import { PlateChip } from "../components/PlateChip";
+import { DropdownArrow } from "../components/DropdownArrow";
 import { Fact } from "../components/Fact";
 import { PartsEditor } from "../components/PartsEditor";
 
@@ -107,7 +108,7 @@ const InvoiceEditor: React.FC<{
           value={technicians.join(", ")}
           fallback="Unassigned"
         />
-        <Fact label="In" value={usDate(item.entryDate)} mono />
+        <Fact label="In the shop" value={usDate(item.entryDate)} mono />
         {/* The repair finished, not the invoice. Nothing records the latter. */}
         <Fact
           label="Repair done"
@@ -206,6 +207,27 @@ const InvoiceEditor: React.FC<{
   );
 };
 
+/*
+ * One grid template for the header and every row, so the columns actually line
+ * up. The row used to be a flex line where the vehicle cell was `flex-1` and
+ * swallowed all the slack - 556px of cell holding 180px of text, leaving a
+ * ~370px hole in the middle of every row. Aligned columns are also what made
+ * History read as a ledger while this page read as a stack of cards.
+ *
+ * Every track is a fixed width except the vehicle. Each row is its own grid
+ * container, so an `auto` track sizes to that row's content alone - a wide
+ * plate like "412j151j · MD" pushed its row's columns out of line with the
+ * rest. Fixed tracks are what makes separate rows read as one table.
+ *
+ * Each breakpoint names exactly as many tracks as there are visible children:
+ * a `hidden md:block` cell is display:none below md and occupies no track, so
+ * the counts have to match or everything shifts a column.
+ */
+const INVOICE_GRID =
+  "grid items-center gap-3 grid-cols-[7.5rem_1fr_7.5rem_6rem_1.25rem] " +
+  "md:grid-cols-[7.5rem_1fr_9rem_7.5rem_6rem_1.25rem] " +
+  "xl:grid-cols-[7.5rem_1fr_9rem_7rem_7.5rem_6rem_1.25rem]";
+
 /** One ticket: a scannable summary line that opens its editor in place. */
 const PricingRow: React.FC<{
   item: VehicleRepair;
@@ -222,38 +244,46 @@ const PricingRow: React.FC<{
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className={`w-full flex items-center gap-3 px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER} ${PRESS}`}
+        className={`w-full ${INVOICE_GRID} px-3 sm:px-4 min-h-12 text-left hover:bg-amstar-surface ${HOVER} ${PRESS}`}
       >
         <PlateChip vehicle={item.vehicle} className="shrink-0" />
-        <span className="flex-1 min-w-0 truncate font-cond text-sm font-bold uppercase tracking-wide text-amstar-ink">
+        <span className="min-w-0 truncate font-cond text-sm font-bold uppercase tracking-wide text-amstar-ink">
           {vehicleLabel(item)}
         </span>
-        <span className="hidden md:block w-32 shrink-0 truncate text-xs text-amstar-ink-dim">
+        <span className="hidden md:block min-w-0 truncate text-xs text-amstar-ink-dim">
           {item.customerName}
         </span>
-        <span className="hidden xl:block w-24 shrink-0 truncate text-xs text-amstar-ink-faint">
+        <span className="hidden xl:block min-w-0 truncate text-xs text-amstar-ink-faint">
           {technicianList(item).join(", ") || "Unassigned"}
         </span>
-        <span
-          className={`hidden sm:block shrink-0 px-2 py-0.5 rounded-sm border text-[9px] font-bold uppercase ${getStatusStyle(item.status)}`}
-        >
-          {item.status.replace(/_/g, " ")}
+        {/*
+          The cell is always rendered so the grid keeps its shape, but only an
+          unexpected status earns a chip. In this archive 20 of 28 rows were
+          COMPLETED, so the column was mostly one word repeated - the rows that
+          are still open are the ones worth spotting.
+        */}
+        <span className="min-w-0">
+          {item.status !== "COMPLETED" && (
+            <span
+              className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-sm border text-[9px] font-bold uppercase ${getStatusStyle(item.status)}`}
+            >
+              {item.status.replace(/_/g, " ")}
+            </span>
+          )}
         </span>
+        {/*
+          Not priced yet is not an alarm. red-ink is the colour this app uses
+          for something wrong; an unpriced job is just work the owner has not
+          got to, so it recedes instead.
+        */}
         <span
-          className={`w-24 shrink-0 text-right font-mono tabular-nums text-sm font-bold ${
-            total === 0 ? "text-amstar-red-ink" : "text-amstar-ink"
+          className={`text-right font-mono tabular-nums text-sm font-bold ${
+            total === 0 ? "text-amstar-ink-faint" : "text-amstar-ink"
           }`}
         >
           {money(total)}
         </span>
-        <span
-          aria-hidden="true"
-          className={`w-4 shrink-0 text-center text-xs text-amstar-ink-faint transition-transform duration-200 ease-out ${
-            isOpen ? "rotate-90" : ""
-          }`}
-        >
-          ▸
-        </span>
+        <DropdownArrow isOpen={isOpen} />
       </button>
 
       {isOpen && (
@@ -299,6 +329,21 @@ export const PricingPage: React.FC<{
 
   const toggle = (id?: number) =>
     setOpenId((current) => (current === id ? null : (id ?? null)));
+
+  const columnHeader = (
+    <div
+      aria-hidden="true"
+      className={`${INVOICE_GRID} px-3 sm:px-4 pb-1 font-cond uppercase tracking-widest text-[10px] text-amstar-ink-faint`}
+    >
+      <span>Plate</span>
+      <span>Vehicle</span>
+      <span className="hidden md:block">Customer</span>
+      <span className="hidden xl:block">Technician(s)</span>
+      <span />
+      <span className="text-right">Total</span>
+      <span />
+    </div>
+  );
 
   const list = (items: VehicleRepair[]) => (
     <div className="flex flex-col gap-2">
@@ -353,6 +398,7 @@ export const PricingPage: React.FC<{
               <h3 className="mb-2 font-cond text-xs font-bold uppercase tracking-[0.2em] text-amstar-red-ink">
                 Needs Invoicing ({needsInvoicing.length})
               </h3>
+              {columnHeader}
               {list(needsInvoicing)}
             </section>
           )}
@@ -362,8 +408,9 @@ export const PricingPage: React.FC<{
               <h3 className="mb-2 font-cond text-xs font-bold uppercase tracking-[0.2em] text-amstar-ink-dim">
                 {isLookup
                   ? `Results (${everythingElse.length})`
-                  : `All Vehicles (${everythingElse.length})`}
+                  : `All invoices (${everythingElse.length})`}
               </h3>
+              {columnHeader}
               {list(everythingElse)}
             </section>
           )}

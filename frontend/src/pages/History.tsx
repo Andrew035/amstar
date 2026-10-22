@@ -26,6 +26,7 @@ import {
 } from "../lib/ticketFilters";
 import { Fact } from "../components/Fact";
 import { PlateChip } from "../components/PlateChip";
+import { DropdownArrow } from "../components/DropdownArrow";
 
 /** The date a repair closed on - the real one when we have it. */
 const closedOn = (r: VehicleRepair): string =>
@@ -213,14 +214,7 @@ export const HistoryPage: React.FC<{
                             control as the pricing page's disclosure, so the
                             two ledgers behave identically.
                           */}
-                          <span
-                            aria-hidden="true"
-                            className={`shrink-0 text-[9px] text-amstar-ink-faint transition-transform duration-200 ease-out ${
-                              isOpen ? "rotate-90" : ""
-                            }`}
-                          >
-                            ▸
-                          </span>
+                          <DropdownArrow isOpen={isOpen} />
                           <span className="truncate">
                             {usDate(closedOn(item))}
                           </span>

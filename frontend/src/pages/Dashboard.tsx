@@ -255,17 +255,9 @@ export const Dashboard: React.FC<{
   technicianNames: string[];
   activity: TicketActivity[];
   canEdit: boolean;
-  /** When the queue last arrived, or null if it never has. */
-  lastSyncedAt: number | null;
-}> = ({ repairs, technicianNames, activity, canEdit, lastSyncedAt }) => {
+}> = ({ repairs, technicianNames, activity, canEdit }) => {
   const navigate = useNavigate();
 
-  /*
-   * Re-read on every queue refresh, which is the only thing that moves this.
-   * Deliberately not a ticking timer: a clock updating a label in the corner
-   * once a second is work the shop never asked for, and the 60s refetch is
-   * already a heartbeat that re-renders this.
-   */
   const openQueue = (filter: string) =>
     navigate(`/queue?filter=${encodeURIComponent(filter)}`);
   /*
