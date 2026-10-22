@@ -29,7 +29,7 @@ export const AmstarLogo: React.FC<{
       aria-label="AM Star Transmissions"
       role="img"
       className={`inline-flex flex-col leading-none select-none
-      transition-transform duration-200 ease-out group-hover:scale-[1.04]
+      transition-transform duration-200 ease-out 
       ${nav ? "items-start origin-left" : "items-center origin-center"} ${className}`}
     >
       {/*
