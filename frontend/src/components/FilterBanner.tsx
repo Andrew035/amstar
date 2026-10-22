@@ -7,7 +7,7 @@ export const FilterBanner: React.FC<{
   count: number;
   onClear: () => void;
 }> = ({ label, count, onClear }) => (
-  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded border border-amstar-line border-l-4 border-l-amstar-red bg-amstar-surface">
+  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded border border-amstar-line bg-amstar-surface">
     <span className="text-sm text-amstar-ink">
       <span className="font-cond uppercase tracking-widest text-xs text-amstar-ink-dim mr-2">
         Showing

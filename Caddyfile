@@ -38,5 +38,33 @@ app.amstartransmissions.org {
       X-Content-Type-Options "nosniff"
       Referrer-Policy "strict-origin-when-cross-origin"
       X-Frame-Options "DENY"
+
+      # The JWT lives in localStorage, so a script injection is token theft.
+      # This is the control that makes that hard.
+      #
+      # script-src is 'self' with no 'unsafe-inline': the Vite build emits no
+      # inline <script>, everything is /assets/index-*.js, so the strict form
+      # costs nothing. Do not add 'unsafe-inline' here to make something work -
+      # it removes most of the value of the whole header.
+      #
+      # style-src needs 'unsafe-inline' and that is not laziness: React writes
+      # inline style ATTRIBUTES, which is how the floating dropdowns position
+      # themselves (panelCoords -> style={{top,left,width}}) and how the
+      # skeleton desyncs its pulse. style-src-attr would be the tighter rule
+      # but is unevenly supported, and falling back to a blocked style-src
+      # would put every dropdown in the wrong place.
+      #
+      # connect-src must name NHTSA and Wikipedia: VIN decoding happens in the
+      # browser, not on the backend (VehicleLookupService is an empty stub).
+      # 'self' alone silently breaks every VIN lookup.
+      #
+      # img-src allows https: because vehicle photos come back from Wikipedia
+      # on hosts that vary (thumb.wikimedia.org today, upload.wikimedia.org for
+      # originals). An <img> cannot execute, so the breadth is cheap.
+      Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://vpic.nhtsa.dot.gov https://en.wikipedia.org; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+      # camera stays open to self: the barcode scanner on the inventory branch
+      # needs it when that work restarts. Nothing else is granted.
+      Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=()"
     }
 }

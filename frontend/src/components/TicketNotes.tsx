@@ -69,9 +69,16 @@ export const TicketNotes: React.FC<{
         <span className="font-cond text-xs text-amstar-ink-dim uppercase tracking-widest">
           {label}
         </span>
-        <span className="font-mono text-[10px] text-amstar-ink-faint tabular-nums">
-          {text.length}/{MAX_NOTES}
-        </span>
+        {/*
+          Only near the ceiling. "0/5000" on an empty pad is a number nobody
+          needs - 5000 characters is not a limit anyone reaches by typing - so
+          the counter stays out of the way until it starts to mean something.
+        */}
+        {text.length > MAX_NOTES * 0.8 && (
+          <span className="font-mono text-[10px] text-amstar-red-ink tabular-nums">
+            {text.length}/{MAX_NOTES}
+          </span>
+        )}
       </div>
 
       <textarea
@@ -90,8 +97,13 @@ export const TicketNotes: React.FC<{
         <p className="mt-2 text-xs font-bold text-amstar-red-ink">{error}</p>
       )}
 
+      {/*
+        Grouped, not spread. `justify-between` put the state word and the
+        button it describes 256px apart at the pane's full width, which read as
+        two unrelated controls rather than one answer to "is this saved".
+      */}
       {canEdit && (
-        <div className="flex justify-between items-center mt-2">
+        <div className="flex items-center justify-end gap-3 mt-2">
           <span className="text-[11px] font-bold text-amstar-ink-faint">
             {isSaving ? "Saving..." : isDirty ? "Unsaved changes" : "Saved"}
           </span>

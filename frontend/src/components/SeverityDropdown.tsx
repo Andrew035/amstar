@@ -6,6 +6,7 @@ import {
   SEVERITY_TEXT,
   CHIP_HOVER,
   getSeverityColor,
+  SELECT_TRIGGER_STYLE,
   PRESS,
 } from "../styles/controls";
 import { panelCoords } from "../lib/floating";
@@ -42,19 +43,45 @@ export const SeverityDropdown: React.FC<{
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openDropdown}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        className={`inline-flex items-center justify-center gap-1.5 rounded-sm font-cond uppercase
-        tracking-wider whitespace-nowrap ${PRESS} ${CHIP_HOVER}
-        ${SEVERITY_TEXT} ${getSeverityColor(value)}
-        ${fullWidth ? "w-full min-h-11 px-3 text-xs" : "px-2 py-0.5 text-[11px]"}`}
-      >
-        {SEVERITY_LABELS[value]}
-        <DropdownArrow isOpen={isOpen} className="!text-current opacity-70" />
-      </button>
+      {/*
+        In a labelled field the severity reads as a swatch beside its name, not
+        as a filled slab. Filling the whole cell made a level-5 ticket the
+        largest red object on the page - bigger than "Add ticket" - so the one
+        colour reserved for alarm was also the loudest thing in a pane where
+        nothing was wrong. In a table cell it stays a chip, which is the whole
+        content of that cell.
+      */}
+      {fullWidth ? (
+        <button
+          type="button"
+          onClick={openDropdown}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          className={`${SELECT_TRIGGER_STYLE} min-h-11 flex items-center justify-between gap-2 font-cond uppercase tracking-wider text-xs`}
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <span
+              aria-hidden="true"
+              className={`shrink-0 w-2.5 h-2.5 rounded-sm ${getSeverityColor(value)}`}
+            />
+            <span className="truncate">{SEVERITY_LABELS[value]}</span>
+          </span>
+          <DropdownArrow isOpen={isOpen} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={openDropdown}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          className={`inline-flex items-center justify-center gap-1.5 rounded-sm font-cond uppercase
+          tracking-wider whitespace-nowrap px-2 py-0.5 text-[11px] ${PRESS} ${CHIP_HOVER}
+          ${SEVERITY_TEXT} ${getSeverityColor(value)}`}
+        >
+          {SEVERITY_LABELS[value]}
+          <DropdownArrow isOpen={isOpen} className="!text-current opacity-70" />
+        </button>
+      )}
       {isOpen && (
         <>
           <div

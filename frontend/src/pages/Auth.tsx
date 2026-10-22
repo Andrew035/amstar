@@ -69,10 +69,10 @@ const Notice: React.FC<{ tone: "bad" | "good"; children: React.ReactNode }> = ({
 }) => (
   <p
     role="status"
-    className={`rounded-sm border-l-2 py-2 pl-3 text-sm font-bold ${
+    className={`rounded-sm px-3 py-2 text-sm font-bold ${
       tone === "bad"
-        ? "border-amstar-red-edge bg-amstar-red/15 text-amstar-red-ink"
-        : "border-sev-1 bg-sev-1/15 text-sev-1"
+        ? "bg-amstar-red/15 text-amstar-red-ink"
+        : "bg-sev-1/15 text-sev-1"
     }`}
   >
     {children}

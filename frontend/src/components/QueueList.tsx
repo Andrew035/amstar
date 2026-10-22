@@ -9,7 +9,6 @@ import {
 } from "../styles/controls";
 import {
   daysInShop,
-  daysLate,
   isComeback,
   isOverdue,
   usDate,
@@ -96,15 +95,16 @@ export const QueueList: React.FC<{
       className={`bg-amstar-surface border border-amstar-line rounded flex flex-col min-h-0 overflow-hidden ${className}`}
     >
       <div className="shrink-0 p-3 border-b border-amstar-line">
+        {/*
+          No "Find a job" eyebrow: the placeholder below already says it is a
+          search and what it searches. The sort order is the one thing the
+          control cannot tell you itself, so that is all this line carries.
+        */}
         <label
           htmlFor="queue-search"
-          className="flex items-baseline justify-between font-cond uppercase tracking-widest text-[11px] text-amstar-ink-dim mb-1"
+          className="flex items-baseline justify-end font-cond tracking-normal text-[11px] text-amstar-ink-faint mb-1"
         >
-          <span>Find a job</span>
-          {/* The list has always been ranked by priorityScore. Nothing said so. */}
-          <span className="normal-case tracking-normal text-amstar-ink-faint">
-            sorted by priority
-          </span>
+          sorted by priority
         </label>
         <input
           id="queue-search"
@@ -127,14 +127,15 @@ export const QueueList: React.FC<{
               type="button"
               onClick={() => onSelect(item.id!)}
               aria-current={selected}
+              /*
+                No left strip. The filled row already says which ticket is
+                selected and the row carries its own "12d late" chip, so the
+                bar was a third way of saying something twice said.
+              */
               className={`w-full text-left flex items-center gap-3 min-h-[4.5rem] px-3 py-2
-              border-b border-amstar-line-soft border-l-[3px]
-              transition-[background-color,border-color] duration-150 ease-out ${
-                selected
-                  ? "bg-amstar-raised border-l-amstar-red-edge"
-                  : late
-                    ? "border-l-sev-5/70 hover:bg-amstar-raised/50"
-                    : "border-l-transparent hover:bg-amstar-raised/50"
+              border-b border-amstar-line-soft
+              transition-colors duration-150 ease-out ${
+                selected ? "bg-amstar-raised" : "hover:bg-amstar-raised/50"
               } ${PRESS}`}
             >
               {/* Severity, named. The digit is the level, the tooltip the word. */}
@@ -171,16 +172,22 @@ export const QueueList: React.FC<{
                 </span>
               </span>
 
+              {/*
+                One kind of thing per line. This column used to hold a red
+                "12d late" chip on some rows and a plain due date on others, so
+                the same slot meant two different things and you had to read
+                each one to know which. It is always the due date now, in red
+                when it has passed - the exact day count is on the dashboard's
+                "Needs attention" panel, which is where you go to triage.
+              */}
               <span className="shrink-0 flex flex-col items-end gap-1 text-right">
-                {late ? (
-                  <span className="px-1.5 rounded-sm bg-sev-5 text-black font-cond text-[10px] font-bold uppercase tracking-wider">
-                    {daysLate(item)}d late
-                  </span>
-                ) : (
-                  <span className="font-mono tabular-nums text-[11px] text-amstar-ink">
-                    {usDate(item.expectedCompletionDate)}
-                  </span>
-                )}
+                <span
+                  className={`font-mono tabular-nums text-[11px] ${
+                    late ? "font-bold text-amstar-red-ink" : "text-amstar-ink"
+                  }`}
+                >
+                  {usDate(item.expectedCompletionDate)}
+                </span>
                 <span className="font-cond uppercase tracking-wider text-[9px] text-amstar-ink-faint">
                   {item.status?.replace(/_/g, " ")}
                 </span>
