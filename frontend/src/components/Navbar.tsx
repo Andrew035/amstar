@@ -101,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Label full="Overview" short="Overview" />
           </NavLink>
           <NavLink to="/queue" className={linkClass} draggable={false}>
-            <Label full="Queue" short="Queue" />
+            <Label full="Repairs" short="Repairs" />
           </NavLink>
           {/* Invoices is the owner's alone. Everything else the shop can see,
               the bookkeeper can see. */}
