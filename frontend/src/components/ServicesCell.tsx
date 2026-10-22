@@ -40,7 +40,7 @@ export const ServicesCell: React.FC<{
   onChange,
   readOnly = false,
   subtitle,
-  className = "min-h-9",
+  className = "min-h-10",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>([]);
@@ -242,7 +242,7 @@ export const ServicesCell: React.FC<{
                           key={s}
                           type="button"
                           onClick={() => add(s)}
-                          className={`min-h-9 px-3 py-2 rounded-sm border border-amstar-line bg-amstar-surface hover:border-amstar-red text-xs font-bold text-amstar-ink uppercase text-left transition-colors ${PRESS}`}
+                          className={`min-h-10 px-3 py-2 rounded-sm border border-amstar-line bg-amstar-surface hover:border-amstar-red text-xs font-bold text-amstar-ink uppercase text-left transition-colors ${PRESS}`}
                         >
                           + {s}
                         </button>

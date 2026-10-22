@@ -96,7 +96,7 @@ export const HistoryPage: React.FC<{
         </h2>
         <input
           type="text"
-          placeholder="Search by name, plate, service, month or year..."
+          placeholder="Name, plate, service or date"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={SEARCH_INPUT_STYLE}
@@ -186,19 +186,9 @@ export const HistoryPage: React.FC<{
                       </tr>
                     )}
 
-                    {/*
-                      Fades rather than rising. A <tr> does accept a transform,
-                      but a row sliding 8px while its neighbours hold still
-                      drags it across their divide-y borders, which reads as a
-                      rendering fault rather than an entrance. Opacity alone
-                      still gives the ledger the sense of filling in.
-                    */}
                     <tr
                       onClick={toggle}
-                      style={{
-                        animationDelay: `${Math.min(index, 12) * 22}ms`,
-                      }}
-                      className={`anim-fade cursor-pointer ${HOVER} ${
+                      className={`cursor-pointer ${HOVER} ${
                         isOpen || viewedRepairId === item.id
                           ? "bg-amstar-raised"
                           : "bg-amstar-surface hover:bg-amstar-raised/60"
@@ -216,7 +206,7 @@ export const HistoryPage: React.FC<{
                           }}
                           aria-expanded={isOpen}
                           aria-label={`Details for ${vehicleLabel(item)}`}
-                          className={`flex items-center gap-2 w-full min-h-8 font-mono tabular-nums font-bold text-amstar-ink ${PRESS}`}
+                          className={`flex items-center gap-2 w-full min-h-10 font-mono tabular-nums font-bold text-amstar-ink ${PRESS}`}
                         >
                           {/*
                             One glyph that turns, not two that swap. Same

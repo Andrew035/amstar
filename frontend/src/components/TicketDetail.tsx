@@ -27,6 +27,21 @@ import { PlateChip } from "./PlateChip";
  * Saving points this ticket at the corrected name; other tickets keep theirs,
  * so one fix never rewrites another job's paperwork.
  */
+
+/*
+ * The borderless-until-hover field, in one place.
+ *
+ * This block was written out twice - once for the customer name, once for the
+ * number fields - and the two had already drifted apart by a `tabular-nums`.
+ * `min-h-10` is the floor CLAUDE.md sets for a tap target; without it these
+ * rendered at 30px, which is the smallest thing to hit on the whole queue.
+ */
+const INLINE_FIELD =
+  "w-full max-w-xs px-2 py-1 min-h-10 -ml-2 bg-transparent border border-transparent rounded-sm " +
+  "text-sm font-bold text-amstar-ink transition-colors cursor-pointer hover:border-amstar-line " +
+  "focus:bg-amstar-field focus:cursor-text focus:outline-none focus:border-amstar-red-edge " +
+  "focus:ring-2 focus:ring-amstar-red-edge/40";
+
 const CustomerNameField: React.FC<{
   repairId: number;
   value: string;
@@ -64,10 +79,7 @@ const CustomerNameField: React.FC<{
         if (e.key === "Enter") e.currentTarget.blur();
         if (e.key === "Escape") setDraft(value);
       }}
-      className="w-full max-w-xs px-2 py-1 -ml-2 bg-transparent border border-transparent rounded-sm
-      text-sm font-bold text-amstar-ink transition-colors cursor-pointer hover:border-amstar-line
-      focus:bg-amstar-field focus:cursor-text focus:outline-none focus:border-amstar-red-edge
-      focus:ring-2 focus:ring-amstar-red-edge/40"
+      className={INLINE_FIELD}
     />
   );
 };
@@ -145,10 +157,7 @@ const InlineNumberField: React.FC<{
         if (e.key === "Enter") e.currentTarget.blur();
         if (e.key === "Escape") setDraft(onFile);
       }}
-      className={`w-full max-w-xs tabular-nums ${mono ? "font-mono" : ""} px-2 py-1 -ml-2 bg-transparent border border-transparent rounded-sm
-      text-sm font-bold text-amstar-ink transition-colors cursor-pointer hover:border-amstar-line
-      focus:bg-amstar-field focus:cursor-text focus:outline-none focus:border-amstar-red-edge
-      focus:ring-2 focus:ring-amstar-red-edge/40`}
+      className={`${INLINE_FIELD} tabular-nums ${mono ? "font-mono" : ""}`}
     />
   );
 };
@@ -219,21 +228,25 @@ export const TicketDetail: React.FC<{
        * Sized to fit without scrolling on the screens the shop uses. The
        * scroller stays as a backstop for a genuinely short window, but it
        * should not be reachable on an iPad or the counter PC: the five field
-       * cells sit on one row, the photo is h-24, and the note pads flex down to
-       * min-h-12. Adding another fixed row here brings the scrollbar back.
+       * cells sit on one row, the photo is h-28 (and absent entirely on a
+       * ticket with no image), and the note pads flex down to min-h-12.
+       * Adding another fixed row here brings the scrollbar back.
        */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col gap-3">
         <div className="shrink-0 flex items-start gap-5 pb-4 border-b border-amstar-line-soft">
-          {repair.vehicle?.carImageUrl ? (
+          {/*
+            No placeholder when there is no photo. Most tickets have none -
+            the VIN decode falls back to "Unknown Vehicle" often enough - and a
+            192x128 dashed box reading "No Photo" was the largest thing on the
+            pane while saying nothing. The header simply takes the full width
+            instead.
+          */}
+          {repair.vehicle?.carImageUrl && (
             <img
               src={repair.vehicle.carImageUrl}
               alt=""
               className="shrink-0 w-40 h-28 sm:w-48 sm:h-32 object-cover rounded border border-amstar-line"
             />
-          ) : (
-            <div className="shrink-0 w-40 h-28 sm:w-48 sm:h-32 grid place-items-center rounded border border-dashed border-amstar-line bg-amstar-field font-cond uppercase tracking-widest text-[10px] text-amstar-ink-faint">
-              No Photo
-            </div>
           )}
 
           <div className="flex-1 min-w-0">
@@ -261,7 +274,7 @@ export const TicketDetail: React.FC<{
                   role="switch"
                   aria-checked={isComeback(repair)}
                   onClick={() => onSaveComeback(id, !isComeback(repair))}
-                  className={`min-h-8 px-2.5 rounded-sm border font-cond text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                  className={`min-h-10 px-2.5 rounded-sm border font-cond text-[10px] font-bold uppercase tracking-wider transition-colors ${
                     isComeback(repair)
                       ? "bg-amstar-red border-amstar-red text-white hover:bg-red-700 hover:border-red-700"
                       : "border-amstar-line text-amstar-ink-faint hover:border-amstar-red hover:text-amstar-ink"

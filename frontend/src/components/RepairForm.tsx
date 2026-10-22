@@ -301,7 +301,7 @@ const ServicePicker: React.FC<{
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className={`${PRIMARY_BUTTON_STYLE} min-h-9 px-4 py-1.5 text-xs`}
+                className={`${PRIMARY_BUTTON_STYLE} min-h-10 px-4 py-1.5 text-xs`}
               >
                 Done
               </button>

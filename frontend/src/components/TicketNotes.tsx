@@ -99,7 +99,7 @@ export const TicketNotes: React.FC<{
             type="button"
             onClick={save}
             disabled={!isDirty || isSaving}
-            className={`${PRIMARY_BUTTON_STYLE} px-4 py-1.5 text-xs`}
+            className={`${PRIMARY_BUTTON_STYLE} px-4 py-1.5 min-h-10 text-xs`}
           >
             {saveLabel}
           </button>

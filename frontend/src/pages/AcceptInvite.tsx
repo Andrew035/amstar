@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { PasswordField } from "../components/PasswordField";
 import {
-  SHARED_INPUT_STYLE,
   PANEL_STYLE,
   LABEL_STYLE,
   PRIMARY_BUTTON_STYLE,
@@ -93,28 +93,26 @@ export const AcceptInvite: React.FC = () => {
             <label className={LABEL_STYLE} htmlFor="invite-password">
               Password
             </label>
-            <input
+            <PasswordField
               id="invite-password"
-              type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={SHARED_INPUT_STYLE}
+              onChange={setPassword}
               placeholder="At least 8 characters"
               autoComplete="new-password"
+              label="password"
             />
           </div>
           <div>
             <label className={LABEL_STYLE} htmlFor="invite-confirm">
               Confirm password
             </label>
-            <input
+            <PasswordField
               id="invite-confirm"
-              type="password"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className={SHARED_INPUT_STYLE}
+              onChange={setConfirm}
               placeholder="••••••••"
               autoComplete="new-password"
+              label="confirmation"
             />
           </div>
 

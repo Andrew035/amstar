@@ -213,20 +213,11 @@ const PricingRow: React.FC<{
   onToggle: () => void;
   onSaveInvoice: SaveInvoice;
   onMarkInvoiced: (id: number) => void;
-  index: number;
-}> = ({ item, isOpen, onToggle, onSaveInvoice, onMarkInvoiced, index }) => {
+}> = ({ item, isOpen, onToggle, onSaveInvoice, onMarkInvoiced }) => {
   const total = invoiceTotal(item);
 
   return (
-    /*
-     * Rows deal in one after another, the same 25ms step the queue list uses.
-     * Capped at ten: past that the stagger stops reading as sequence and
-     * starts reading as the page being slow.
-     */
-    <div
-      style={{ animationDelay: `${Math.min(index, 10) * 25}ms` }}
-      className={`anim-row ${PANEL_STYLE} overflow-hidden`}
-    >
+    <div className={`${PANEL_STYLE} overflow-hidden`}>
       <button
         type="button"
         onClick={onToggle}
@@ -311,11 +302,10 @@ export const PricingPage: React.FC<{
 
   const list = (items: VehicleRepair[]) => (
     <div className="flex flex-col gap-2">
-      {items.map((item, i) => (
+      {items.map((item) => (
         <PricingRow
           key={item.id}
           item={item}
-          index={i}
           isOpen={openId === item.id}
           onToggle={() => toggle(item.id)}
           onSaveInvoice={onSaveInvoice}
@@ -333,7 +323,7 @@ export const PricingPage: React.FC<{
         </h2>
         <input
           type="text"
-          placeholder="Search by name, plate, service, month or year..."
+          placeholder="Name, plate, service or date"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={SEARCH_INPUT_STYLE}

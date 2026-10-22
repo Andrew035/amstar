@@ -45,7 +45,7 @@ export const CapacityPanel: React.FC<{
                     : onOpenTech(row.name)
                 }
                 disabled={idle}
-                className={`w-full min-h-9 flex items-center gap-2 px-1 text-left text-sm rounded-sm transition-colors enabled:hover:bg-amstar-raised disabled:cursor-default ${
+                className={`w-full min-h-10 flex items-center gap-2 px-1 text-left text-sm rounded-sm transition-colors enabled:hover:bg-amstar-raised disabled:cursor-default ${
                   row.isUnassignedBucket
                     ? "border-b border-amstar-line mb-1 pb-1.5"
                     : ""

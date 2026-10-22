@@ -14,10 +14,8 @@ import { Dashboard } from "./pages/Dashboard";
 import { ActiveQueue } from "./pages/ActiveQueue";
 import { PricingPage } from "./pages/Pricing";
 import { HistoryPage } from "./pages/History";
-import { Login } from "./pages/Login";
-import { Register } from "./pages/Register";
+import { Auth } from "./pages/Auth";
 import { apiFetch, ApiError } from "./api";
-import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import { Roster } from "./pages/Roster";
 import { AcceptInvite } from "./pages/AcceptInvite";
@@ -746,7 +744,7 @@ export const App: React.FC = () => {
                 path="/login"
                 element={
                   !currentUser ? (
-                    <Login onLoginSuccess={handleLoginSuccess} />
+                    <Auth initial="login" onLoginSuccess={handleLoginSuccess} />
                   ) : (
                     <Navigate to="/" replace />
                   )
@@ -755,14 +753,18 @@ export const App: React.FC = () => {
               <Route
                 path="/register"
                 element={
-                  !currentUser ? <Register /> : <Navigate to="/" replace />
+                  !currentUser ? (
+                    <Auth initial="register" onLoginSuccess={handleLoginSuccess} />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
                 }
               />
               <Route
                 path="/forgot-password"
                 element={
                   !currentUser ? (
-                    <ForgotPassword />
+                    <Auth initial="forgot" onLoginSuccess={handleLoginSuccess} />
                   ) : (
                     <Navigate to="/" replace />
                   )

@@ -69,16 +69,11 @@ export const PartsEditor: React.FC<{
 
         {lines.map((line, i) => (
           /*
-           * `anim-row` runs on mount, so opening a ticket deals the existing
-           * parts out in order and "+ Add part" slides in only the new line.
-           * Editing a line does not remount it, so nothing re-animates while
-           * somebody is typing in it.
+           * `anim-row` without a stagger: "+ Add part" slides the new line in,
+           * which is feedback for something the user just did. Editing a line
+           * does not remount it, so nothing re-animates while somebody types.
            */
-          <div
-            key={i}
-            style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
-            className={`anim-row ${PARTS_GRID} items-center`}
-          >
+          <div key={i} className={`anim-row ${PARTS_GRID} items-center`}>
             <input
               value={line.description}
               onChange={(e) =>

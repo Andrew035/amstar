@@ -21,7 +21,7 @@ export const TargetPanel: React.FC<{
             type="button"
             onClick={() => row.filter && onOpenFilter(row.filter)}
             disabled={!row.filter}
-            className={`w-full min-h-9 flex items-center gap-2.5 px-1 text-left rounded-sm transition-colors enabled:hover:bg-amstar-raised disabled:cursor-default ${PRESS}`}
+            className={`w-full min-h-10 flex items-center gap-2.5 px-1 text-left rounded-sm transition-colors enabled:hover:bg-amstar-raised disabled:cursor-default ${PRESS}`}
           >
             <span className="w-20 shrink-0 text-xs text-amstar-ink-dim truncate">
               {row.label}

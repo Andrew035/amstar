@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { SHARED_INPUT_STYLE, PANEL_STYLE, LABEL_STYLE, PRIMARY_BUTTON_STYLE } from '../styles/controls';
+import { PANEL_STYLE, LABEL_STYLE, PRIMARY_BUTTON_STYLE } from '../styles/controls';
 import { API_BASE } from '../config';
+import { PasswordField } from '../components/PasswordField';
 
 export const ResetPassword: React.FC = () => {
   const [params] = useSearchParams();
@@ -76,15 +77,13 @@ export const ResetPassword: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className={LABEL_STYLE}>New Password</label>
-            <input type="password" required value={password}
-              onChange={e => setPassword(e.target.value)}
-              className={SHARED_INPUT_STYLE} placeholder="At least 8 characters" />
+            <PasswordField id="reset-password" value={password} onChange={setPassword}
+              placeholder="At least 8 characters" autoComplete="new-password" label="password" />
           </div>
           <div>
             <label className={LABEL_STYLE}>Confirm Password</label>
-            <input type="password" required value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              className={SHARED_INPUT_STYLE} placeholder="••••••••" />
+            <PasswordField id="reset-confirm" value={confirm} onChange={setConfirm}
+              placeholder="••••••••" autoComplete="new-password" label="confirmation" />
           </div>
           <button type="submit" disabled={isSubmitting}
             className={`${PRIMARY_BUTTON_STYLE} w-full py-3`}>

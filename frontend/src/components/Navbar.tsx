@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
    * `select-none` keeps a double-tap on an iPad from highlighting the label.
    */
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `relative px-2 lg:px-4 py-2 rounded-sm font-cond uppercase tracking-wider text-sm
+    `relative px-2 lg:px-4 py-2 min-h-11 flex items-center rounded-sm font-cond uppercase tracking-wider text-sm
     select-none ${HOVER} after:absolute after:left-2 after:right-2 after:bottom-0
     after:h-0.5 after:rounded-full after:bg-amstar-red after:origin-center
     after:transition-transform after:duration-200 after:ease-out ${
@@ -123,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             aria-expanded={menu}
             aria-haspopup="menu"
             className={`font-cond text-[11px] uppercase tracking-widest bg-amstar-raised
-              border px-2 lg:px-4  py-2 relative rounded-sm flex items-center gap-2 ${HOVER} ${PRESS}
+              border px-2 lg:px-4 py-2 min-h-11 relative rounded-sm flex items-center gap-2 ${HOVER} ${PRESS}
               focus:outline-none focus:border-amstar-red-edge focus:ring-2 focus:ring-amstar-red-edge/40
               ${
                 menu

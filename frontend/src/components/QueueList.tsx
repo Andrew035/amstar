@@ -117,7 +117,7 @@ export const QueueList: React.FC<{
       </div>
 
       <div ref={scroller} className="flex-1 min-h-0 overflow-y-auto">
-        {repairs.map((item, i) => {
+        {repairs.map((item) => {
           const selected = item.id === selectedId;
           const late = isOverdue(item);
           const days = daysInShop(item);
@@ -127,14 +127,7 @@ export const QueueList: React.FC<{
               type="button"
               onClick={() => onSelect(item.id!)}
               aria-current={selected}
-              /*
-               * The rows come in one after another rather than all at once,
-               * which is what makes a filtered list read as having been rebuilt
-               * instead of having blinked. Capped at ten so a 200-ticket queue
-               * is not still animating six seconds after it loaded.
-               */
-              style={{ animationDelay: `${Math.min(i, 10) * 25}ms` }}
-              className={`anim-row w-full text-left flex items-center gap-3 min-h-[4.5rem] px-3 py-2
+              className={`w-full text-left flex items-center gap-3 min-h-[4.5rem] px-3 py-2
               border-b border-amstar-line-soft border-l-[3px]
               transition-[background-color,border-color] duration-150 ease-out ${
                 selected

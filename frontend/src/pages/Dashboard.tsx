@@ -82,12 +82,8 @@ const TicketRow: React.FC<{
   repair: VehicleRepair;
   onOpen: () => void;
   badge: React.ReactNode;
-  index: number;
-}> = ({ repair, onOpen, badge, index }) => (
-  <li
-    className="anim-row"
-    style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
-  >
+}> = ({ repair, onOpen, badge }) => (
+  <li>
     <button
       type="button"
       onClick={onOpen}
@@ -190,12 +186,8 @@ const ActivityFeed: React.FC<{ activity: TicketActivity[] }> = ({
     <Empty>No activity yet. Changes to tickets will show up here.</Empty>
   ) : (
     <ul className="divide-y divide-amstar-line-soft">
-      {activity.map((event, i) => (
-        <li
-          key={event.id}
-          className="py-2 flex gap-3 anim-row"
-          style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
-        >
+      {activity.map((event) => (
+        <li key={event.id} className="py-2 flex gap-3">
           <span
             className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${ACTION_DOT[event.action]}`}
             aria-hidden="true"
@@ -347,11 +339,10 @@ export const Dashboard: React.FC<{
             <Empty>Nothing is late or due by tomorrow.</Empty>
           ) : (
             <ul>
-              {dueSoon.map((r, i) => (
+              {dueSoon.map((r) => (
                 <TicketRow
                   key={r.id}
                   repair={r}
-                  index={i}
                   onOpen={() => openTicket(r.id)}
                   badge={dueBadge(r)}
                 />

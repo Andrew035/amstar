@@ -144,7 +144,13 @@ body {
  * on the element's base state, so there is nothing to keep filling.
  */
 .anim-rise {
-  animation: amstar-rise 300ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  /*
+   * 220ms, not 300. This fires on every navigation, and the app's core loop is
+   * Overview -> Queue -> Invoices all day. At 300ms the page entry was the
+   * slowest thing between a tap and seeing the work; the same curve at 220 is
+   * the one motion that event gets now that the per-row cascade is gone.
+   */
+  animation: amstar-rise 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 .anim-row {
   animation: amstar-rise 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
@@ -158,30 +164,6 @@ body {
 }
 .anim-slide-up {
   animation: amstar-slide-up 350ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
-/*
- * Loading placeholders.
- *
- * One keyframe at 50% and nothing else: 0% and 100% fall back to the element's
- * own opacity, so a block breathes 1 -> 0.45 -> 1 around its resting state.
- * That is also what makes it safe under the reduced-motion block below, which
- * collapses every animation to a single 0.01ms run - this one lands on 100%,
- * the element's normal appearance, instead of freezing half-faded.
- *
- * 1.4s, not the 140/220/300ms the rest of the app uses. Those are durations for
- * a transition between two states, where anything slower reads as lag. This is
- * ambient: it has to look like breathing, and a pulse under ~800ms reads as
- * flashing. ease-in-out because it is neither entering nor exiting, it is
- * continuous motion.
- */
-@keyframes amstar-skeleton {
-  50% {
-    opacity: 0.45;
-  }
-}
-.skeleton {
-  animation: amstar-skeleton 1.4s ease-in-out infinite;
 }
 
 /*
@@ -210,6 +192,47 @@ body {
 }
 .skeleton {
   animation: amstar-skeleton 1.4s ease-in-out infinite;
+}
+
+/*
+ * The auth card flip.
+ *
+ * Sign-in and sign-up are one surface with two faces rather than two routes,
+ * so moving between them turns the card instead of replacing the page. That
+ * only works because the flip is local state - a route change would remount
+ * <main> (it is keyed on the pathname) and there would be nothing left to
+ * animate.
+ *
+ * `ease-in-out`, not the app's usual fast-out curve: the card is moving on
+ * screen rather than entering or leaving it, so it should accelerate away and
+ * settle rather than snap. 460ms is long for this codebase, and deliberately -
+ * a flip reads as one object turning only if you can follow the turn, and
+ * somebody signs up once.
+ *
+ * The faces are grid-stacked in one cell, so the card is as tall as the taller
+ * face and nothing resizes mid-turn. Under the reduced-motion block below the
+ * transition collapses to 0.01ms and the flip becomes an instant swap, which
+ * is the correct degradation - backface-visibility still hides the mirrored
+ * face, so no reversed text is ever shown.
+ */
+.flip-scene {
+  perspective: 1600px;
+}
+.flip-card {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 460ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+.flip-card[data-face="back"] {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  grid-area: 1 / 1;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.flip-face[data-side="back"] {
+  transform: rotateY(180deg);
 }
 
 /*

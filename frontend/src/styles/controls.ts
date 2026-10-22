@@ -82,7 +82,7 @@ export const OPTION_ROW_STYLE = `w-full min-h-10 flex items-center gap-3 px-3 py
  */
 export const PRIMARY_BUTTON_STYLE = `bg-amstar-red hover:bg-red-700 text-white font-cond uppercase tracking-widest rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.3)] transition-[background-color,transform] duration-150 ease-out ${PRESS} disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amstar-red disabled:active:translate-y-0 disabled:active:scale-100`;
 
-export const INLINE_INPUT_STYLE = `px-3 py-1.5 bg-transparent border border-transparent hover:border-amstar-line focus:bg-amstar-field rounded text-xs font-bold text-amstar-ink ${HOVER} cursor-pointer uppercase w-full ${FOCUS}`;
+export const INLINE_INPUT_STYLE = `px-3 py-1.5 min-h-10 bg-transparent border border-transparent hover:border-amstar-line focus:bg-amstar-field rounded text-xs font-bold text-amstar-ink ${HOVER} cursor-pointer uppercase w-full ${FOCUS}`;
 
 // Static surfaces.
 export const PANEL_STYLE =
