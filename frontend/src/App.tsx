@@ -78,6 +78,15 @@ export const App: React.FC = () => {
     () => userFromToken().user,
   );
   const showSkeleton = useDelayed(loading && !!currentUser);
+  /*
+   * When the queue last actually arrived.
+   *
+   * The dashboard used to show a green dot and the word "Live" unconditionally
+   * - it said the same thing whether the last refresh landed twenty seconds
+   * ago or had been failing for an hour, which is a status indicator that
+   * indicates nothing. Set only on success, so it reports what happened.
+   */
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const [currentRole, setCurrentRole] = useState<string | null>(
     () => userFromToken().role,
   );
@@ -212,6 +221,7 @@ export const App: React.FC = () => {
     if (!localStorage.getItem("amstar_token")) return;
     try {
       setRepairs(await apiFetch<VehicleRepair[]>("/api/repairs/queue"));
+      setLastSyncedAt(Date.now());
       fetchActivity();
     } catch (error) {
       // apiFetch already logged the user out on 401; anything else is worth showing.
@@ -781,6 +791,7 @@ export const App: React.FC = () => {
                 element={
                   currentUser ? (
                     <Dashboard
+                      lastSyncedAt={lastSyncedAt}
                       repairs={repairs}
                       technicianNames={technicianNames}
                       activity={activity}

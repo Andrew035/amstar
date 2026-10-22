@@ -179,6 +179,24 @@ const timeAgo = (iso: string): string => {
   return `${Math.floor(hours / 24)}d ago`;
 };
 
+/**
+ * The actor, as a person rather than a machine identifier.
+ *
+ * `ticket_activity.actor` stores the signed-in principal, which is the full
+ * email. Rendering it put a 28-character address in the boldest position of
+ * every row - across 30 rows there were only three distinct actors, one of
+ * them repeated nineteen times running - so the widest thing in the feed was
+ * the least informative. The local part is what AuthController already derives
+ * for a display name.
+ *
+ * It also stops the feed showing everyone's email to everyone. Every signed-in
+ * account can read this panel, technicians included since V20.
+ */
+const actorName = (actor: string) => {
+  const at = actor.indexOf("@");
+  return at > 0 ? actor.slice(0, at) : actor;
+};
+
 const ActivityFeed: React.FC<{ activity: TicketActivity[] }> = ({
   activity,
 }) =>
@@ -186,7 +204,12 @@ const ActivityFeed: React.FC<{ activity: TicketActivity[] }> = ({
     <Empty>No activity yet. Changes to tickets will show up here.</Empty>
   ) : (
     <ul className="divide-y divide-amstar-line-soft">
-      {activity.map((event) => (
+      {activity.map((event, i) => {
+        // Say who only when it changes. A run of edits by one person is one
+        // person's work, and repeating the name down the column buries what
+        // actually happened.
+        const sameAsAbove = i > 0 && activity[i - 1].actor === event.actor;
+        return (
         <li key={event.id} className="py-2 flex gap-3">
           <span
             className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${ACTION_DOT[event.action]}`}
@@ -194,7 +217,13 @@ const ActivityFeed: React.FC<{ activity: TicketActivity[] }> = ({
           />
           <div className="min-w-0 flex-1">
             <p className="text-sm text-amstar-ink leading-snug">
-              <span className="font-bold">{event.actor}</span>{" "}
+              {!sameAsAbove && (
+                <>
+                  <span className="font-bold" title={event.actor}>
+                    {actorName(event.actor)}
+                  </span>{" "}
+                </>
+              )}
               <span className="text-amstar-ink-dim">
                 {ACTION_TEXT[event.action]}
               </span>{" "}
@@ -214,7 +243,8 @@ const ActivityFeed: React.FC<{ activity: TicketActivity[] }> = ({
             {timeAgo(event.createdAt)}
           </time>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 
@@ -225,8 +255,29 @@ export const Dashboard: React.FC<{
   technicianNames: string[];
   activity: TicketActivity[];
   canEdit: boolean;
-}> = ({ repairs, technicianNames, activity, canEdit }) => {
+  /** When the queue last arrived, or null if it never has. */
+  lastSyncedAt: number | null;
+}> = ({ repairs, technicianNames, activity, canEdit, lastSyncedAt }) => {
   const navigate = useNavigate();
+
+  /*
+   * Re-read on every queue refresh, which is the only thing that moves this.
+   * Deliberately not a ticking timer: a clock updating a label in the corner
+   * once a second is work the shop never asked for, and the 60s refetch is
+   * already a heartbeat that re-renders this.
+   */
+  const syncMinutes =
+    lastSyncedAt === null
+      ? null
+      : Math.floor((Date.now() - lastSyncedAt) / 60000);
+  const stale = syncMinutes !== null && syncMinutes >= 3;
+  const syncLabel =
+    syncMinutes === null
+      ? "Connecting"
+      : syncMinutes < 1
+        ? "Live"
+        : `${syncMinutes}m ago`;
+
   const openQueue = (filter: string) =>
     navigate(`/queue?filter=${encodeURIComponent(filter)}`);
   /*
@@ -267,16 +318,18 @@ export const Dashboard: React.FC<{
         </h2>
         <span className="flex items-center gap-1.5 font-cond text-[11px] uppercase tracking-widest text-amstar-ink-dim">
           {/*
-            Static. This dot sits in the corner of a screen the shop has open
-            all day, and a permanent two-second pulse in the periphery is
-            motion nobody asked for - the queue refreshing every 60s is what
-            "Live" actually means, and the dot says that standing still.
+            Reports the last successful refresh rather than asserting "Live".
+            The queue refetches every 60s, so anything past a couple of minutes
+            means the last few attempts did not land - which is exactly when a
+            dashboard full of numbers is worth distrusting. Static, because a
+            pulse in the corner of a screen the shop has open all day is motion
+            nobody asked for.
           */}
           <span
-            className="w-2 h-2 rounded-full bg-sev-1"
+            className={`w-2 h-2 rounded-full ${stale ? "bg-amstar-alert" : "bg-sev-1"}`}
             aria-hidden="true"
           />
-          Live
+          {syncLabel}
         </span>
       </div>
 

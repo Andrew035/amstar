@@ -37,12 +37,31 @@ export const CapacityPanel: React.FC<{
           const stale = (row.oldestDays ?? 0) >= 7;
           return (
             <li key={row.name}>
+              {/*
+                The row reads "Adolfo  ■ ■  2  17d" - four values, no headers,
+                and the severity squares are aria-hidden, so a screen reader
+                got a name and two bare numbers. The label spells out what the
+                eye infers from position, and the title does the same for
+                anyone hovering who has not learned the layout yet.
+              */}
               <button
                 type="button"
                 onClick={() =>
                   row.isUnassignedBucket
                     ? onOpenUnassigned()
                     : onOpenTech(row.name)
+                }
+                title={
+                  idle
+                    ? `${row.name} has no open tickets`
+                    : `${row.name}: ${row.openCount} open, oldest ${row.oldestDays}d`
+                }
+                aria-label={
+                  idle
+                    ? `${row.name}, no open tickets`
+                    : `${row.name}, ${row.openCount} open ticket${
+                        row.openCount === 1 ? "" : "s"
+                      }, oldest ${row.oldestDays} days`
                 }
                 disabled={idle}
                 className={`w-full min-h-10 flex items-center gap-2 px-1 text-left text-sm rounded-sm transition-colors enabled:hover:bg-amstar-raised disabled:cursor-default ${
