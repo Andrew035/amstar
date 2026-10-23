@@ -80,10 +80,13 @@ export const PrivacyPolicy = () => (
       </ul>
       <p>
         We collect this from you when you drop a vehicle off, or from the
-        vehicle itself.{" "}
+        vehicle itself.
         <strong>
-          We do not handle payment card details in this application.
-        </strong>
+          We do not process payments or handle payment card details in this
+          application
+        </strong>{" "}
+        - it records the cost of the work, and billing is handled separately
+        through our accounting system.
       </p>
     </S>
 
