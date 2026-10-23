@@ -56,7 +56,8 @@ Every one of these is a placeholder that must be replaced before real use.
 | 3 | `.env` | `AMSTAR_APP_URL` | `https://<real domain>` |
 | 4 | `.env` | `AMSTAR_SMTP_USER` / `_PASSWORD` | Gmail address + App Password |
 | 5 | `.env` | `AMSTAR_HC_URL` | healthchecks.io ping URL |
-| 6 | `application.properties` | `amstar.auth.admin-emails` | verify the manager emails |
+| 6 | `.env` | `AMSTAR_ADMIN_EMAILS` | the owner emails, comma separated |
+| 7 | `.env` | `AMSTAR_BOOKKEEPER_EMAILS` | the bookkeeper email, or leave empty |
 
 **Items 2 and 3 are silent failures.** Both default to `http://localhost:5173`.
 Wrong, the app still starts, password reset links just point at localhost and
@@ -106,7 +107,7 @@ docker compose logs -f backend caddy
 
 You are looking for three things:
 
-- Flyway: `Migrating schema "public" to version "1"` through the latest (`"6"` today)
+- Flyway: `Migrating schema "public" to version "1"` through the latest (`"20"` today)
 - `Started RepairServiceApplication`
 - Caddy: `certificate obtained successfully`
 
@@ -151,18 +152,16 @@ Tokens carry the role as a claim and live ten hours, so without it an account
 would keep presenting a role that no longer exists. A forced re-login right after
 this deploy is expected, not a broken deploy.
 
-**Changing someone's role** is a SQL update plus a `token_version` bump, in one
-transaction. Moving an address between the allowlists does nothing on its own,
-because the role is written only at registration:
+**V20 adds the TECHNICIAN role**, the `technicians.user_id` link, and a
+`purpose` column on the reset tokens. It does not sign anyone out and does not
+change any existing account: every current user stays ADMIN or BOOKKEEPER, and
+every roster entry starts with no account linked.
 
-```sql
-update users
-   set role = 'BOOKKEEPER', token_version = token_version + 1
- where email = 'person@example.com' and role = 'ADMIN';
-```
-
-Check at least one active ADMIN remains afterwards. Nothing in the app can
-change a role, so a shop with no admin needs another SQL session to recover.
+**Changing someone's role is now a job for the app**, on the Roster page
+(section 8). It writes the role and bumps `token_version` in one transaction,
+which is what makes the change take effect immediately instead of whenever the
+old token expires. The SQL path is the fallback for when nobody can sign in;
+section 8 has it, bump included.
 
 ---
 
@@ -238,7 +237,7 @@ EOF
 ## 6. Disaster recovery
 
 The schema is rebuilt by Flyway from the migrations in
-`backend/src/main/resources/db/migration/` (`V1`–`V6` today), so you only ever
+`backend/src/main/resources/db/migration/` (`V1`–`V20` today), so you only ever
 restore **data**, never structure.
 
 ### Volume corrupted, or `docker compose down -v` run by accident
@@ -246,7 +245,7 @@ restore **data**, never structure.
 ```bash
 cd /opt/amstar
 docker compose up -d postgres-db backend
-docker compose logs backend | grep Migrating     # confirm every migration applied (V1..V6 today)
+docker compose logs backend | grep Migrating     # confirm every migration applied (V1..V20 today)
 
 gzip -dc /var/backups/amstar/amstar_<newest>.sql.gz \
   | docker exec -i amstar_postgres psql -U amstar_user -d amstar_db
@@ -305,32 +304,89 @@ reminder on this.
 
 ## 8. User administration
 
-### Add a manager
+Since V20 this is done in the app, on the **Roster** page. The SQL further down
+is the fallback for when nobody can sign in at all.
 
-Admin is assigned **at registration only**, from the email allowlist. Adding an
-email later does not promote an existing account.
+### The three roles
 
-New person:
-1. Add the email to `amstar.auth.admin-emails` in `application.properties`
-2. `docker compose up -d --build backend`
-3. They register with that email
+Ranked: `TECHNICIAN` < `BOOKKEEPER` < `ADMIN`. You may only grant a role
+**strictly below your own**, so an admin creates bookkeepers and technicians, a
+bookkeeper creates technicians, and nobody can promote a peer or themselves.
+Creating a *second* admin is therefore not possible from the UI by design; the
+SQL below is how that is done.
 
-Existing account:
+Be honest about what the split buys: both ADMIN and BOOKKEEPER have the same
+shop-floor authority, and the role gates exactly one thing, the Invoices page.
+It is organizational, not a security boundary.
+
+### Give someone a login
+
+Roster → the row menu next to their name:
+
+- **Invite to sign in** — for someone who has never had an account. Creates an
+  inactive account and emails a single-use link to set their first password.
+  That link is the only way in; no password is ever chosen on their behalf.
+- **Link an existing account** — for the owners and the bookkeeper, whose
+  accounts predate the roster. Points the roster row at the login they already
+  use, and changes nothing about their role.
+
+A failed invite email is reported in the app ("Account created, but the invite
+email failed to send") and the row then offers **Resend invite**. The account
+exists either way, so this is recoverable. To confirm the cause:
+
 ```bash
-docker exec amstar_postgres psql -U amstar_user -d amstar_db \
-  -c "update users set role='ADMIN' where email='them@example.com';"
+docker compose logs backend | grep "Failed to send invite email"
 ```
-They must log out and back in, the role lives in the JWT, which lasts 10 hours.
+
+### Change a role
+
+Roster → row menu → **Change role**. The account is signed out everywhere the
+instant the role changes, so the new authority applies immediately rather than
+whenever their old token happens to expire.
 
 ### Remove access
 
+Roster → row menu → **Revoke sign-in**. Immediate, for the same reason.
+
+**"Remove from roster" is not this.** That only hides the name from the
+assignment dropdowns; the account behind it keeps working. Revoking sign-in is
+the one that stops them logging in.
+
+### Registration allowlists
+
+Self-registration is still open, governed by `.env`:
+
+- `AMSTAR_ADMIN_EMAILS` — these addresses register as ADMIN
+- `AMSTAR_BOOKKEEPER_EMAILS` — these register as BOOKKEEPER. Optional; empty
+  means nobody can, which is deliberate so a deploy with no bookkeeper starts.
+
+Every other address is refused with the byte-identical message a bad signup
+code gets, so the form cannot be used to discover which addresses are
+authorized. The role is written **only at registration**, so moving an address
+between the lists afterwards does nothing by itself.
+
 ```bash
-docker exec amstar_postgres psql -U amstar_user -d amstar_db \
-  -c "update users set is_active=false where email='them@example.com';"
+# after editing .env
+docker compose up -d backend   # `restart` will NOT reload .env
 ```
 
-Blocks new logins. Their current token stays valid until it expires (≤10 hours).
-To cut it off immediately, rotate the JWT secret.
+### SQL fallback: make a second admin
+
+The one thing the UI deliberately cannot do.
+
+**The `token_version` bump is not optional.** The role travels in the JWT, and
+`token_version` is the only thing that invalidates one. Without the bump the
+account keeps its old authority for up to ten hours.
+
+```bash
+docker exec amstar_postgres psql -U amstar_user -d amstar_db -c \
+  "update users set role='ADMIN', token_version = token_version + 1
+     where email='them@example.com';"
+```
+
+One statement, so the role and the bump commit together. Check at least one
+active ADMIN remains after any demotion — nothing in the app can grant ADMIN
+back, so a shop with no admin needs another SQL session to recover.
 
 ### Rotate the JWT secret
 
@@ -397,8 +453,10 @@ Documented so they are decisions, not surprises.
   when the Caddy container restarts. A distributed attacker with many IPs is not
   meaningfully slowed; this protects against single-source brute force and
   email-quota abuse, which is the realistic threat here.
-- **Password reset does not invalidate active sessions.** JWTs are stateless.
-  Rotate the secret (section 8) to force everyone out.
+- **Password reset does not invalidate active sessions.** JWTs are stateless,
+  and resetting a password does not touch `token_version`. To cut one account
+  off now, use **Revoke sign-in** on the Roster; to cut everyone off, rotate the
+  secret (section 8).
 - **Unknown technician names are silently dropped** on assignment. Returns 200,
   name disappears. The dropdown only offers real names, so it needs a crafted
   request.

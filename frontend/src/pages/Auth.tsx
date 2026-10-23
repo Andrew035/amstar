@@ -55,7 +55,7 @@ const SwitchLine: React.FC<{
     <button
       type="button"
       onClick={onClick}
-      className={`font-bold text-amstar-red-ink underline-offset-4 hover:underline ${HOVER} ${PRESS}`}
+      className={`inline-flex min-h-10 items-center font-bold text-amstar-red-ink underline-offset-4 hover:underline ${HOVER} ${PRESS}`}
     >
       {action}
     </button>
@@ -232,7 +232,7 @@ export const Auth: React.FC<{
   });
 
   return (
-    <div className="grid items-center gap-10 py-6 lg:min-h-[calc(100dvh-8rem)] lg:grid-cols-[1fr_minmax(26rem,30rem)] lg:gap-16">
+    <div className="grid min-h-[calc(100dvh-4rem)] items-center justify-items-center gap-10 py-6 lg:grid-cols-[1fr_minmax(26rem,30rem)] lg:justify-items-stretch lg:gap-16">
       {/*
         The shop, at the size a sign is read from. This half used to be empty
         navy; a wordmark set small and centred over a form is the generic
@@ -262,7 +262,7 @@ export const Auth: React.FC<{
         </dl>
       </aside>
 
-      <div className="flip-scene w-full">
+      <div className="flip-scene w-full max-w-[30rem] lg:max-w-none">
         <div className="flip-card" data-face={face === "login" ? "front" : "back"}>
           {/* ---------------------------------------------------- sign in */}
           <section {...faceProps("login")}>
@@ -323,7 +323,7 @@ export const Auth: React.FC<{
               <button
                 type="button"
                 onClick={() => turnTo("forgot")}
-                className={`text-sm text-amstar-ink-faint underline-offset-4 hover:text-amstar-ink hover:underline ${HOVER} ${PRESS}`}
+                className={`inline-flex min-h-10 items-center text-sm text-amstar-ink-faint underline-offset-4 hover:text-amstar-ink hover:underline ${HOVER} ${PRESS}`}
               >
                 Forgot password?
               </button>
