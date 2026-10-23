@@ -24,6 +24,7 @@ import { PricingModal } from "./components/PricingModal";
 import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
 import { DashboardSkeleton, QueueSkeleton } from "./components/Skeleton";
 import { useDelayed } from "./lib/useDelayed";
+import { PrivacyPolicy, Terms } from "./pages/Legal";
 
 /**
  * What the shop did, not how alarming it is. Green for something added or
@@ -754,7 +755,10 @@ export const App: React.FC = () => {
                 path="/register"
                 element={
                   !currentUser ? (
-                    <Auth initial="register" onLoginSuccess={handleLoginSuccess} />
+                    <Auth
+                      initial="register"
+                      onLoginSuccess={handleLoginSuccess}
+                    />
                   ) : (
                     <Navigate to="/" replace />
                   )
@@ -764,7 +768,10 @@ export const App: React.FC = () => {
                 path="/forgot-password"
                 element={
                   !currentUser ? (
-                    <Auth initial="forgot" onLoginSuccess={handleLoginSuccess} />
+                    <Auth
+                      initial="forgot"
+                      onLoginSuccess={handleLoginSuccess}
+                    />
                   ) : (
                     <Navigate to="/" replace />
                   )
@@ -891,6 +898,10 @@ export const App: React.FC = () => {
                   )
                 }
               />
+
+              {/* Legal Information */}
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<Terms />} />
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />

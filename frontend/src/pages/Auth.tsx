@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AmstarLogo } from "../components/AmstarLogo";
 import { PasswordField } from "../components/PasswordField";
 import {
@@ -131,12 +131,16 @@ export const Auth: React.FC<{
       });
       if (!response.ok) {
         if (response.status === 429) {
-          throw new Error("Too many sign-in attempts. Wait a minute and try again.");
+          throw new Error(
+            "Too many sign-in attempts. Wait a minute and try again.",
+          );
         }
         if (response.status === 401) {
           throw new Error("Invalid email or password");
         }
-        throw new Error("Something went wrong signing in. Try again in a moment.");
+        throw new Error(
+          "Something went wrong signing in. Try again in a moment.",
+        );
       }
       const data = await response.json();
       localStorage.setItem("amstar_token", data.token);
@@ -263,7 +267,10 @@ export const Auth: React.FC<{
       </aside>
 
       <div className="flip-scene w-full max-w-[30rem] lg:max-w-none">
-        <div className="flip-card" data-face={face === "login" ? "front" : "back"}>
+        <div
+          className="flip-card"
+          data-face={face === "login" ? "front" : "back"}
+        >
           {/* ---------------------------------------------------- sign in */}
           <section {...faceProps("login")}>
             <div className="group mb-7 lg:hidden">
@@ -327,6 +334,21 @@ export const Auth: React.FC<{
               >
                 Forgot password?
               </button>
+            </div>
+
+            <div className="mt-4 flex gap-4 text-xs text-amstar-ink-faint">
+              <Link
+                to="/privacy"
+                className="inline-flex min-h-10 items-center underline-offset-4 hover:text-amstar-ink hover:underline"
+              >
+                Privacy
+              </Link>
+              <Link
+                to="/terms"
+                className="inline-flex min-h-10 items-center underline-offset-4 hover:text-amstar-ink hover:underline"
+              >
+                Terms
+              </Link>
             </div>
           </section>
 
