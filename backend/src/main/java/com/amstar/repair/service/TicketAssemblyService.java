@@ -133,24 +133,53 @@ public class TicketAssemblyService {
     repair.setCustomer(resolveCustomer(fullName, phone));
   }
 
+  /** Finds the customer this ticket belongs to, or creates them. */
   private Customer resolveCustomer(String fullName, String phone) {
     String name = trimToNull(fullName);
     if (name == null) {
       return null;
     }
     String number = trimToNull(phone);
-    Customer customer =
-        customers
-            .findFirstByFullNameIgnoreCase(name)
-            .orElseGet(() -> customers.save(new Customer(name)));
+    List<Customer> sameName = customers.findByFullNameIgnoreCase(name);
 
-    // Set it whenever one was given, so a number that changed is not silently
-    // ignored, but never let a blank wipe the number already on file.
-    if (number != null && !number.equals(customer.getPhone())) {
-      customer.setPhone(number);
-      return customers.save(customer);
+    if (number != null) {
+      String digits = digits(number);
+      for (Customer c : sameName) {
+        if (digits.equals(digits(c.getPhone()))) {
+          return c; // Same name, same number: the same person
+        }
+      }
+      // A record for this name with no number yet. The shop often has no
+      // number at drop-off, so filling one in later is the normal path.
+      for (Customer c : sameName) {
+        if (trimToNull(c.getPhone()) == null) {
+          c.setPhone(number);
+          return customers.save(c);
+        }
+      }
+      // Every record under this name carries a different number: someone else.
+      Customer fresh = new Customer(name);
+      fresh.setPhone(number);
+      return customers.save(fresh);
     }
-    return customer;
+
+    // No number given, which is normal at drop-off. Safe only while the name
+    // still picks out one person.
+    if (sameName.isEmpty()) {
+      return customers.save(new Customer(name));
+    }
+    if (sameName.size() == 1) {
+      return sameName.get(0);
+    }
+    throw new IllegalArgumentException(
+        "There is more than one customer named \""
+            + name
+            + "\". Add a phone number to say which one.");
+  }
+
+  /** Phone numbers compare by digits; punctuation is presentation. */
+  private static String digits(String s) {
+    return s == null ? "" : s.replaceAll("\\D", "");
   }
 
   // Services

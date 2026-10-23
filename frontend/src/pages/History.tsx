@@ -374,8 +374,8 @@ export const HistoryPage: React.FC<{
                                         ))}
                                       </ul>
                                     ) : (
-                                      <p className="font-mono text-[11px] leading-relaxed text-amstar-ink-dim whitespace-pre-line">
-                                        {item.parts || "No parts recorded."}
+                                      <p className="font-mono text-[11px] leading-relaxed text-amstar-ink-dim">
+                                        No parts recorded.
                                       </p>
                                     )}
                                   </div>

@@ -180,7 +180,6 @@ export const TicketDetail: React.FC<{
   onAssignWorker: (id: number, workers: string) => void;
   onServiceChange: (id: number, service: string) => void;
   onSaveNotes: (id: number, notes: string) => Promise<void>;
-  onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
   onSaveComeback: (id: number, isComeback: boolean) => void;
   canEdit: boolean;
@@ -199,7 +198,6 @@ export const TicketDetail: React.FC<{
   onAssignWorker,
   onServiceChange,
   onSaveNotes,
-  onSaveParts,
   onDeleteClick,
   onSaveComeback,
   canEdit,
@@ -323,10 +321,10 @@ export const TicketDetail: React.FC<{
         </div>
 
         {/*
-          * Five cells, one row from lg up. lg and not xl on purpose: the shop
-          * works on iPads at 1180px wide, where xl never applies and these
-          * wrapped onto three rows - 204px of the 505px the pane gets.
-          */}
+         * Five cells, one row from lg up. lg and not xl on purpose: the shop
+         * works on iPads at 1180px wide, where xl never applies and these
+         * wrapped onto three rows - 204px of the 505px the pane gets.
+         */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div>
             <span className={LABEL_STYLE}>Severity</span>
@@ -425,39 +423,27 @@ export const TicketDetail: React.FC<{
         </div>
 
         {/*
-          * The pads are flex-1 with a deliberately low floor: they grow to fill
-          * a tall window, and on a short one they shrink rather than pushing the
-          * pane into a scrollbar. min-h-32 made 128px the effective minimum,
-          * which overflowed a 1366x768 laptop by 102px once Phone and Mileage
-          * added a row to the grid above. The header's height is set by the
-          * column beside the photo, not the photo, so shrinking that buys
-          * nothing - the levers are this floor and the grid's row count.
-          */}
+         * The pads are flex-1 with a deliberately low floor: they grow to fill
+         * a tall window, and on a short one they shrink rather than pushing the
+         * pane into a scrollbar. min-h-32 made 128px the effective minimum,
+         * which overflowed a 1366x768 laptop by 102px once Phone and Mileage
+         * added a row to the grid above. The header's height is set by the
+         * column beside the photo, not the photo, so shrinking that buys
+         * nothing - the levers are this floor and the grid's row count.
+         */}
         {/* The bookkeeper reads these to write the invoice, so she sees them;
             TicketNotes renders a disabled pad without canEdit. The API sends the
             fields to both roles, so this hides a panel rather than being the
             boundary. */}
         {canEdit && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+          <div className="flex flex-col flex-1 min-h-0 pb">
             <TicketNotes
               repairId={id}
               initialNotes={repair.notes}
               canEdit={canEdit}
               onSave={onSaveNotes}
               className="flex flex-col min-h-0"
-              textareaClass="flex-1 min-h-12"
-            />
-            <TicketNotes
-              repairId={id}
-              initialNotes={repair.parts}
-              canEdit={canEdit}
-              onSave={onSaveParts}
-              label="Parts"
-              saveLabel="Save Parts"
-              placeholder="Part name, part number, price - written down, not stored as figures..."
-              emptyText="No parts recorded for this repair yet."
-              className="flex flex-col min-h-0"
-              textareaClass="flex-1 min-h-12"
+              textareaClass="flex-1 min-h-32"
             />
           </div>
         )}

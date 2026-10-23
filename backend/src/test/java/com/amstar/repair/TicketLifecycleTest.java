@@ -33,7 +33,6 @@ public class TicketLifecycleTest extends IntegrationTest {
     assertOk(patch("/api/repairs/" + id + "/customer", admin, Map.of("customerName", "Kane Ruiz")));
     assertOk(
         patch("/api/repairs/" + id + "/notes", admin, Map.of("notes", "Waiting on the owner")));
-    assertOk(patch("/api/repairs/" + id + "/parts", admin, Map.of("parts", "Valve body VB-9912")));
     assertOk(
         patch(
             "/api/repairs/" + id + "/line-items",
@@ -64,12 +63,13 @@ public class TicketLifecycleTest extends IntegrationTest {
     assertEquals("2026-12-24", ticket.get("expectedCompletionDate"));
     assertEquals("CLUTCH REPLACEMENT", ticket.get("serviceType"));
     assertEquals("Waiting on the owner", ticket.get("notes"));
-    assertEquals("Valve body VB-9912", ticket.get("parts"));
     assertTrue(
         String.valueOf(ticket.get("assignedWorker")).contains("Max"), "technicians were not saved");
 
     // The feed must have logged each of these, which only works if every action
-    // is listed in the activity_action_valid constraint.
+    // is listed in the activity_action_valid constraint. PARTS is deliberately
+    // absent: the pad is gone, so nothing can produce it any more. The value
+    // stays in the constraint for the rows that already carry it.
     List<String> actions = activityActions(admin);
     assertTrue(
         actions.containsAll(
@@ -82,7 +82,6 @@ public class TicketLifecycleTest extends IntegrationTest {
                 "DUE_DATE",
                 "CUSTOMER",
                 "NOTES",
-                "PARTS",
                 "LINE_ITEMS",
                 "PRICING")),
         "the activity feed is missing actions, saw: " + actions);
@@ -371,12 +370,13 @@ public class TicketLifecycleTest extends IntegrationTest {
                 "serviceType", "TIRE ROTATION",
                 "severity", 1,
                 "expectedCompletionDate", "2026-12-20",
-                "vehicle",
-                    Map.of("licensePlate", "MIL1001", "state", "MD", "mileage", 131900))));
+                "vehicle", Map.of("licensePlate", "MIL1001", "state", "MD", "mileage", 131900))));
     assertEquals(131900, ((Map<?, ?>) ticketById(admin, id).get("vehicle")).get("mileage"));
 
     // A blank number must not wipe one already on file.
-    assertOk(patch("/api/repairs/" + id + "/customer", admin, Map.of("customerName", "Rosalind Okafor")));
+    assertOk(
+        patch(
+            "/api/repairs/" + id + "/customer", admin, Map.of("customerName", "Rosalind Okafor")));
     assertEquals("(301) 555-0142", ticketById(admin, id).get("customerPhone"));
   }
 
@@ -407,8 +407,11 @@ public class TicketLifecycleTest extends IntegrationTest {
     assertTrue(activityActions(admin).contains("MILEAGE"));
 
     // Out of range is a readable 400, not a constraint violation turned into 409.
-    assertEquals(400, patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", 9_000_000)).status());
-    assertEquals(400, patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", -5)).status());
+    assertEquals(
+        400,
+        patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", 9_000_000)).status());
+    assertEquals(
+        400, patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", -5)).status());
 
     // A blank leaves the reading alone rather than wiping it.
     assertOk(patch("/api/repairs/" + id + "/mileage", admin, Map.of("mileage", "")));

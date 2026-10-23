@@ -65,10 +65,6 @@ public class VehicleRepair {
   @Column(columnDefinition = "TEXT")
   private String notes;
 
-  /** Free-text parts pad. Names, part numbers and quoted prices as typed. */
-  @Column(columnDefinition = "TEXT")
-  private String parts;
-
   @OneToMany(
       mappedBy = "ticket",
       cascade = CascadeType.ALL,
@@ -309,14 +305,6 @@ public class VehicleRepair {
 
   public void setNotes(String notes) {
     this.notes = notes;
-  }
-
-  public String getParts() {
-    return parts;
-  }
-
-  public void setParts(String parts) {
-    this.parts = parts;
   }
 
   public List<TicketLineItem> getLineItems() {

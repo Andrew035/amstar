@@ -199,16 +199,6 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSaveParts = async (id: number, parts: string) => {
-    if (!canEdit) return;
-    await apiFetch(`/api/repairs/${id}/parts`, {
-      method: "PATCH",
-      body: JSON.stringify({ parts }),
-    });
-    showToast("Parts saved.", "success");
-    fetchQueue();
-  };
-
   const fetchQueue = async () => {
     if (!localStorage.getItem("amstar_token")) return;
     try {
@@ -359,7 +349,6 @@ export const App: React.FC = () => {
       lineItems: LineItem[];
       laborPrice: number;
       notes: string;
-      parts: string;
     },
   ) => {
     if (!isAdmin) return;
@@ -379,14 +368,10 @@ export const App: React.FC = () => {
         method: "PATCH",
         body: JSON.stringify({ notes: payload.notes }),
       });
-      await apiFetch(`/api/repairs/${id}/parts`, {
-        method: "PATCH",
-        body: JSON.stringify({ parts: payload.parts }),
-      });
       showToast("Invoice saved.", "success");
       fetchQueue();
     } catch (error) {
-      // Four sequential writes, so a failure part way through leaves the
+      // Three sequential writes, so a failure part way through leaves the
       // earlier ones applied. Acceptable here: every one of them is idempotent
       // and the page refetches, so saving again settles it.
       toastError(error, "Could not save the invoice.");
@@ -819,7 +804,6 @@ export const App: React.FC = () => {
                       onServiceChange={handleServiceChange}
                       onDeleteClick={handleDeleteClick}
                       onSaveNotes={handleSaveNotes}
-                      onSaveParts={handleSaveParts}
                       onSaveComeback={handleSaveComeback}
                       onOpenPricing={setPricedRepair}
                       onPhoneChange={handlePhoneChange}
@@ -916,7 +900,6 @@ export const App: React.FC = () => {
           canEdit={canEdit}
           onClose={() => setViewedRepair(null)}
           onSaveNotes={handleSaveNotes}
-          onSaveParts={handleSaveParts}
         />
       )}
 

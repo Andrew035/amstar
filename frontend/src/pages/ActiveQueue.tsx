@@ -35,7 +35,6 @@ export const ActiveQueue: React.FC<{
   onDueDateChange: (id: number, dueDate: string) => void;
   onCustomerNameChange: (id: number, name: string) => void;
   onSaveNotes: (id: number, notes: string) => Promise<void>;
-  onSaveParts: (id: number, parts: string) => Promise<void>;
   onDeleteClick: (id: number) => void;
   onSaveComeback: (id: number, isComeback: boolean) => void;
   onOpenPricing: (repair: VehicleRepair) => void;
@@ -55,7 +54,6 @@ export const ActiveQueue: React.FC<{
   onAssignWorker,
   onServiceChange,
   onSaveNotes,
-  onSaveParts,
   onDeleteClick,
   onSaveComeback,
   onOpenPricing,
@@ -217,7 +215,6 @@ export const ActiveQueue: React.FC<{
             onAssignWorker={onAssignWorker}
             onServiceChange={onServiceChange}
             onSaveNotes={onSaveNotes}
-            onSaveParts={onSaveParts}
             onSaveComeback={onSaveComeback}
             onDeleteClick={onDeleteClick}
             onOpenPricing={onOpenPricing}

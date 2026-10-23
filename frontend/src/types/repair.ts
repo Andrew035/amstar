@@ -67,7 +67,6 @@ export interface VehicleRepair {
   actualCompletionDate: string;
   priorityScore?: number;
   notes?: string;
-  parts?: string;
 
   // Priced rows. Absent on a shop-floor account - the API withholds them.
   lineItems?: LineItem[];

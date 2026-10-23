@@ -39,7 +39,6 @@ export type InvoicePayload = {
   lineItems: LineItem[];
   laborPrice: number;
   notes: string;
-  parts: string;
 };
 
 export type SaveInvoice = (id: number, payload: InvoicePayload) => void;
@@ -60,7 +59,6 @@ const InvoiceEditor: React.FC<{
   const [lines, setLines] = useState<LineItem[]>(item.lineItems ?? []);
   const [laborPrice, setLaborPrice] = useState<number>(item.laborPrice || 0);
   const [notes, setNotes] = useState<string>(item.notes ?? "");
-  const [parts, setParts] = useState<string>(item.parts ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
   const partsTotal = lines.reduce(
@@ -81,7 +79,6 @@ const InvoiceEditor: React.FC<{
         .map((l) => ({ ...l, quantity: l.quantity || 1 })),
       laborPrice,
       notes,
-      parts,
     });
     setTimeout(() => setIsSaving(false), 400);
   };
@@ -120,7 +117,7 @@ const InvoiceEditor: React.FC<{
 
       <PartsEditor lines={lines} onChange={setLines} />
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-5">
         <div>
           <span className={PAD_LABEL}>Notes</span>
           <textarea
@@ -132,29 +129,22 @@ const InvoiceEditor: React.FC<{
             className={PAD_INPUT}
           />
         </div>
-        <div>
-          <span className={PAD_LABEL}>Parts notes</span>
-          <textarea
-            value={parts}
-            onChange={(e) => setParts(e.target.value)}
-            maxLength={2000}
-            placeholder="Where the parts came from, order numbers, anything loose."
-            aria-label="Parts notes"
-            className={PAD_INPUT}
-          />
-        </div>
       </div>
 
       <div className="mt-4 pt-4 border-t border-amstar-line-soft flex flex-wrap items-end justify-between gap-4">
         <div className="flex items-start gap-6">
           <div>
-            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Parts</span>
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
+              Parts
+            </span>
             <span className="flex min-h-11 items-center font-mono text-sm tabular-nums text-amstar-ink">
               {money(partsTotal)}
             </span>
           </div>
           <div>
-            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Labor</span>
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
+              Labor
+            </span>
             <CurrencyInput
               value={laborPrice}
               onChange={setLaborPrice}
@@ -163,7 +153,9 @@ const InvoiceEditor: React.FC<{
             />
           </div>
           <div>
-            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">Total</span>
+            <span className="mb-1 block font-cond text-[9px] uppercase tracking-widest text-amstar-ink-faint">
+              Total
+            </span>
             <span
               className={`flex min-h-11 items-center font-mono text-2xl font-bold tracking-tight tabular-nums ${
                 currentTotal > 0 ? "text-sev-1" : "text-amstar-ink-faint"
@@ -299,7 +291,7 @@ const PricingRow: React.FC<{
 
 /**
  * The Invoices page. Admin only - the route and the nav link both check it, and
- * every write it makes (/pricing, /notes, /parts) is ADMIN-only on the server.
+ * every write it makes (/line-items, /pricing, /notes) is ADMIN-only on the server.
  */
 export const PricingPage: React.FC<{
   repairs: VehicleRepair[];

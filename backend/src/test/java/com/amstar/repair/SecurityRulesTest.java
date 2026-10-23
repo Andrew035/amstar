@@ -112,7 +112,6 @@ public class SecurityRulesTest extends IntegrationTest {
     assertOk(patch("/api/repairs/" + id + "/due-date", books, Map.of("dueDate", "2026-12-24")));
     assertOk(patch("/api/repairs/" + id + "/customer", books, Map.of("customerName", "Kane Ruiz")));
     assertOk(patch("/api/repairs/" + id + "/notes", books, Map.of("notes", "hello")));
-    assertOk(patch("/api/repairs/" + id + "/parts", books, Map.of("parts", "valve body")));
     // Labor as well as the parts: she prices the whole job from the queue modal.
     assertOk(patch("/api/repairs/" + id + "/pricing", books, Map.of("laborPrice", 420)));
     assertOk(
@@ -215,7 +214,6 @@ public class SecurityRulesTest extends IntegrationTest {
     String admin = adminToken();
     long id = createTicket(admin, "Kane", 3, "2026-12-01");
     patch("/api/repairs/" + id + "/notes", admin, Map.of("notes", "manager only"));
-    patch("/api/repairs/" + id + "/parts", admin, Map.of("parts", "valve body VB-9912"));
     patch(
         "/api/repairs/" + id + "/line-items",
         admin,
@@ -230,7 +228,6 @@ public class SecurityRulesTest extends IntegrationTest {
     // inside the billing boundary rather than outside it.
     Map<String, Object> asBookkeeper = ticketById(bookkeeperToken(), id);
     assertEquals("manager only", asBookkeeper.get("notes"), "she writes the invoice from these");
-    assertEquals("valve body VB-9912", asBookkeeper.get("parts"));
     assertEquals(
         1,
         ((List<?>) asBookkeeper.get("lineItems")).size(),
@@ -361,10 +358,10 @@ public class SecurityRulesTest extends IntegrationTest {
   /**
    * The grant matrix, all nine actor/target pairs.
    *
-   * <p>The rule is "strictly below your own", which is what stops the hierarchy being able to
-   * widen itself: no role can mint its own rank, so a single compromised account cannot multiply.
-   * ADMIN is the one nobody can hand out, which is why a second owner stays a deliberate manual
-   * job - the allowlist plus the documented SQL.
+   * <p>The rule is "strictly below your own", which is what stops the hierarchy being able to widen
+   * itself: no role can mint its own rank, so a single compromised account cannot multiply. ADMIN
+   * is the one nobody can hand out, which is why a second owner stays a deliberate manual job - the
+   * allowlist plus the documented SQL.
    */
   @Test
   void aRoleCanOnlyBeGrantedBelowYourOwn() {
@@ -496,10 +493,7 @@ public class SecurityRulesTest extends IntegrationTest {
         "inviting a taken address must be refused, which is why linking exists");
 
     assertTrue(
-        patch(
-                "/api/technicians/" + rosterId + "/account",
-                admin,
-                Map.of("email", BOOKKEEPER_EMAIL))
+        patch("/api/technicians/" + rosterId + "/account", admin, Map.of("email", BOOKKEEPER_EMAIL))
             .isOk(),
         "an admin may link a bookkeeper's existing account");
 
@@ -647,10 +641,7 @@ public class SecurityRulesTest extends IntegrationTest {
         "is_active and the token_version bump together must end the session now");
 
     assertTrue(
-        post(
-                "/api/auth/login",
-                null,
-                Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"))
+        post("/api/auth/login", null, Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"))
             .isClientError(),
         "and they cannot simply sign in again");
   }
@@ -668,10 +659,7 @@ public class SecurityRulesTest extends IntegrationTest {
             .isOk());
 
     assertTrue(
-        post(
-                "/api/auth/login",
-                null,
-                Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"))
+        post("/api/auth/login", null, Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"))
             .isOk(),
         "they can sign in again");
   }
@@ -762,10 +750,7 @@ public class SecurityRulesTest extends IntegrationTest {
 
     // The row exists, with a password nobody has ever seen and is_active false.
     ApiResponse tooEarly =
-        post(
-            "/api/auth/login",
-            null,
-            Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"));
+        post("/api/auth/login", null, Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"));
     assertTrue(tooEarly.isClientError(), "an unaccepted invite must not be a working account");
 
     String raw = plantCredentialToken(TECHNICIAN_EMAIL, "INVITE");
@@ -854,7 +839,8 @@ public class SecurityRulesTest extends IntegrationTest {
     assertTrue(get("/api/repairs/queue", technician).isOk(), "a technician may read the queue");
     assertForbidden(
         patch("/api/repairs/" + ticket + "/status", technician, Map.of("status", "IN_PROGRESS")));
-    assertForbidden(patch("/api/repairs/" + ticket + "/severity", technician, Map.of("severity", 5)));
+    assertForbidden(
+        patch("/api/repairs/" + ticket + "/severity", technician, Map.of("severity", 5)));
     assertForbidden(delete("/api/repairs/" + ticket, technician));
 
     // BILLING_AUTHORITIES was unreachable until TECHNICIAN existed. It is live now.

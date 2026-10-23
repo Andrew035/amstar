@@ -31,14 +31,7 @@ export const VehicleModal: React.FC<{
   canEdit: boolean;
   onClose: () => void;
   onSaveNotes: (id: number, notes: string) => Promise<void>;
-  onSaveParts: (id: number, parts: string) => Promise<void>;
-}> = ({
-  repair,
-  canEdit,
-  onClose,
-  onSaveNotes,
-  onSaveParts,
-}) => {
+}> = ({ repair, canEdit, onClose, onSaveNotes }) => {
   const technicians = technicianList(repair);
 
   return (
@@ -87,7 +80,11 @@ export const VehicleModal: React.FC<{
 
         <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Fact label="Customer" value={repair.customerName} />
-          <Fact label="Phone" value={phone(repair.customerPhone)} fallback="-" />
+          <Fact
+            label="Phone"
+            value={phone(repair.customerPhone)}
+            fallback="-"
+          />
           {/*
            * vehicleLabel already joins year, make and model. This used to
            * render it and then append the model again, so a Honda Odyssey read
@@ -139,23 +136,12 @@ export const VehicleModal: React.FC<{
           </Fact>
         </div>
 
-        {/* Notes and parts: the same pad twice, side by side on a wide screen. */}
-        <div className="grid grid-cols-1 gap-4 border-t border-amstar-line pt-5 sm:grid-cols-2">
+        <div className="border-t border-amstar-line pt-5">
           <TicketNotes
             repairId={repair.id!}
             initialNotes={repair.notes}
             canEdit={canEdit}
             onSave={onSaveNotes}
-          />
-          <TicketNotes
-            repairId={repair.id!}
-            initialNotes={repair.parts}
-            canEdit={canEdit}
-            onSave={onSaveParts}
-            label="Parts"
-            saveLabel="Save Parts"
-            placeholder="Part names, numbers and what they were quoted at..."
-            emptyText="No parts written down for this repair yet."
           />
         </div>
       </div>

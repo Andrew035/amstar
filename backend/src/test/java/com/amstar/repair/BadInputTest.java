@@ -99,9 +99,6 @@ public class BadInputTest extends IntegrationTest {
     assertRefused(
         patch("/api/repairs/" + id + "/notes", admin, Map.of("notes", "x".repeat(5001))),
         "over-long notes");
-    assertRefused(
-        patch("/api/repairs/" + id + "/parts", admin, Map.of("parts", "x".repeat(5001))),
-        "an over-long parts list");
   }
 
   @Test
@@ -214,6 +211,48 @@ public class BadInputTest extends IntegrationTest {
     assertEquals(
         4, ((Number) survivor.get("severity")).intValue(), "the victim's severity was overwritten");
     assertEquals(2, get("/api/repairs/queue", admin).asList().size(), "both tickets must exist");
+  }
+
+  @Test
+  void twoPeopleWithOneNameStaySeparate() {
+    String admin = adminToken();
+    createTicket(admin, "Mike Smith", 3, "2026-12-01", "(301)-555-0100");
+    createTicket(admin, "Mike Smith", 3, "2026-12-01", "(301)-555-0199");
+
+    assertEquals(2, customersNamed("Mike Smith"), "a different number means a different person");
+  }
+
+  @Test
+  void theSameNumberFindsTheSamePerson() {
+    String admin = adminToken();
+    createTicket(admin, "Mike Smith", 3, "2026-12-01", "(301)-555-0100");
+    // Different case, and the number unformatted: still one person.
+    createTicket(admin, "mike smith", 3, "2026-12-01", "3015550100");
+
+    assertEquals(1, customersNamed("Mike Smith"), "formatting is not identity");
+  }
+
+  @Test
+  void anAmbiguousNameWithNoNumberIsRefused() {
+    String admin = adminToken();
+    createTicket(admin, "Mike Smith", 3, "2026-12-01", "(301)-555-0100");
+    long second = createTicket(admin, "Mike Smith", 3, "2026-12-01", "(301)-555-0199");
+
+    // Two people now answer to this name, so a rename to it with no number has
+    // no right answer. Refusing beats silently picking one.
+    assertRefused(
+        patch("/api/repairs/" + second + "/customer", admin, Map.of("customerName", "Mike Smith")),
+        "an ambiguous customer name");
+  }
+
+  /** How many customer rows carry this name, whatever their number. */
+  private int customersNamed(String name) {
+    Integer count =
+        jdbc.queryForObject(
+            "select count(*) from customers where lower(full_name) = lower(?)",
+            Integer.class,
+            name);
+    return count == null ? 0 : count;
   }
 
   private void assertRefused(ApiResponse response, String what) {

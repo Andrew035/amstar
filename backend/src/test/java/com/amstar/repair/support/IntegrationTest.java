@@ -6,6 +6,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -208,10 +209,7 @@ public abstract class IntegrationTest {
     }
 
     ApiResponse login =
-        post(
-            "/api/auth/login",
-            null,
-            Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"));
+        post("/api/auth/login", null, Map.of("email", TECHNICIAN_EMAIL, "password", "Password123"));
     Object token = login.asMap().get("token");
     if (token == null) {
       throw new AssertionError("invited technician could not sign in: " + login.body());
@@ -247,8 +245,8 @@ public abstract class IntegrationTest {
       throw new AssertionError("SHA-256 unavailable", e);
     }
     jdbc.update(
-        "insert into password_reset_tokens (user_id, token_hash, expires_at, purpose) "
-            + "values ((select id from users where email = ?), ?, now() + interval '30 minutes', ?)",
+        "insert into password_reset_tokens (user_id, token_hash, expires_at, purpose) values"
+            + " ((select id from users where email = ?), ?, now() + interval '30 minutes', ?)",
         email,
         digest,
         purpose);
@@ -276,31 +274,40 @@ public abstract class IntegrationTest {
 
   /** Creates a ticket and returns its id. */
   protected long createTicket(String token, String customer, int severity, String dueDate) {
-    ApiResponse created =
-        post(
-            "/api/repairs",
-            token,
-            Map.of(
-                "customerName",
-                customer,
-                "vehicle",
-                Map.of(
-                    "licensePlate", "T" + (System.nanoTime() % 100000),
-                    "state", "NY",
-                    "make", "FORD",
-                    "model", "E-250",
-                    "year", 2010),
-                "serviceType",
-                "OIL CHANGE",
-                "severity",
-                severity,
-                "expectedCompletionDate",
-                dueDate,
-                "assignedWorker",
-                "Max",
-                "status",
-                "PENDING"));
+    return createTicket(token, customer, severity, dueDate, null);
+  }
 
+  /**
+   * Creates a ticket carrying a customer phone number.
+   *
+   * <p>Separate from the four-argument form because most tests do not care who the customer is. The
+   * ones that do care need the number: since name alone stopped identifying a person, it is the
+   * only thing telling two customers with one name apart.
+   */
+  protected long createTicket(
+      String token, String customer, int severity, String dueDate, String phone) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("customerName", customer);
+    // Map.of rejects nulls, and an absent number must stay absent rather than
+    // arrive as an empty string - blank means "leave it alone", not "clear it".
+    if (phone != null) {
+      body.put("customerPhone", phone);
+    }
+    body.put(
+        "vehicle",
+        Map.of(
+            "licensePlate", "T" + (System.nanoTime() % 100000),
+            "state", "NY",
+            "make", "FORD",
+            "model", "E-250",
+            "year", 2010));
+    body.put("serviceType", "OIL CHANGE");
+    body.put("severity", severity);
+    body.put("expectedCompletionDate", dueDate);
+    body.put("assignedWorker", "Max");
+    body.put("status", "PENDING");
+
+    ApiResponse created = post("/api/repairs", token, body);
     if (!created.isOk()) {
       throw new AssertionError("could not create a test ticket: " + created.body());
     }
